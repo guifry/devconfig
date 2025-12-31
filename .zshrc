@@ -3,6 +3,9 @@
 
 [[ -e ~/.bashrc ]] && emulate sh -c 'source ~/.bashrc'
 
+# Load local secrets (tokens, etc) - not committed
+[[ -f ~/.secrets ]] && source ~/.secrets
+
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
@@ -99,6 +102,15 @@ source $ZSH/oh-my-zsh.sh
 # For a full list of active aliases, run `alias`.
 
 alias edzsh='vi ~/.zshrc'
+
+# Wrapper for devconfig CLI - handles 'reload' in current shell context
+devconfig() {
+    if [[ "$1" == "reload" ]]; then
+        source ~/.zshrc
+    else
+        command devconfig "$@"
+    fi
+}
 
 ZSH_DISABLE_COMPFIX=true
 
