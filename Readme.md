@@ -1,95 +1,91 @@
-# Dev config
+# devconfig
 
-## Setup (new machine)
+Cross-platform dotfiles and dev environment setup.
+
+## Quick start
+
+### Option 1: Nix (recommended, cross-platform)
+
+```bash
+# Install Nix
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+
+# Clone and setup
+git clone git@github.com:guifry/devconfig.git ~/projects/devconfig
+cd ~/projects/devconfig
+make setup
+```
+
+Auto-detects macOS (ARM/Intel) and Linux.
+
+### Option 2: Legacy script (macOS only)
 
 ```bash
 ./setup.sh
 source ~/.zshrc
 ```
 
-Then follow the **GitHub CLI Setup** section below.
+Copies config files but doesn't install packages.
 
-## Update devconfig repo
+## Commands
 
 ```bash
-./update.sh
+make setup    # First-time bootstrap
+make switch   # Apply config changes
+make update   # Update nixpkgs + apply
+make clean    # Garbage collect old generations
 ```
 
-## Steps for new machines
+## What's included
 
-Install:
+**Packages:** tmux, vim, git, curl, jq, ripgrep, fzf, direnv
 
-- Brew & XCode command line tools
-- Pyenv
-- Docker
-- Github SSH keys (see SSH config below)
-- VSCode and enable Sync
-- ITerm2
-- NVM
-- oh-my-zsh
-- direnv (`brew install direnv`)
-- gh CLI (`brew install gh`)
-- This repository
+**Configs:**
+- zsh: auto-starts tmux
+- tmux: `Ctrl+]` prefix, vi keys, hjkl pane nav
+- vim: relative line numbers, system clipboard
+- direnv: nix-shell integration
+
+**Not managed by Nix:**
+- macOS GUI apps (iTerm2, VSCode) — install manually or via Homebrew
+- ~/.secrets — local tokens, not committed
 
 ## Secrets
 
-Local secrets (tokens, API keys) are stored in `~/.secrets` which is sourced by `.zshrc`.
-This file is NOT committed. See `.secrets.example` for template.
+Local secrets stored in `~/.secrets`, sourced by `.zshrc`. See `.secrets.example`.
 
-## GitHub CLI Setup (multi-account)
+## GitHub CLI (multi-account)
 
-Personal account is default everywhere. Work account auto-activates in work folders.
+Personal account default everywhere. Work account auto-activates in work folders.
 
-### 1. Login to both accounts
-
-```bash
-gh auth login   # login as guifry (personal)
-gh auth login   # login as gforey-ext (work)
-```
-
-### 2. Get personal token and add to ~/.secrets
+### Setup
 
 ```bash
+# Login both accounts
+gh auth login   # personal (guifry)
+gh auth login   # work (gforey-ext)
+
+# Get personal token → ~/.secrets
 gh auth switch -u guifry
-gh auth token   # copy this
-```
+gh auth token   # copy to GH_TOKEN in ~/.secrets
 
-Edit `~/.secrets`:
-```bash
-export GH_TOKEN="ghp_your_personal_token"
-```
-
-### 3. Get work token and create work folder .envrc
-
-```bash
+# Get work token → ~/kpler/.envrc
 gh auth switch -u gforey-ext
-gh auth token   # copy this
-```
-
-Create `~/kpler/.envrc`:
-```bash
-export GH_TOKEN="ghp_your_work_token"
-```
-
-Then allow it:
-```bash
+gh auth token   # copy to GH_TOKEN in ~/kpler/.envrc
 direnv allow ~/kpler
-```
 
-### 4. Switch back to personal as default
-
-```bash
+# Default to personal
 gh auth switch -u guifry
 ```
 
-### 5. Test
+### Test
 
 ```bash
-cd ~/projects/anything    # gh auth status → guifry
-cd ~/kpler/any-repo       # gh auth status → gforey-ext
+cd ~/projects/anything    # → guifry
+cd ~/kpler/any-repo       # → gforey-ext
 ```
 
-## SSH Config
+## SSH config
 
 `~/.ssh/config`:
 ```
@@ -110,4 +106,9 @@ Host github.com
   IdentityFile ~/.ssh/id_ed25519_kpler
 ```
 
-For personal repos, use: `git@github.com-guifry:guifry/repo.git`
+For personal repos: `git@github.com-guifry:guifry/repo.git`
+
+## Cheatsheets
+
+- [tmux](tmux-cheatsheet.md)
+- [vim](vim-cheatsheet.md)
