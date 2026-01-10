@@ -9,6 +9,10 @@ echo "Setting up devconfig..."
 cp .bashrc ~/.bashrc
 cp .zshrc ~/.zshrc
 cp .vimrc ~/.vimrc
+cp .tmux.conf ~/.tmux.conf
+
+# Iterm hotkey config
+cp ~/devconfig/iterm2/com.googlecode.iterm2.plist ~/Library/Preferences/
 
 # Setup secrets file (only if doesn't exist)
 if [[ ! -f ~/.secrets ]]; then

@@ -32,7 +32,7 @@ def show_picker() -> str | None:
     global _selected_content
     _selected_content = None
 
-    items = storage.get_items(limit=10)
+    items = storage.get_items(limit=50)
     if not items:
         return None
 

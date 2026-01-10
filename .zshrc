@@ -1,19 +1,24 @@
+# Auto-start tmux
+if [[ -z "$TMUX" ]]; then
+    tmux new-session -A -s main
+fi
+
 # If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
+# export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
 [[ -e ~/.bashrc ]] && emulate sh -c 'source ~/.bashrc'
 
-# Load local secrets (tokens, etc) - not committed
+# Load local secrets (tokens, etc) - not committed to devconfig
 [[ -f ~/.secrets ]] && source ~/.secrets
 
-# Path to your oh-my-zsh installation.
+# Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
 # Set name of the theme to load --- if set to "random", it will
-# load a random theme each time oh-my-zsh is loaded, in which case,
+# load a random theme each time Oh My Zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="avit"
+ZSH_THEME="robbyrussell"
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -90,48 +95,91 @@ source $ZSH/oh-my-zsh.sh
 # if [[ -n $SSH_CONNECTION ]]; then
 #   export EDITOR='vim'
 # else
-#   export EDITOR='mvim'
+#   export EDITOR='nvim'
 # fi
 
 # Compilation flags
-# export ARCHFLAGS="-arch x86_64"
+# export ARCHFLAGS="-arch $(uname -m)"
 
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
+# Set personal aliases, overriding those provided by Oh My Zsh libs,
+# plugins, and themes. Aliases can be placed here, though Oh My Zsh
+# users are encouraged to define aliases within a top-level file in
+# the $ZSH_CUSTOM folder, with .zsh extension. Examples:
+# - $ZSH_CUSTOM/aliases.zsh
+# - $ZSH_CUSTOM/macos.zsh
 # For a full list of active aliases, run `alias`.
-
-alias edzsh='vi ~/.zshrc'
-
-# Wrapper for devconfig CLI - handles 'reload' in current shell context
-devconfig() {
-    if [[ "$1" == "reload" ]]; then
-        source ~/.zshrc
-    else
-        command devconfig "$@"
-    fi
-}
-
-ZSH_DISABLE_COMPFIX=true
+#
+# Example aliases
+# alias zshconfig="mate ~/.zshrc"
+# alias ohmyzsh="mate ~/.oh-my-zsh"
 
 
-# NVM
+
+alias ws='open -a /Applications/Windsurf.app'
+alias loadzsh='source ~/.zshrc'
+alias lint-webapp='pnpm eslint apps/terminal/src/domains/chartering --ext .ts,.vue --fix'
+
+export PATH="/opt/homebrew/bin:$PATH"
+
+
+# Claude Code
+export ENABLE_LSP_TOOL=1
+
+
+
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 
-# PYENV
-eval "$(pyenv init -)"
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init - zsh)"
 
 # The next line updates PATH for the Google Cloud SDK.
-if [ -f '/Users/guilhem.forey/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/guilhem.forey/Downloads/google-cloud-sdk/path.zsh.inc'; fi
+if [ -f '/Users/guilhemforey/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/guilhemforey/Downloads/google-cloud-sdk/path.zsh.inc'; fi
 
 # The next line enables shell command completion for gcloud.
-if [ -f '/Users/guilhem.forey/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/guilhem.forey/Downloads/google-cloud-sdk/completion.zsh.inc'; fi
+if [ -f '/Users/guilhemforey/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/guilhemforey/Downloads/google-cloud-sdk/completion.zsh.inc'; fi
 
 
-bindkey '^[b' backward-word
-# Bind Option+Arrow Right to move forward one word
-bindkey '^[f' forward-word
+
+# This enables nix-shell to use my ZSH config
+eval "$(direnv hook zsh)"
+# Then, when you run direnv allow in a repo that support nix shell, it will hook.
+# This removes annoying warnings from nix shell
+export NIX_CONFIG="warn-dirty = false"
+
+
+
+# tabtab source for electron-forge package
+# uninstall by removing these lines or running `tabtab uninstall electron-forge`
+[[ -f /Users/guilhemforey/.npm/_npx/6913fdfd1ea7a741/node_modules/tabtab/.completions/electron-forge.zsh ]] && . /Users/guilhemforey/.npm/_npx/6913fdfd1ea7a741/node_modules/tabtab/.completions/electron-forge.zsh
+
+
+# Mise
+eval "$(mise activate zsh)"
+
+# opencode
+export PATH=/Users/guilhemforey/.opencode/bin:$PATH
+
+
+
+eval "$(mise activate zsh)"
+
+
+
+# Chartering lint/format - works from any wt-webapp worktree
+# Note: ESLint runs prettier via plugin:prettier/recommended, no separate prettier needed
+unalias chartering-fix chartering-lint chartering-format chartering-precommit 2>/dev/null
+chartering-fix() {
+  local root=$(git rev-parse --show-toplevel 2>/dev/null)
+  [[ -z "$root" ]] && echo "Not in a git repo" && return 1
+  (cd "$root/apps/terminal" && pnpm exec eslint src/domains/chartering --ext .ts,.vue --fix --quiet)
+}
+chartering-precommit() {
+  local root=$(git rev-parse --show-toplevel 2>/dev/null)
+  [[ -z "$root" ]] && echo "Not in a git repo" && return 1
+  (cd "$root" && pre-commit run --files apps/terminal/src/domains/chartering/**/*.ts apps/terminal/src/domains/chartering/**/*.vue)
+}
 

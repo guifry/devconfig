@@ -15,6 +15,16 @@ set undodir=~/.vim/undodir
 set undofile
 set incsearch
 
+" Relative line numbers except current line
+set number
+set relativenumber
+
+nmap <M-p> <Plug>yankstack_substitute_older_paste
+nmap <M-n> <Plug>yankstack_substitute_newer_paste
+
+" Show status bar at the bottom, to know what file it is etc.
+set statusline=%f\ %m\ %=\ %l:%c
+
 set colorcolumn=80
 highlight ColorColumn ctermbg=0 guibg=lightgrey
 
@@ -33,6 +43,7 @@ Plug 'JamshedVesuna/vim-markdown-preview'
 Plug 'yuezk/vim-js'
 Plug 'HerringtonDarkholme/yats.vim'
 Plug 'maxmellon/vim-jsx-pretty'
+Plug 'maxbrunsfeld/vim-yankstack'
 
 
 call plug#end()
@@ -42,6 +53,9 @@ set background=dark
 
 " Able to paste multiple times
 xnoremap p pgvy
+" Share clipboard with system
+set clipboard=unnamed
 
 let g:ctrlp_custom_ignore = 'node_modules'
+
 
