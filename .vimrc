@@ -14,6 +14,7 @@ set nobackup
 set undodir=~/.vim/undodir
 set undofile
 set incsearch
+set ttimeoutlen=80
 
 " Relative line numbers except current line
 set number
