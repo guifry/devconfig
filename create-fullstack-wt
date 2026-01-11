@@ -38,10 +38,11 @@ def get_next_wt_number() -> int:
 
 
 def get_previous_wt_dir(current_num: int) -> Path | None:
-    if current_num <= 1:
-        return None
-    prev = KPLER_DIR / f"{WT_PREFIX}{current_num - 1}"
-    return prev if prev.exists() else None
+    for n in range(current_num - 1, 0, -1):
+        prev = KPLER_DIR / f"{WT_PREFIX}{n}"
+        if prev.exists():
+            return prev
+    return None
 
 
 def get_default_branch(repo: Path) -> str:
