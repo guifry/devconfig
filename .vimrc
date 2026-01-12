@@ -56,6 +56,6 @@ xnoremap p pgvy
 " Share clipboard with system
 set clipboard=unnamed
 
-let g:ctrlp_custom_ignore = 'node_modules'
+let g:ctrlp_custom_ignore = 'node_modules\|\.git\|__pycache__\|\.mypy_cache\|\.venv\|venv\|dist\|build'
 
 
