@@ -7,7 +7,7 @@ set shiftwidth=4
 set expandtab
 set smartindent
 set nu
-set nowrap
+set wrap
 set noswapfile
 set nobackup
 set undodir=~/.vim/undodir
