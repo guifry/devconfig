@@ -14,6 +14,7 @@
     curl
     jq
     ripgrep
+    fd
     fzf
     direnv
   ];
