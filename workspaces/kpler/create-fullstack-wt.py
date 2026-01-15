@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-import os
+import argparse
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 KPLER_DIR = Path.home() / "kpler"
 WEB_APP_REPO = KPLER_DIR / "web-app"
 CHARTERING_REPO = KPLER_DIR / "chartering-fast-api"
-WT_PREFIX = "fullstack-chartering-wt-"
+WT_PREFIX = "FST-"
+
+
+def log(msg: str) -> None:
+    print(msg, file=sys.stderr)
 
 
 def get_branch_numbers(repo: Path) -> list[int]:
@@ -19,7 +24,7 @@ def get_branch_numbers(repo: Path) -> list[int]:
     numbers = []
     for line in result.stdout.splitlines():
         branch = line.strip().lstrip("* ")
-        match = re.search(rf"{WT_PREFIX}(\d+)$", branch)
+        match = re.search(rf"{WT_PREFIX}(\d+)(?:-|$)", branch)
         if match:
             numbers.append(int(match.group(1)))
     return numbers
@@ -29,7 +34,7 @@ def get_next_wt_number() -> int:
     numbers = []
     for d in KPLER_DIR.iterdir():
         if d.is_dir() and d.name.startswith(WT_PREFIX):
-            match = re.search(rf"{WT_PREFIX}(\d+)$", d.name)
+            match = re.search(rf"{WT_PREFIX}(\d+)(?:-|$)", d.name)
             if match:
                 numbers.append(int(match.group(1)))
     numbers.extend(get_branch_numbers(WEB_APP_REPO))
@@ -39,9 +44,9 @@ def get_next_wt_number() -> int:
 
 def get_previous_wt_dir(current_num: int) -> Path | None:
     for n in range(current_num - 1, 0, -1):
-        prev = KPLER_DIR / f"{WT_PREFIX}{n}"
-        if prev.exists():
-            return prev
+        for d in KPLER_DIR.iterdir():
+            if d.is_dir() and re.match(rf"{WT_PREFIX}{n}(?:-|$)", d.name):
+                return d
     return None
 
 
@@ -65,7 +70,7 @@ def get_default_branch(repo: Path) -> str:
 def create_worktree(repo: Path, target_dir: Path, base_branch: str, new_branch: str) -> None:
     subprocess.run(
         ["git", "worktree", "add", "-b", new_branch, str(target_dir), base_branch],
-        cwd=repo, check=True
+        cwd=repo, check=True, stdout=sys.stderr
     )
 
 
@@ -79,37 +84,43 @@ def copy_extra_files(src_dir: Path, dst_dir: Path) -> None:
             shutil.copytree(item, dst)
         else:
             shutil.copy2(item, dst)
-    print(f"Copied extra files from {src_dir}")
+    log(f"Copied extra files from {src_dir}")
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("suffix", nargs="?", default="", help="optional suffix for worktree name")
+    args = parser.parse_args()
+
     if not WEB_APP_REPO.exists():
         raise SystemExit(f"web-app not found at {WEB_APP_REPO}")
     if not CHARTERING_REPO.exists():
         raise SystemExit(f"chartering-fast-api not found at {CHARTERING_REPO}")
 
     wt_num = get_next_wt_number()
-    wt_dir = KPLER_DIR / f"{WT_PREFIX}{wt_num}"
+    suffix_part = f"-{args.suffix}" if args.suffix else ""
+    wt_name = f"{WT_PREFIX}{wt_num}{suffix_part}"
+    wt_dir = KPLER_DIR / wt_name
     wt_dir.mkdir()
-    print(f"Created {wt_dir}")
+    log(f"Created {wt_dir}")
 
-    wt_name = f"{WT_PREFIX}{wt_num}"
     web_app_base = get_default_branch(WEB_APP_REPO)
     chartering_base = get_default_branch(CHARTERING_REPO)
 
-    print(f"Creating web-app worktree (branch {wt_name} from {web_app_base})...")
+    log(f"Creating web-app worktree (branch {wt_name} from {web_app_base})...")
     create_worktree(WEB_APP_REPO, wt_dir / "web-app", web_app_base, wt_name)
 
-    print(f"Creating chartering-fast-api worktree (branch {wt_name} from {chartering_base})...")
+    log(f"Creating chartering-fast-api worktree (branch {wt_name} from {chartering_base})...")
     create_worktree(CHARTERING_REPO, wt_dir / "chartering-fast-api", chartering_base, wt_name)
 
     prev_wt = get_previous_wt_dir(wt_num)
     if prev_wt:
         copy_extra_files(prev_wt, wt_dir)
     else:
-        print("No previous worktree to copy files from")
+        log("No previous worktree to copy files from")
 
-    print(f"\nDone! Worktree ready at: {wt_dir}")
+    log(f"\nDone! Worktree ready at: {wt_dir}")
+    print(wt_dir)
 
 
 if __name__ == "__main__":

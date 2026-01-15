@@ -183,3 +183,7 @@ chartering-precommit() {
   (cd "$root" && pre-commit run --files apps/terminal/src/domains/chartering/**/*.ts apps/terminal/src/domains/chartering/**/*.vue)
 }
 
+fst() {
+  local wt_dir=$(~/bin/fst "$@")
+  [[ -n "$wt_dir" && -d "$wt_dir" ]] && cd "$wt_dir"
+}

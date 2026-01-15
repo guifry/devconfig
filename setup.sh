@@ -32,6 +32,7 @@ fi
 # Create bin directory and copy scripts
 mkdir -p ~/bin
 cp scripts/* ~/bin/ 2>/dev/null || true
+ln -sf ~/projects/devconfig/workspaces/kpler/create-fullstack-wt.py ~/bin/fst
 
 echo ""
 echo "Done! Next steps:"
