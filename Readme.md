@@ -6,27 +6,27 @@ Cross-platform terminal environment. One command setup.
 
 ### macOS
 ```bash
-curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash
 ```
 
 ### Ubuntu / Debian
 ```bash
-sudo apt update && sudo apt install -y curl && curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/main/bootstrap.sh | bash
+sudo apt update && sudo apt install -y curl && curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash
 ```
 
 ### Fedora / RHEL / CentOS
 ```bash
-curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash
 ```
 
 ### Arch
 ```bash
-curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash
 ```
 
 ### Alpine
 ```bash
-apk add curl bash git && curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/main/bootstrap.sh | bash
+apk add curl bash git && curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash
 ```
 
 Prompts for **light** (terminal: zsh, tmux, vim, rg, claude) or **full** (+ SSH keys, Python).
