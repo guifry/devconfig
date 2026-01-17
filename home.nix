@@ -17,15 +17,11 @@ in {
 
   home.packages = with pkgs; [
     gnumake
-    tmux
-    vim
-    git
     curl
     jq
     ripgrep
     fd
     fzf
-    direnv
   ] ++ lib.optionals (!isDarwin) [
     xclip
   ];
