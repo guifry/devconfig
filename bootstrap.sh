@@ -50,13 +50,33 @@ fi
 REPO="${DEVCONFIG_PATH:-$HOME/projects/devconfig}"
 mkdir -p "$(dirname "$REPO")"
 if [ -d "$REPO" ]; then
+  cd "$REPO"
+
+  # Check for uncommitted changes
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "Error: devconfig has uncommitted changes."
+    echo "Please commit or stash them first, then re-run setup."
+    exit 1
+  fi
+
+  # Check for unpushed commits
+  git fetch origin
+  LOCAL=$(git rev-parse HEAD)
+  REMOTE=$(git rev-parse origin/master)
+  BASE=$(git merge-base HEAD origin/master)
+
+  if [ "$LOCAL" != "$REMOTE" ] && [ "$LOCAL" != "$BASE" ]; then
+    echo "Error: devconfig has local commits not pushed to origin."
+    echo "Please push or reset them first, then re-run setup."
+    exit 1
+  fi
+
   echo "Updating devconfig..."
-  git -C "$REPO" pull --ff-only
+  git pull --ff-only
 else
   git clone https://github.com/guifry/devconfig.git "$REPO"
+  cd "$REPO"
 fi
-
-cd "$REPO"
 
 echo ""
 echo "Alias categories (space-separated numbers, or 'none'):"
