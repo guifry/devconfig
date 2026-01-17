@@ -22,6 +22,7 @@ endif
 setup: setup-light
 
 setup-light:
+	@./scripts/backup-existing.sh
 	nix run home-manager -- switch --flake .#$(CONFIG)
 	./scripts/aliases-setup.sh
 	@echo ""
