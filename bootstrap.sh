@@ -32,6 +32,19 @@ if ! command -v nix &> /dev/null; then
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
   fi
   . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+
+  # For non-systemd Linux, may need to start daemon manually
+  if [[ "$OSTYPE" != darwin* ]] && [ ! -d /run/systemd/system ]; then
+    if [ ! -S /nix/var/nix/daemon-socket/socket ]; then
+      echo "Starting nix daemon..."
+      if command -v sudo &>/dev/null; then
+        sudo nix daemon &>/dev/null &
+      else
+        nix daemon &>/dev/null &
+      fi
+      sleep 2
+    fi
+  fi
 fi
 
 REPO="${DEVCONFIG_PATH:-$HOME/projects/devconfig}"
@@ -71,7 +84,13 @@ nix run home-manager -- switch --impure --flake ".#$CONFIG"
 # Install Claude Code
 echo ""
 echo "Installing Claude Code..."
-command -v claude >/dev/null 2>&1 || curl -fsSL https://claude.ai/install.sh | sh
+if ! command -v claude >/dev/null 2>&1; then
+  if curl -fsSL https://claude.ai/install.sh | sh; then
+    echo "Claude Code installed"
+  else
+    echo "Warning: Claude Code install failed (non-critical)"
+  fi
+fi
 
 # Full setup extras
 if [[ "$choice" == "2" ]]; then
