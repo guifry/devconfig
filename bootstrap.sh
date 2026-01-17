@@ -17,7 +17,11 @@ fi
 
 if ! command -v nix &> /dev/null; then
   echo "Installing Nix..."
-  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+  if [ -d /run/systemd/system ]; then
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+  else
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
+  fi
   . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 fi
 
