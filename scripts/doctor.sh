@@ -56,7 +56,7 @@ if [[ ${#missing[@]} -eq 0 ]]; then
 else
   echo "Missing: ${missing[*]}"
   echo ""
-  read -p "Install missing components? [y/N]: " install
+  read -p "Install missing components? [y/N]: " install < /dev/tty
   if [[ "$install" =~ ^[Yy]$ ]]; then
     SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
     REPO_DIR="$(dirname "$SCRIPT_DIR")"

@@ -9,7 +9,7 @@ echo "Devconfig Setup"
 echo "==============="
 echo "1) Light - terminal experience (zsh, tmux, vim, rg, claude code)"
 echo "2) Full  - light + SSH keys + Python environment"
-read -p "Choice [1/2]: " choice
+read -p "Choice [1/2]: " choice < /dev/tty
 
 if ! command -v git &> /dev/null; then
   echo "Git required. Install with:"
@@ -59,7 +59,7 @@ echo "1) chartering  - chartering-fix, chartering-lint"
 echo "2) kpler       - kpler work aliases"
 echo "3) macos-apps  - windsurf, mac app shortcuts"
 echo "4) personal    - fst, personal utils"
-read -p "Select [e.g. 1 3 4 or 1,3,4]: " alias_choice
+read -p "Select [e.g. 1 3 4 or 1,3,4]: " alias_choice < /dev/tty
 export ALIAS_CATEGORIES="$alias_choice"
 
 # Detect platform config
@@ -73,6 +73,14 @@ fi
 
 # Backup existing dotfiles
 ./scripts/backup-existing.sh || { echo "Setup cancelled."; exit 0; }
+
+# Warn if headless Linux (clipboard won't work)
+if [[ "$UNAME" != "Darwin" ]] && [[ -z "$DISPLAY" ]] && [[ -z "$WAYLAND_DISPLAY" ]]; then
+  echo ""
+  echo "Note: No display detected (headless server)."
+  echo "      Clipboard integration (xclip) will not work."
+  echo ""
+fi
 
 # Run home-manager (--impure needed for builtins.getEnv)
 echo "Running home-manager..."

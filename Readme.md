@@ -33,6 +33,77 @@ Prompts for **light** (terminal: zsh, tmux, vim, rg, claude) or **full** (+ SSH 
 
 ---
 
+## What the Setup Does
+
+1. **Checks git** — prompts install instructions if missing
+2. **Installs Nix** — via Determinate Systems installer, handles:
+   - macOS (ARM/Intel)
+   - Linux with systemd
+   - Linux without systemd (containers, WSL1) — uses `--init none`
+3. **Clones this repo** to `~/projects/devconfig`
+4. **Backs up existing dotfiles** — ~/.zshrc, ~/.tmux.conf, ~/.vimrc, ~/.gitconfig to `~/.dotfiles-backup/<timestamp>/`
+5. **Runs home-manager** — installs packages, symlinks configs
+6. **Sets up aliases** — symlinks selected categories to `~/.aliases.d/`
+7. **Installs Claude Code** — via official installer
+8. **Full setup only:** SSH key wizard + Python (uv)
+
+---
+
+## Design Constraints
+
+| Constraint | How It's Handled |
+|------------|------------------|
+| Works on macOS ARM | `darwin-arm64` flake config, `aarch64-darwin` pkgs |
+| Works on macOS Intel | `darwin-x86` flake config, `x86_64-darwin` pkgs |
+| Works on Linux x86 | `linux-x86` flake config, `x86_64-linux` pkgs |
+| Works on Linux ARM | `linux-arm64` flake config, `aarch64-linux` pkgs |
+| Works without systemd | Nix install with `--init none`, manual daemon start |
+| Works in containers | USER/HOME env vars set if missing |
+| Backs up before overwriting | `~/.dotfiles-backup/<timestamp>/` with user confirmation |
+| Warns about auto-wipe | Prompts user about org backup policies |
+| Clipboard cross-platform | pbcopy on macOS, xclip on Linux |
+| Headless servers | Warns xclip won't work if no $DISPLAY |
+| Non-destructive | Never force-overwrites, always prompts |
+| Reversible | home-manager generations, backup restore, nix uninstall |
+| Idempotent | Safe to re-run, skips already-installed components |
+| SSH key backup | Backs up existing keys before generating new |
+| Dynamic username | Uses $USER env var, works on any server |
+
+---
+
+## Uninstall / Rollback
+
+### Rollback to previous config
+```bash
+# List generations
+home-manager generations
+
+# Activate a previous generation (copy the path from above)
+/nix/store/xxx-home-manager-generation/activate
+```
+
+### Restore backed-up dotfiles
+```bash
+# Find your backup
+ls ~/.dotfiles-backup/
+
+# Restore
+cp ~/.dotfiles-backup/<timestamp>/* ~/
+```
+
+### Uninstall Nix completely
+```bash
+/nix/nix-installer uninstall
+```
+
+### Remove devconfig
+```bash
+rm -rf ~/projects/devconfig
+rm -rf ~/.aliases.d
+```
+
+---
+
 ## Commands
 
 ```bash

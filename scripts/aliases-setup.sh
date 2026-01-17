@@ -23,7 +23,7 @@ if [[ -z "$ALIAS_CATEGORIES" ]]; then
   echo "2) kpler       - kpler work aliases"
   echo "3) macos-apps  - windsurf, mac app shortcuts"
   echo "4) personal    - fst, personal utils"
-  read -p "Select (space-separated, or 'none'): " ALIAS_CATEGORIES
+  read -p "Select (space-separated, or 'none'): " ALIAS_CATEGORIES < /dev/tty
 fi
 
 [[ "$ALIAS_CATEGORIES" == "none" ]] && exit 0

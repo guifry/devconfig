@@ -22,13 +22,13 @@ generate_key() {
   echo "----------------------------------------"
   cat "${keyfile}.pub"
   echo "----------------------------------------"
-  read -p "Press enter when done..."
+  read -p "Press enter when done..." < /dev/tty
 }
 
-read -p "Personal GitHub email (or skip): " personal_email
+read -p "Personal GitHub email (or skip): " personal_email < /dev/tty
 [[ -n "$personal_email" ]] && generate_key "personal" "$personal_email"
 
-read -p "Work GitHub email (or skip): " work_email
+read -p "Work GitHub email (or skip): " work_email < /dev/tty
 [[ -n "$work_email" ]] && generate_key "work" "$work_email"
 
 if [[ -n "$personal_email" ]] || [[ -n "$work_email" ]]; then

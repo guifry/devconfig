@@ -25,7 +25,7 @@ if [[ ${#existing[@]} -gt 0 ]]; then
   echo "WARNING: Some organisations auto-wipe folders outside designated paths."
   echo "Ensure backup location won't be purged, or copy backups elsewhere."
   echo ""
-  read -p "Continue? [y/N]: " confirm
+  read -p "Continue? [y/N]: " confirm < /dev/tty
   if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
     echo "Aborted by user."
     exit 2
