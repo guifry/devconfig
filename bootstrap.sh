@@ -49,7 +49,12 @@ fi
 
 REPO="${DEVCONFIG_PATH:-$HOME/projects/devconfig}"
 mkdir -p "$(dirname "$REPO")"
-[ -d "$REPO" ] || git clone https://github.com/guifry/devconfig.git "$REPO"
+if [ -d "$REPO" ]; then
+  echo "Updating devconfig..."
+  git -C "$REPO" pull --ff-only
+else
+  git clone https://github.com/guifry/devconfig.git "$REPO"
+fi
 
 cd "$REPO"
 
