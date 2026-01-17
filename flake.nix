@@ -14,25 +14,24 @@
       forAllSystems = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
     in {
       homeConfigurations = {
-        # macOS (Apple Silicon)
         "guilhemforey@darwin" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.aarch64-darwin;
           modules = [ ./home.nix ];
-          extraSpecialArgs = { isDarwin = true; };
         };
 
-        # macOS (Intel)
         "guilhemforey@darwin-x86" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.x86_64-darwin;
           modules = [ ./home.nix ];
-          extraSpecialArgs = { isDarwin = true; };
         };
 
-        # Linux
         "guilhemforey@linux" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.x86_64-linux;
           modules = [ ./home.nix ];
-          extraSpecialArgs = { isDarwin = false; };
+        };
+
+        "guilhemforey@linux-arm" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.aarch64-linux;
+          modules = [ ./home.nix ];
         };
       };
     };

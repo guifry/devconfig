@@ -10,24 +10,41 @@ ifeq ($(UNAME),Darwin)
         CONFIG := guilhemforey@darwin-x86
     endif
 else
-    CONFIG := guilhemforey@linux
+    ifeq ($(ARCH),aarch64)
+        CONFIG := guilhemforey@linux-arm
+    else
+        CONFIG := guilhemforey@linux
+    endif
 endif
 
-.PHONY: setup switch update clean
+.PHONY: setup setup-light setup-full switch update clean doctor
 
-# First-time setup (bootstraps home-manager)
-setup:
+setup: setup-light
+
+setup-light:
 	nix run home-manager -- switch --flake .#$(CONFIG)
+	./scripts/aliases-setup.sh
+	@echo ""
+	@echo "Installing Claude Code..."
+	@command -v claude >/dev/null 2>&1 || curl -fsSL https://claude.ai/install.sh | sh
+	@echo ""
+	@echo "Light setup complete. Restart your shell or run: source ~/.zshrc"
 
-# Apply config changes (after home-manager installed)
+setup-full: setup-light
+	./scripts/ssh-setup.sh
+	./scripts/python-setup.sh
+	@echo ""
+	@echo "Full setup complete."
+
 switch:
 	home-manager switch --flake .#$(CONFIG)
 
-# Update flake inputs (nixpkgs, home-manager) and apply
 update:
 	nix flake update
 	home-manager switch --flake .#$(CONFIG)
 
-# Remove old generations, free disk space
 clean:
 	nix-collect-garbage -d
+
+doctor:
+	@./scripts/doctor.sh

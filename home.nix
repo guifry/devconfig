@@ -1,6 +1,8 @@
-{ config, pkgs, isDarwin, ... }:
+{ config, pkgs, lib, ... }:
 
-{
+let
+  isDarwin = pkgs.stdenv.isDarwin;
+in {
   home.username = "guilhemforey";
   home.homeDirectory = if isDarwin then "/Users/guilhemforey" else "/home/guilhemforey";
   home.stateVersion = "24.05";
@@ -17,25 +19,40 @@
     fd
     fzf
     direnv
+  ] ++ lib.optionals (!isDarwin) [
+    xclip
   ];
 
   programs.zsh = {
     enable = true;
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
+    oh-my-zsh = {
+      enable = true;
+      theme = "robbyrussell";
+      plugins = [ "git" ];
+    };
     initExtra = ''
-      # Auto-start tmux
       if [[ -z "$TMUX" ]]; then
-          tmux new-session -A -s main
+        tmux new-session -A -s main
       fi
 
-      # Direnv
       eval "$(direnv hook zsh)"
       export NIX_CONFIG="warn-dirty = false"
+
+      [[ -f ~/.secrets ]] && source ~/.secrets
+
+      for f in ~/.aliases.d/*.sh; do
+        [[ -f "$f" ]] && source "$f"
+      done
+
+      export ENABLE_LSP_TOOL=1
+    '' + lib.optionalString isDarwin ''
+      export PATH="/opt/homebrew/bin:$PATH"
+    '' + lib.optionalString (!isDarwin) ''
+      alias pbcopy='xclip -selection clipboard'
+      alias pbpaste='xclip -selection clipboard -o'
     '';
-    shellAliases = {
-      loadzsh = "source ~/.zshrc";
-    };
   };
 
   programs.tmux = {
@@ -44,12 +61,21 @@
     keyMode = "vi";
     mouse = true;
     extraConfig = ''
-      # Pane navigation (hjkl)
       bind h select-pane -L
       bind j select-pane -D
       bind k select-pane -U
       bind l select-pane -R
-    '';
+
+      bind '"' split-window -v -c "#{pane_current_path}"
+      bind % split-window -h -c "#{pane_current_path}"
+
+      bind -T copy-mode-vi v send -X begin-selection
+      set -g mode-style "fg=black,bg=yellow"
+    '' + (if isDarwin then ''
+      bind -T copy-mode-vi y send -X copy-pipe "pbcopy"
+    '' else ''
+      bind -T copy-mode-vi y send -X copy-pipe "xclip -selection clipboard"
+    '');
   };
 
   programs.vim = {
@@ -84,8 +110,10 @@
 
   programs.git = {
     enable = true;
-    userName = "Guilhem Forey";
-    userEmail = ""; # Fill in
+    settings.user = {
+      name = "Guilhem Forey";
+      email = "";
+    };
   };
 
   programs.direnv = {
