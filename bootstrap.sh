@@ -40,8 +40,35 @@ echo "4) personal    - fst, personal utils"
 read -p "Select [e.g. 1 3 4]: " alias_choice
 export ALIAS_CATEGORIES="$alias_choice"
 
-if [[ "$choice" == "2" ]]; then
-  make setup-full
+# Detect platform config
+UNAME=$(uname)
+ARCH=$(uname -m)
+if [[ "$UNAME" == "Darwin" ]]; then
+  [[ "$ARCH" == "arm64" ]] && CONFIG="darwin-arm64" || CONFIG="darwin-x86"
 else
-  make setup-light
+  [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
 fi
+
+# Backup existing dotfiles
+./scripts/backup-existing.sh
+
+# Run home-manager
+echo "Running home-manager..."
+nix run home-manager -- switch --flake ".#$CONFIG"
+
+# Setup aliases
+./scripts/aliases-setup.sh
+
+# Install Claude Code
+echo ""
+echo "Installing Claude Code..."
+command -v claude >/dev/null 2>&1 || curl -fsSL https://claude.ai/install.sh | sh
+
+# Full setup extras
+if [[ "$choice" == "2" ]]; then
+  ./scripts/ssh-setup.sh
+  ./scripts/python-setup.sh
+fi
+
+echo ""
+echo "Setup complete. Restart your shell or run: source ~/.zshrc"
