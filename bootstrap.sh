@@ -89,10 +89,6 @@ nix run home-manager -- switch --impure --flake ".#$CONFIG"
 # Setup aliases
 ./scripts/aliases-setup.sh
 
-# Setup git aliases
-echo "Setting up git aliases..."
-./loadGitAliases.sh
-
 # Setup secrets template
 if [[ ! -f ~/.secrets ]]; then
   cp .secrets.example ~/.secrets
