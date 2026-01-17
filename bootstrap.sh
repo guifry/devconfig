@@ -107,4 +107,4 @@ if [[ "$choice" == "2" ]]; then
 fi
 
 echo ""
-echo "Setup complete. Restart your shell or run: source ~/.zshrc"
+echo "Setup complete. Start zsh with: exec zsh"
