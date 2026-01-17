@@ -107,4 +107,10 @@ if [[ "$choice" == "2" ]]; then
 fi
 
 echo ""
-echo "Setup complete. Start zsh with: exec zsh"
+echo "Setup complete!"
+echo ""
+echo "To start zsh, try (in order):"
+echo "  1. Restart your terminal"
+echo "  2. exec zsh"
+echo "  3. source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh && zsh"
+echo "  4. ~/.nix-profile/bin/zsh"
