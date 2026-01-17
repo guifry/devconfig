@@ -35,7 +35,7 @@ in {
       theme = "robbyrussell";
       plugins = [ "git" ];
     };
-    initExtra = ''
+    initContent = ''
       if [[ -z "$TMUX" ]]; then
         tmux new-session -A -s main
       fi
@@ -113,10 +113,6 @@ in {
 
   programs.git = {
     enable = true;
-    settings.user = {
-      name = "Guilhem Forey";
-      email = "";
-    };
   };
 
   programs.direnv = {

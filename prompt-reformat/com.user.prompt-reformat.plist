@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.prompt-reformat</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/guilhemforey/projects/devconfig/prompt-reformat/.venv/bin/python</string>
+        <string>/Users/guilhemforey/projects/devconfig/prompt-reformat/main.py</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/guilhemforey/projects/devconfig/prompt-reformat</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/prompt-reformat.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/prompt-reformat.err</string>
+</dict>
+</plist>

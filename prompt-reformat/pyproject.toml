@@ -1,0 +1,14 @@
+[project]
+name = "prompt-reformat"
+version = "0.1.0"
+description = "Hotkey-triggered prompt reformatter using Groq LLM"
+requires-python = ">=3.12"
+dependencies = [
+    "pynput>=1.7.6",
+    "groq>=0.4.0",
+    "python-dotenv>=1.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

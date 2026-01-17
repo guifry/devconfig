@@ -7,12 +7,15 @@ ALIASES_DST="$HOME/.aliases.d"
 
 mkdir -p "$ALIASES_DST"
 
-declare -A categories=(
-  [1]="chartering"
-  [2]="kpler"
-  [3]="macos-apps"
-  [4]="personal"
-)
+get_category() {
+  case $1 in
+    1) echo "chartering" ;;
+    2) echo "kpler" ;;
+    3) echo "macos-apps" ;;
+    4) echo "personal" ;;
+    *) echo "" ;;
+  esac
+}
 
 if [[ -z "$ALIAS_CATEGORIES" ]]; then
   echo "Alias categories:"
@@ -26,7 +29,7 @@ fi
 [[ "$ALIAS_CATEGORIES" == "none" ]] && exit 0
 
 for num in $ALIAS_CATEGORIES; do
-  cat="${categories[$num]}"
+  cat=$(get_category "$num")
   [[ -z "$cat" ]] && continue
   src="$ALIASES_SRC/${cat}.sh"
   dst="$ALIASES_DST/${cat}.sh"

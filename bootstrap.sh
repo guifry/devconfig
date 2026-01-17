@@ -54,11 +54,11 @@ else
 fi
 
 # Backup existing dotfiles
-./scripts/backup-existing.sh
+./scripts/backup-existing.sh || { echo "Setup cancelled."; exit 0; }
 
-# Run home-manager
+# Run home-manager (--impure needed for builtins.getEnv)
 echo "Running home-manager..."
-nix run home-manager -- switch --flake ".#$CONFIG"
+nix run home-manager -- switch --impure --flake ".#$CONFIG"
 
 # Setup aliases
 ./scripts/aliases-setup.sh

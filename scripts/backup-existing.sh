@@ -26,7 +26,10 @@ if [[ ${#existing[@]} -gt 0 ]]; then
   echo "Ensure backup location won't be purged, or copy backups elsewhere."
   echo ""
   read -p "Continue? [y/N]: " confirm
-  [[ ! "$confirm" =~ ^[Yy]$ ]] && echo "Aborted." && exit 1
+  if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+    echo "Aborted by user."
+    exit 2
+  fi
 
   mkdir -p "$BACKUP_DIR"
   for f in "${existing[@]}"; do

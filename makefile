@@ -23,7 +23,7 @@ setup: setup-light
 
 setup-light:
 	@./scripts/backup-existing.sh
-	nix run home-manager -- switch --flake .#$(CONFIG)
+	nix run home-manager -- switch --impure --flake .#$(CONFIG)
 	./scripts/aliases-setup.sh
 	@echo ""
 	@echo "Installing Claude Code..."
@@ -38,11 +38,11 @@ setup-full: setup-light
 	@echo "Full setup complete."
 
 switch:
-	home-manager switch --flake .#$(CONFIG)
+	home-manager switch --impure --flake .#$(CONFIG)
 
 update:
 	nix flake update
-	home-manager switch --flake .#$(CONFIG)
+	home-manager switch --impure --flake .#$(CONFIG)
 
 clean:
 	nix-collect-garbage -d

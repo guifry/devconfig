@@ -1,0 +1,12 @@
+#!/bin/bash
+# Shell wrapper for devconfig CLI using UV
+
+DEVCONFIG_CLI_DIR="${HOME}/projects/devconfig/devconfig-cli"
+
+if [[ ! -d "$DEVCONFIG_CLI_DIR" ]]; then
+    echo "Error: devconfig-cli not found at $DEVCONFIG_CLI_DIR" >&2
+    exit 1
+fi
+
+# Pass original CWD so Python can resolve relative paths correctly
+DEVCONFIG_ORIG_CWD="$(pwd)" uv run --directory "$DEVCONFIG_CLI_DIR" devconfig "$@"
