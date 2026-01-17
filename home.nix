@@ -2,9 +2,15 @@
 
 let
   isDarwin = pkgs.stdenv.isDarwin;
+  envUser = builtins.getEnv "USER";
+  envHome = builtins.getEnv "HOME";
+  username = if envUser != "" then envUser else "user";
+  homeDirectory = if envHome != "" then envHome
+    else if isDarwin then "/Users/${username}"
+    else "/home/${username}";
 in {
-  home.username = "guilhemforey";
-  home.homeDirectory = if isDarwin then "/Users/guilhemforey" else "/home/guilhemforey";
+  home.username = username;
+  home.homeDirectory = homeDirectory;
   home.stateVersion = "24.05";
 
   programs.home-manager.enable = true;

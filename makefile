@@ -5,15 +5,15 @@ ARCH := $(shell uname -m)
 # Select home-manager config based on platform
 ifeq ($(UNAME),Darwin)
     ifeq ($(ARCH),arm64)
-        CONFIG := guilhemforey@darwin
+        CONFIG := darwin-arm64
     else
-        CONFIG := guilhemforey@darwin-x86
+        CONFIG := darwin-x86
     endif
 else
     ifeq ($(ARCH),aarch64)
-        CONFIG := guilhemforey@linux-arm
+        CONFIG := linux-arm64
     else
-        CONFIG := guilhemforey@linux
+        CONFIG := linux-x86
     endif
 endif
 

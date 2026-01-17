@@ -14,22 +14,22 @@
       forAllSystems = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
     in {
       homeConfigurations = {
-        "guilhemforey@darwin" = home-manager.lib.homeManagerConfiguration {
+        "darwin-arm64" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.aarch64-darwin;
           modules = [ ./home.nix ];
         };
 
-        "guilhemforey@darwin-x86" = home-manager.lib.homeManagerConfiguration {
+        "darwin-x86" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.x86_64-darwin;
           modules = [ ./home.nix ];
         };
 
-        "guilhemforey@linux" = home-manager.lib.homeManagerConfiguration {
+        "linux-x86" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.x86_64-linux;
           modules = [ ./home.nix ];
         };
 
-        "guilhemforey@linux-arm" = home-manager.lib.homeManagerConfiguration {
+        "linux-arm64" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.aarch64-linux;
           modules = [ ./home.nix ];
         };
