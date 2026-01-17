@@ -21,9 +21,14 @@ fi
 
 if ! command -v nix &> /dev/null; then
   echo "Installing Nix..."
-  if [ -d /run/systemd/system ]; then
+  if [[ "$OSTYPE" == darwin* ]]; then
+    # macOS - standard install
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+  elif [ -d /run/systemd/system ]; then
+    # Linux with systemd - standard install
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
   else
+    # Linux without systemd (containers, WSL1, etc) - no init system
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --init none
   fi
   . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
