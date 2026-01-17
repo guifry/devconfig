@@ -1,0 +1,60 @@
+#!/bin/bash
+
+echo "SSH Key Setup"
+echo "============="
+
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+generate_key() {
+  local name=$1
+  local email=$2
+  local keyfile=~/.ssh/id_ed25519_$name
+
+  if [[ -f "$keyfile" ]]; then
+    echo "Key $keyfile already exists, skipping"
+    return
+  fi
+
+  ssh-keygen -t ed25519 -C "$email" -f "$keyfile"
+  echo ""
+  echo "Add this public key to GitHub ($name):"
+  echo "----------------------------------------"
+  cat "${keyfile}.pub"
+  echo "----------------------------------------"
+  read -p "Press enter when done..."
+}
+
+read -p "Personal GitHub email (or skip): " personal_email
+[[ -n "$personal_email" ]] && generate_key "personal" "$personal_email"
+
+read -p "Work GitHub email (or skip): " work_email
+[[ -n "$work_email" ]] && generate_key "work" "$work_email"
+
+if [[ -n "$personal_email" ]] || [[ -n "$work_email" ]]; then
+  echo ""
+  echo "Generating SSH config..."
+
+  cat > ~/.ssh/config << 'EOF'
+Host github.com
+  AddKeysToAgent yes
+  IdentityFile ~/.ssh/id_ed25519_personal
+
+Host github.com-work
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_work
+EOF
+
+  if [[ "$OSTYPE" == darwin* ]]; then
+    sed -i '' '2a\
+  UseKeychain yes
+' ~/.ssh/config
+  fi
+
+  chmod 600 ~/.ssh/config
+  echo "SSH config written to ~/.ssh/config"
+fi
+
+echo ""
+echo "SSH setup complete"
