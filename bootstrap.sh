@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# Ensure USER and HOME are set (sometimes missing in containers)
+export USER="${USER:-$(whoami)}"
+export HOME="${HOME:-$(eval echo ~$USER)}"
+
 echo "Devconfig Setup"
 echo "==============="
 echo "1) Light - terminal experience (zsh, tmux, vim, rg, claude code)"
@@ -30,10 +34,6 @@ mkdir -p "$(dirname "$REPO")"
 [ -d "$REPO" ] || git clone https://github.com/guifry/devconfig.git "$REPO"
 
 cd "$REPO"
-
-# Ensure USER and HOME are set (sometimes missing in containers)
-export USER="${USER:-$(whoami)}"
-export HOME="${HOME:-$(eval echo ~$USER)}"
 
 echo ""
 echo "Alias categories (space-separated numbers, or 'none'):"
