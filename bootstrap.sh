@@ -56,9 +56,9 @@ cd "$REPO"
 echo ""
 echo "Alias categories (space-separated numbers, or 'none'):"
 echo "1) chartering  - chartering-fix, chartering-lint"
-echo "2) kpler       - kpler work aliases"
+echo "2) kpler       - fst, kpler work env"
 echo "3) macos-apps  - windsurf, mac app shortcuts"
-echo "4) personal    - fst, personal utils"
+echo "4) personal    - loadzsh, personal utils"
 read -p "Select [e.g. 1 3 4 or 1,3,4]: " alias_choice < /dev/tty
 export ALIAS_CATEGORIES="$alias_choice"
 
@@ -88,6 +88,29 @@ nix run home-manager -- switch --impure --flake ".#$CONFIG"
 
 # Setup aliases
 ./scripts/aliases-setup.sh
+
+# Setup git aliases
+echo "Setting up git aliases..."
+./loadGitAliases.sh
+
+# Setup secrets template
+if [[ ! -f ~/.secrets ]]; then
+  cp .secrets.example ~/.secrets
+  echo "Created ~/.secrets from template - edit with your tokens"
+fi
+
+# Setup ~/bin with utility scripts
+mkdir -p ~/bin
+cp scripts/tx scripts/create_script scripts/edscript ~/bin/ 2>/dev/null || true
+chmod +x ~/bin/* 2>/dev/null || true
+echo "Utility scripts installed to ~/bin"
+
+# Setup direnvrc for parent .envrc inheritance
+mkdir -p ~/.config/direnv
+if ! grep -q "source_up" ~/.config/direnv/direnvrc 2>/dev/null; then
+  echo 'source_up_if_exists 2>/dev/null || true' >> ~/.config/direnv/direnvrc
+  echo "Added source_up to direnvrc"
+fi
 
 # Install Claude Code
 echo ""

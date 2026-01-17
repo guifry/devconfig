@@ -20,9 +20,9 @@ get_category() {
 if [[ -z "$ALIAS_CATEGORIES" ]]; then
   echo "Alias categories:"
   echo "1) chartering  - chartering-fix, chartering-lint"
-  echo "2) kpler       - kpler work aliases"
+  echo "2) kpler       - fst, kpler work env"
   echo "3) macos-apps  - windsurf, mac app shortcuts"
-  echo "4) personal    - fst, personal utils"
+  echo "4) personal    - loadzsh, personal utils"
   read -p "Select (space-separated, or 'none'): " ALIAS_CATEGORIES < /dev/tty
 fi
 
@@ -39,6 +39,13 @@ for num in $ALIAS_CATEGORIES; do
   if [[ -f "$src" ]]; then
     ln -sf "$src" "$dst"
     echo "Enabled: $cat"
+
+    # kpler category: also install fst command
+    if [[ "$cat" == "kpler" ]]; then
+      mkdir -p ~/bin
+      ln -sf "$REPO_DIR/workspaces/kpler/create-fullstack-wt.py" ~/bin/fst
+      echo "Installed: fst command"
+    fi
   else
     echo "Warning: $src not found"
   fi
