@@ -28,6 +28,9 @@ fi
 
 [[ "$ALIAS_CATEGORIES" == "none" ]] && exit 0
 
+# Support both "1 2 3" and "1,2,3" formats
+ALIAS_CATEGORIES="${ALIAS_CATEGORIES//,/ }"
+
 for num in $ALIAS_CATEGORIES; do
   cat=$(get_category "$num")
   [[ -z "$cat" ]] && continue

@@ -34,7 +34,7 @@ if [[ ${#existing[@]} -gt 0 ]]; then
   mkdir -p "$BACKUP_DIR"
   for f in "${existing[@]}"; do
     cp "$f" "$BACKUP_DIR/"
-    echo "Backed up: $(basename $f)"
+    echo "Backed up: $(basename "$f")"
   done
   echo ""
   echo "Restore with: cp $BACKUP_DIR/* ~/"

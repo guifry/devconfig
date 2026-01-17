@@ -41,7 +41,7 @@ echo "1) chartering  - chartering-fix, chartering-lint"
 echo "2) kpler       - kpler work aliases"
 echo "3) macos-apps  - windsurf, mac app shortcuts"
 echo "4) personal    - fst, personal utils"
-read -p "Select [e.g. 1 3 4]: " alias_choice
+read -p "Select [e.g. 1 3 4 or 1,3,4]: " alias_choice
 export ALIAS_CATEGORIES="$alias_choice"
 
 # Detect platform config

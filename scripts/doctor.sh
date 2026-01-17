@@ -75,6 +75,11 @@ else
     done
 
     if $needs_light; then
+      if ! command -v nix &> /dev/null; then
+        echo "Nix not installed. Run bootstrap first:"
+        echo "  curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash"
+        exit 1
+      fi
       make setup-light
     fi
     if $needs_full; then

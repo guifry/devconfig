@@ -9,10 +9,7 @@
     };
   };
 
-  outputs = { nixpkgs, home-manager, ... }:
-    let
-      forAllSystems = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-    in {
+  outputs = { nixpkgs, home-manager, ... }: {
       homeConfigurations = {
         "darwin-arm64" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.aarch64-darwin;

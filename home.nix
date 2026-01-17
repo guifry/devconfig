@@ -119,4 +119,8 @@ in {
     enable = true;
     nix-direnv.enable = true;
   };
+
+  home.activation.createVimUndoDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    mkdir -p ~/.vim/undodir
+  '';
 }

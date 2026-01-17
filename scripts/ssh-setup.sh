@@ -35,23 +35,33 @@ if [[ -n "$personal_email" ]] || [[ -n "$work_email" ]]; then
   echo ""
   echo "Generating SSH config..."
 
-  cat > ~/.ssh/config << 'EOF'
-Host github.com
-  AddKeysToAgent yes
+  # Backup existing SSH config
+  if [[ -f ~/.ssh/config ]]; then
+    cp ~/.ssh/config ~/.ssh/config.backup.$(date +%Y%m%d-%H%M%S)
+    echo "Backed up existing ~/.ssh/config"
+  fi
+
+  # Build new config
+  SSH_CONFIG=""
+  if [[ -n "$personal_email" ]]; then
+    SSH_CONFIG+="Host github.com
+  AddKeysToAgent yes"
+    [[ "$OSTYPE" == darwin* ]] && SSH_CONFIG+="
+  UseKeychain yes"
+    SSH_CONFIG+="
   IdentityFile ~/.ssh/id_ed25519_personal
 
-Host github.com-work
+"
+  fi
+  if [[ -n "$work_email" ]]; then
+    SSH_CONFIG+="Host github.com-work
   HostName github.com
   User git
   IdentityFile ~/.ssh/id_ed25519_work
-EOF
-
-  if [[ "$OSTYPE" == darwin* ]]; then
-    sed -i '' '2a\
-  UseKeychain yes
-' ~/.ssh/config
+"
   fi
 
+  echo "$SSH_CONFIG" > ~/.ssh/config
   chmod 600 ~/.ssh/config
   echo "SSH config written to ~/.ssh/config"
 fi
