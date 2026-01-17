@@ -31,6 +31,10 @@ mkdir -p "$(dirname "$REPO")"
 
 cd "$REPO"
 
+# Ensure USER and HOME are set (sometimes missing in containers)
+export USER="${USER:-$(whoami)}"
+export HOME="${HOME:-$(eval echo ~$USER)}"
+
 echo ""
 echo "Alias categories (space-separated numbers, or 'none'):"
 echo "1) chartering  - chartering-fix, chartering-lint"
