@@ -2,7 +2,7 @@
 
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
 
-files_to_backup=(
+files_to_check=(
   ~/.zshrc
   ~/.tmux.conf
   ~/.vimrc
@@ -10,22 +10,30 @@ files_to_backup=(
   ~/.ssh/config
 )
 
-backed_up=false
-
-for f in "${files_to_backup[@]}"; do
-  if [[ -f "$f" && ! -L "$f" ]]; then
-    if ! $backed_up; then
-      mkdir -p "$BACKUP_DIR"
-      echo "Backing up existing dotfiles to $BACKUP_DIR"
-      backed_up=true
-    fi
-    cp "$f" "$BACKUP_DIR/"
-    echo "  $(basename $f)"
-  fi
+existing=()
+for f in "${files_to_check[@]}"; do
+  [[ -f "$f" && ! -L "$f" ]] && existing+=("$f")
 done
 
-if $backed_up; then
+if [[ ${#existing[@]} -gt 0 ]]; then
+  echo ""
+  echo "The following files will be overwritten:"
+  for f in "${existing[@]}"; do echo "  $f"; done
+  echo ""
+  echo "Backup location: $BACKUP_DIR"
+  echo ""
+  echo "WARNING: Some organisations auto-wipe folders outside designated paths."
+  echo "Ensure backup location won't be purged, or copy backups elsewhere."
+  echo ""
+  read -p "Continue? [y/N]: " confirm
+  [[ ! "$confirm" =~ ^[Yy]$ ]] && echo "Aborted." && exit 1
+
+  mkdir -p "$BACKUP_DIR"
+  for f in "${existing[@]}"; do
+    cp "$f" "$BACKUP_DIR/"
+    echo "Backed up: $(basename $f)"
+  done
+  echo ""
   echo "Restore with: cp $BACKUP_DIR/* ~/"
-else
-  echo "No existing dotfiles to backup"
+  echo ""
 fi
