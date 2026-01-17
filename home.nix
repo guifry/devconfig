@@ -22,6 +22,7 @@ in {
     ripgrep
     fd
     fzf
+    btop
   ] ++ lib.optionals (!isDarwin) [
     xclip
   ];
