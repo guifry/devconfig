@@ -1,39 +1,47 @@
 # devconfig
 
-Cross-platform dotfiles and dev environment setup.
+Cross-platform terminal environment. One command setup.
 
-## Quick start
+## Setup
 
-### Option 1: Nix (recommended, cross-platform)
-
+### macOS
 ```bash
-# Install Nix
-curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
-
-# Clone and setup
-git clone git@github.com:guifry/devconfig.git ~/projects/devconfig
-cd ~/projects/devconfig
-make setup
+curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/main/bootstrap.sh | bash
 ```
 
-Auto-detects macOS (ARM/Intel) and Linux.
-
-### Option 2: Legacy script (macOS only)
-
+### Ubuntu / Debian
 ```bash
-./setup.sh
-source ~/.zshrc
+sudo apt update && sudo apt install -y curl && curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/main/bootstrap.sh | bash
 ```
 
-Copies config files but doesn't install packages.
+### Fedora / RHEL / CentOS
+```bash
+curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/main/bootstrap.sh | bash
+```
+
+### Arch
+```bash
+curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/main/bootstrap.sh | bash
+```
+
+### Alpine
+```bash
+apk add curl bash git && curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/main/bootstrap.sh | bash
+```
+
+Prompts for **light** (terminal: zsh, tmux, vim, rg, claude) or **full** (+ SSH keys, Python).
+
+---
 
 ## Commands
 
 ```bash
-make setup    # First-time bootstrap
-make switch   # Apply config changes
-make update   # Update nixpkgs + apply
-make clean    # Garbage collect old generations
+make doctor       # Check status, install missing components
+make switch       # Apply config changes
+make update       # Update nixpkgs + apply
+make clean        # Garbage collect old generations
+make setup-light  # Re-run light setup
+make setup-full   # Re-run full setup
 ```
 
 ## What's included
