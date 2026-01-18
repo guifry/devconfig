@@ -64,7 +64,10 @@ in {
     prefix = "C-]";
     keyMode = "vi";
     mouse = true;
+    resizeAmount = 5;
     extraConfig = ''
+      set -g renumber-windows on
+
       bind h select-pane -L
       bind j select-pane -D
       bind k select-pane -U
