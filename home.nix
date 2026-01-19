@@ -23,6 +23,7 @@ in {
     fd
     btop
     lazygit
+    gh
   ] ++ lib.optionals (!isDarwin) [
     xclip
   ];
