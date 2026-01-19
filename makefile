@@ -38,11 +38,11 @@ setup-full: setup-light
 	@echo "Full setup complete."
 
 switch:
-	home-manager switch --impure --flake .#$(CONFIG)
+	nix run home-manager -- switch --impure --flake .#$(CONFIG)
 
 update:
 	nix flake update
-	home-manager switch --impure --flake .#$(CONFIG)
+	nix run home-manager -- switch --impure --flake .#$(CONFIG)
 
 clean:
 	nix-collect-garbage -d

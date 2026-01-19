@@ -21,13 +21,13 @@ fi
 
 cmd_switch() {
   echo "Applying config..."
-  home-manager switch --impure --flake ".#$CONFIG"
+  nix run home-manager -- switch --impure --flake ".#$CONFIG"
 }
 
 cmd_update() {
   echo "Updating nixpkgs..."
   nix flake update
-  home-manager switch --impure --flake ".#$CONFIG"
+  nix run home-manager -- switch --impure --flake ".#$CONFIG"
 }
 
 cmd_doctor() {
