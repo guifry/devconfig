@@ -97,6 +97,14 @@ in {
     keyMode = "vi";
     mouse = true;
     resizeAmount = 5;
+    plugins = with pkgs.tmuxPlugins; [
+      {
+        plugin = tmux-thumbs;
+        extraConfig = ''
+          set -g @thumbs-key f
+        '';
+      }
+    ];
     extraConfig = ''
       set -g renumber-windows on
 
