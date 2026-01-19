@@ -23,6 +23,7 @@ in {
     fd
     fzf
     btop
+    home-manager
   ] ++ lib.optionals (!isDarwin) [
     xclip
   ];

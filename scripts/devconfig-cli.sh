@@ -22,15 +22,23 @@ else
   [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
 fi
 
+run_home_manager() {
+  if command -v home-manager &>/dev/null; then
+    home-manager "$@"
+  else
+    nix run home-manager -- "$@"
+  fi
+}
+
 cmd_switch() {
   echo "Applying config..."
-  nix run home-manager -- switch --impure --flake ".#$CONFIG"
+  run_home_manager switch --impure --flake ".#$CONFIG"
 }
 
 cmd_update() {
   echo "Updating nixpkgs..."
   nix flake update
-  nix run home-manager -- switch --impure --flake ".#$CONFIG"
+  run_home_manager switch --impure --flake ".#$CONFIG"
 }
 
 cmd_doctor() {
