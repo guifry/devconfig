@@ -43,6 +43,16 @@ cmd_edit() {
   ${EDITOR:-vim} "$REPO/home.nix"
 }
 
+cmd_status() {
+  echo "Nix Store"
+  echo "========="
+  echo ""
+  echo "Size: $(du -sh /nix/store 2>/dev/null | cut -f1)"
+  echo ""
+  echo "Generations:"
+  home-manager generations 2>/dev/null || nix run home-manager -- generations
+}
+
 cmd_help() {
   echo "devconfig - manage your dev environment"
   echo ""
@@ -52,6 +62,7 @@ cmd_help() {
   echo "  switch    Apply config changes"
   echo "  update    Update nixpkgs + apply"
   echo "  doctor    Check installed components"
+  echo "  status    Show nix store size + generations"
   echo "  clean     Garbage collect old generations"
   echo "  edit      Open home.nix in editor"
   echo ""
@@ -65,8 +76,9 @@ show_menu() {
   echo "1) switch  - Apply config changes"
   echo "2) update  - Update nixpkgs + apply"
   echo "3) doctor  - Check installed components"
-  echo "4) clean   - Garbage collect old generations"
-  echo "5) edit    - Open home.nix in editor"
+  echo "4) status  - Show nix store size + generations"
+  echo "5) clean   - Garbage collect old generations"
+  echo "6) edit    - Open home.nix in editor"
   echo "q) quit"
   echo ""
   read -p "Select: " choice < /dev/tty
@@ -75,8 +87,9 @@ show_menu() {
     1|switch)  cmd_switch ;;
     2|update)  cmd_update ;;
     3|doctor)  cmd_doctor ;;
-    4|clean)   cmd_clean ;;
-    5|edit)    cmd_edit ;;
+    4|status)  cmd_status ;;
+    5|clean)   cmd_clean ;;
+    6|edit)    cmd_edit ;;
     q|quit)    exit 0 ;;
     *)         echo "Invalid option" ;;
   esac
@@ -87,6 +100,7 @@ case "${1:-}" in
   switch)  cmd_switch ;;
   update)  cmd_update ;;
   doctor)  cmd_doctor ;;
+  status)  cmd_status ;;
   clean)   cmd_clean ;;
   edit)    cmd_edit ;;
   help|-h|--help)  cmd_help ;;
