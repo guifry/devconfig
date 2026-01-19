@@ -159,3 +159,13 @@ echo "  1. Restart your terminal"
 echo "  2. exec zsh"
 echo "  3. source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh && zsh"
 echo "  4. ~/.nix-profile/bin/zsh"
+
+if [[ "$UNAME" == "Darwin" ]]; then
+  echo ""
+  echo "=== iTerm2 Setup (optional) ==="
+  echo "To sync iTerm2 config with devconfig:"
+  echo "  1. Open iTerm2 → Settings → General → Preferences"
+  echo "  2. Check 'Load preferences from a custom folder or URL'"
+  echo "  3. Set path to: ~/projects/devconfig/iterm"
+  echo "  4. Check 'Save changes to folder when iTerm2 quits'"
+fi
