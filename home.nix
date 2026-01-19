@@ -77,6 +77,8 @@ in {
       # Claude Code sounds
       alias sounds-on='touch ~/.claude/sounds/.enabled && echo "Sounds enabled"'
       alias sounds-off='rm -f ~/.claude/sounds/.enabled && echo "Sounds disabled"'
+
+      alias lg='lazygit'
     '' + lib.optionalString isDarwin ''
       export PATH="/opt/homebrew/bin:$PATH"
 
