@@ -123,6 +123,7 @@ fi
 # Setup ~/bin with utility scripts
 mkdir -p ~/bin
 cp scripts/tx scripts/create_script scripts/edscript ~/bin/ 2>/dev/null || true
+ln -sf "$REPO/scripts/devconfig-cli.sh" ~/bin/devconfig
 chmod +x ~/bin/* 2>/dev/null || true
 echo "Utility scripts installed to ~/bin"
 

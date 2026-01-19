@@ -51,6 +51,7 @@ in {
       done
 
       export ENABLE_LSP_TOOL=1
+      export PATH="$HOME/bin:$PATH"
     '' + lib.optionalString isDarwin ''
       export PATH="/opt/homebrew/bin:$PATH"
     '' + lib.optionalString (!isDarwin) ''
