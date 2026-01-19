@@ -45,9 +45,11 @@ in {
 
       [[ -f ~/.secrets ]] && source ~/.secrets
 
-      for f in ~/.aliases.d/*.sh; do
-        [[ -f "$f" ]] && source "$f"
-      done
+      if [[ -d ~/.aliases.d ]]; then
+        for f in ~/.aliases.d/*.sh(N); do
+          [[ -f "$f" ]] && source "$f"
+        done
+      fi
 
       export ENABLE_LSP_TOOL=1
       export PATH="$HOME/bin:$PATH"
