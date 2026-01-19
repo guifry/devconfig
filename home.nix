@@ -22,6 +22,7 @@ in {
     ripgrep
     fd
     btop
+    lazygit
   ] ++ lib.optionals (!isDarwin) [
     xclip
   ];
