@@ -10,6 +10,9 @@ fi
 
 cd "$REPO"
 
+# Enable nix experimental features
+export NIX_CONFIG="experimental-features = nix-command flakes"
+
 # Detect platform
 UNAME=$(uname)
 ARCH=$(uname -m)
