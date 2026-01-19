@@ -1,3 +1,5 @@
+unalias chartering-fix chartering-lint chartering-format chartering-precommit 2>/dev/null
+
 chartering-fix() {
   local root=$(git rev-parse --show-toplevel 2>/dev/null)
   [[ -z "$root" ]] && echo "Not in a git repo" && return 1

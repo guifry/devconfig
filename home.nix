@@ -52,8 +52,35 @@ in {
 
       export ENABLE_LSP_TOOL=1
       export PATH="$HOME/bin:$PATH"
+
+      # NVM
+      export NVM_DIR="$HOME/.nvm"
+      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+      [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+      # pyenv
+      export PYENV_ROOT="$HOME/.pyenv"
+      [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+      command -v pyenv &>/dev/null && eval "$(pyenv init - zsh)"
+
+      # mise
+      command -v mise &>/dev/null && eval "$(mise activate zsh)"
+
+      # opencode
+      export PATH="$HOME/.opencode/bin:$PATH"
+
+      # electron-forge tabtab
+      [[ -f ~/.npm/_npx/6913fdfd1ea7a741/node_modules/tabtab/.completions/electron-forge.zsh ]] && . ~/.npm/_npx/6913fdfd1ea7a741/node_modules/tabtab/.completions/electron-forge.zsh
+
+      # Claude Code sounds
+      alias sounds-on='touch ~/.claude/sounds/.enabled && echo "Sounds enabled"'
+      alias sounds-off='rm -f ~/.claude/sounds/.enabled && echo "Sounds disabled"'
     '' + lib.optionalString isDarwin ''
       export PATH="/opt/homebrew/bin:$PATH"
+
+      # Google Cloud SDK
+      [[ -f ~/Downloads/google-cloud-sdk/path.zsh.inc ]] && source ~/Downloads/google-cloud-sdk/path.zsh.inc
+      [[ -f ~/Downloads/google-cloud-sdk/completion.zsh.inc ]] && source ~/Downloads/google-cloud-sdk/completion.zsh.inc
     '' + lib.optionalString (!isDarwin) ''
       alias pbcopy='xclip -selection clipboard'
       alias pbpaste='xclip -selection clipboard -o'
@@ -93,26 +120,54 @@ in {
       relativenumber = true;
     };
     extraConfig = ''
+      syntax on
       set nocompatible
       filetype plugin indent on
-      syntax enable
+
+      set belloff=all
       set tabstop=4
       set softtabstop=4
       set shiftwidth=4
       set expandtab
       set smartindent
-      set nowrap
+      set wrap
       set smartcase
       set noswapfile
       set nobackup
       set undodir=~/.vim/undodir
       set undofile
       set incsearch
+      set ttimeoutlen=80
       set colorcolumn=80
       set clipboard=unnamed
       set statusline=%f\ %m\ %=\ %l:%c
       highlight ColorColumn ctermbg=0 guibg=lightgrey
+
+      " Yankstack paste navigation
+      nmap <M-p> <Plug>yankstack_substitute_older_paste
+      nmap <M-n> <Plug>yankstack_substitute_newer_paste
+
+      " Keep selection when pasting in visual mode
       xnoremap p pgvy
+
+      " vim-plug
+      call plug#begin('~/.vim/plugged')
+
+      Plug 'morhetz/gruvbox'
+      Plug 'jremmen/vim-ripgrep'
+      Plug 'tpope/vim-fugitive'
+      Plug 'leafgarland/typescript-vim'
+      Plug 'vim-utils/vim-man'
+      Plug 'git@github.com:kien/ctrlp.vim.git'
+      Plug 'neoclide/coc.nvim', {'branch': 'release'}
+      Plug 'mbbill/undotree'
+      Plug 'JamshedVesuna/vim-markdown-preview'
+      Plug 'yuezk/vim-js'
+      Plug 'HerringtonDarkholme/yats.vim'
+      Plug 'maxmellon/vim-jsx-pretty'
+      Plug 'maxbrunsfeld/vim-yankstack'
+
+      call plug#end()
     '';
   };
 
@@ -138,6 +193,12 @@ in {
         delsave = "!git branch -D \"save--$(git symbolic-ref --short HEAD)\"";
       };
     };
+    includes = [
+      { condition = "gitdir:~/kpler/"; path = "~/.gitconfig-kpler"; }
+      { condition = "gitdir:~/GDS/"; path = "~/.gitconfig-gds"; }
+      { condition = "gitdir:~/projects/"; path = "~/.gitconfig-guifry"; }
+      { condition = "gitdir:~/bp/"; path = "~/.gitconfig-bp"; }
+    ];
   };
 
   programs.direnv = {
