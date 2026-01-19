@@ -102,7 +102,11 @@ in {
         plugin = tmux-thumbs;
         extraConfig = ''
           set -g @thumbs-key f
-        '';
+        '' + (if isDarwin then ''
+          set -g @thumbs-command 'echo -n {} | pbcopy'
+        '' else ''
+          set -g @thumbs-command 'echo -n {} | xclip -selection clipboard'
+        '');
       }
     ];
     extraConfig = ''
