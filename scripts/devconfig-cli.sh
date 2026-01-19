@@ -53,7 +53,8 @@ cmd_status() {
   echo "Size: $(du -sh /nix/store 2>/dev/null | cut -f1)"
   echo ""
   echo "Generations:"
-  home-manager generations 2>/dev/null || nix run home-manager -- generations
+  ls -la ~/.local/state/nix/profiles/home-manager-* 2>/dev/null | wc -l | xargs echo "Count:"
+  ls -lt ~/.local/state/nix/profiles/home-manager-* 2>/dev/null | head -5
 }
 
 cmd_help() {
