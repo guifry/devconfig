@@ -21,7 +21,6 @@ in {
     jq
     ripgrep
     fd
-    fzf
     btop
   ] ++ lib.optionals (!isDarwin) [
     xclip
@@ -204,6 +203,11 @@ in {
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
+  };
+
+  programs.fzf = {
+    enable = true;
+    enableZshIntegration = true;
   };
 
   home.activation.createVimUndoDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
