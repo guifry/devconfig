@@ -23,7 +23,6 @@ in {
     fd
     fzf
     btop
-    home-manager
   ] ++ lib.optionals (!isDarwin) [
     xclip
   ];
@@ -119,23 +118,25 @@ in {
 
   programs.git = {
     enable = true;
-    aliases = {
-      br = "branch";
-      c = "commit";
-      ca = "commit --amend";
-      co = "checkout";
-      cp = "cherry-pick";
-      l = "log";
-      pf = "push --force";
-      pfl = "push --force-with-lease";
-      pnew = "!git push --set-upstream origin $(git symbolic-ref --short HEAD)";
-      pur = "pull --rebase";
-      rb = "rebase";
-      rbi = "rebase -i";
-      st = "status";
-      upc = "commit --amend --no-edit";
-      saveb = "!git checkout -b \"save--$(git symbolic-ref --short HEAD)\"";
-      delsave = "!git branch -D \"save--$(git symbolic-ref --short HEAD)\"";
+    extraConfig = {
+      alias = {
+        br = "branch";
+        c = "commit";
+        ca = "commit --amend";
+        co = "checkout";
+        cp = "cherry-pick";
+        l = "log";
+        pf = "push --force";
+        pfl = "push --force-with-lease";
+        pnew = "!git push --set-upstream origin $(git symbolic-ref --short HEAD)";
+        pur = "pull --rebase";
+        rb = "rebase";
+        rbi = "rebase -i";
+        st = "status";
+        upc = "commit --amend --no-edit";
+        saveb = "!git checkout -b \"save--$(git symbolic-ref --short HEAD)\"";
+        delsave = "!git branch -D \"save--$(git symbolic-ref --short HEAD)\"";
+      };
     };
   };
 
