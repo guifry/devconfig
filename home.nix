@@ -118,7 +118,7 @@ in {
 
   programs.git = {
     enable = true;
-    extraConfig = {
+    settings = {
       alias = {
         br = "branch";
         c = "commit";
