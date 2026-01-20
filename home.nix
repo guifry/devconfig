@@ -166,6 +166,7 @@ in {
       set incsearch
       set ttimeoutlen=80
       set colorcolumn=80
+      set scrolloff=999
       set clipboard=unnamed
       set statusline=%f\ %m\ %=\ %l:%c
       highlight ColorColumn ctermbg=0 guibg=lightgrey
