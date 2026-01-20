@@ -145,6 +145,15 @@ if ! command -v claude >/dev/null 2>&1; then
   fi
 fi
 
+# Install vim-plug and plugins
+if [[ ! -f ~/.vim/autoload/plug.vim ]]; then
+  echo "Installing vim-plug..."
+  curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+fi
+echo "Installing vim plugins..."
+vim +PlugInstall +qall
+
 # Full setup extras
 if [[ "$choice" == "2" ]]; then
   ./scripts/ssh-setup.sh
