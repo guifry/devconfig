@@ -55,6 +55,7 @@ in {
 
       export ENABLE_LSP_TOOL=1
       export PATH="$HOME/bin:$PATH"
+      export PATH="$HOME/.local/bin:$PATH"
 
       # NVM
       export NVM_DIR="$HOME/.nvm"
@@ -80,6 +81,20 @@ in {
       alias sounds-off='rm -f ~/.claude/sounds/.enabled && echo "Sounds disabled"'
 
       alias lg='lazygit'
+
+      # Migrated from bashrc
+      alias la='ls -A'
+      alias ls='ls -GFA'
+      alias vi='vim'
+      alias tf='terraform'
+      alias dc='docker-compose'
+      alias py='python3'
+      alias ns='nix-shell'
+      alias activate='source ./venv/bin/activate'
+
+      function killport () {
+        lsof -ti tcp:$1 | xargs kill -9;
+      }
     '' + lib.optionalString isDarwin ''
       export PATH="/opt/homebrew/bin:$PATH"
 
