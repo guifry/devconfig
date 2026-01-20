@@ -109,6 +109,12 @@ in {
           set -g @thumbs-command 'echo -n {} | xclip -selection clipboard'
         '');
       }
+      {
+        plugin = resurrect;
+        extraConfig = ''
+          set -g @resurrect-capture-pane-contents 'on'
+        '';
+      }
     ];
     extraConfig = ''
       set -g renumber-windows on
