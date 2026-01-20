@@ -183,8 +183,14 @@ in {
       Plug 'HerringtonDarkholme/yats.vim'
       Plug 'maxmellon/vim-jsx-pretty'
       Plug 'maxbrunsfeld/vim-yankstack'
+      Plug 'preservim/nerdtree'
 
       call plug#end()
+
+      " NERDTree
+      nnoremap <leader>n :NERDTreeToggle<CR>
+      nnoremap <leader>f :NERDTreeFind<CR>
+      let NERDTreeShowHidden=1
     '';
   };
 
