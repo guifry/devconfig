@@ -133,6 +133,8 @@ in {
     ];
     extraConfig = ''
       set -g renumber-windows on
+      set -g set-clipboard on
+      set -g allow-passthrough on
 
       bind h select-pane -L
       bind j select-pane -D
@@ -210,8 +212,11 @@ in {
       Plug 'maxmellon/vim-jsx-pretty'
       Plug 'maxbrunsfeld/vim-yankstack'
       Plug 'preservim/nerdtree'
+      Plug 'ojroques/vim-oscyank'
 
       call plug#end()
+
+      autocmd TextYankPost * if v:event.operator is 'y' && v:event.regname is '''' | call OSCYank(getreg('"')) | endif
 
       " NERDTree
       nnoremap <leader>n :NERDTreeToggle<CR>
