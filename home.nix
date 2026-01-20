@@ -124,9 +124,13 @@ in {
       bind -T copy-mode-vi v send -X begin-selection
       set -g mode-style "fg=black,bg=yellow"
     '' + (if isDarwin then ''
-      bind -T copy-mode-vi y send -X copy-pipe "pbcopy"
+      bind -T copy-mode-vi y send -X copy-pipe-and-cancel "pbcopy"
+      bind -T copy-mode-vi Enter send -X copy-pipe-and-cancel "pbcopy"
+      bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-pipe-and-cancel "pbcopy"
     '' else ''
-      bind -T copy-mode-vi y send -X copy-pipe "xclip -selection clipboard"
+      bind -T copy-mode-vi y send -X copy-pipe-and-cancel "xclip -selection clipboard"
+      bind -T copy-mode-vi Enter send -X copy-pipe-and-cancel "xclip -selection clipboard"
+      bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-pipe-and-cancel "xclip -selection clipboard"
     '');
   };
 
