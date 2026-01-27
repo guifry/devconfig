@@ -10,13 +10,14 @@ fi
 
 cd "$REPO"
 
-# Enable nix experimental features
 export NIX_CONFIG="experimental-features = nix-command flakes"
 
-# Detect platform
 UNAME=$(uname)
 ARCH=$(uname -m)
+IS_DARWIN=false
+
 if [[ "$UNAME" == "Darwin" ]]; then
+  IS_DARWIN=true
   [[ "$ARCH" == "arm64" ]] && CONFIG="darwin-arm64" || CONFIG="darwin-x86"
 else
   [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
@@ -31,14 +32,46 @@ run_home_manager() {
 }
 
 cmd_switch() {
-  echo "Applying config..."
-  run_home_manager switch --impure --flake ".#$CONFIG"
+  echo "Applying nix config..."
+  run_home_manager switch --impure --flake ".#$CONFIG" || return 1
+
+  if [[ "$IS_DARWIN" == "true" && -f "$REPO/Brewfile" ]]; then
+    echo "Applying brew packages..."
+    brew bundle --file="$REPO/Brewfile"
+  fi
+
+  echo "Syncing vim plugins..."
+  vim +PlugInstall +PlugClean! +qall 2>/dev/null || true
+
+  echo ""
+  echo "Done. Run 'reload' or open new terminal to apply shell changes."
+
+  if [[ "$IS_DARWIN" == "true" && -f "$REPO/macos-manual-apps.md" ]]; then
+    echo ""
+    echo "─────────────────────────────────────"
+    echo "MANUAL APPS (install these yourself):"
+    echo "─────────────────────────────────────"
+    awk '/^# macOS Manual Apps/,/^# macOS Manual Config/{if(/^## /)print "  • " substr($0,4)}' "$REPO/macos-manual-apps.md"
+    echo ""
+    echo "─────────────────────────────────────"
+    echo "MANUAL CONFIG (installed, import config via app UI):"
+    echo "─────────────────────────────────────"
+    awk '/^# macOS Manual Config/,0{if(/^## /)print "  • " substr($0,4)}' "$REPO/macos-manual-apps.md"
+    echo ""
+    echo "See $REPO/macos-manual-apps.md for details."
+  fi
 }
 
 cmd_update() {
-  echo "Updating nixpkgs..."
+  echo "Updating flake inputs..."
   nix flake update
-  run_home_manager switch --impure --flake ".#$CONFIG"
+
+  if [[ "$IS_DARWIN" == "true" ]]; then
+    echo "Updating brew..."
+    brew update
+  fi
+
+  cmd_switch
 }
 
 cmd_doctor() {
@@ -46,8 +79,13 @@ cmd_doctor() {
 }
 
 cmd_clean() {
-  echo "Cleaning old generations..."
+  echo "Cleaning old nix generations..."
   nix-collect-garbage -d
+
+  if [[ "$IS_DARWIN" == "true" ]]; then
+    echo "Cleaning brew cache..."
+    brew cleanup
+  fi
 }
 
 cmd_edit() {
@@ -57,12 +95,19 @@ cmd_edit() {
 cmd_status() {
   echo "Nix Store"
   echo "========="
-  echo ""
   echo "Size: $(du -sh /nix/store 2>/dev/null | cut -f1)"
   echo ""
   echo "Generations:"
   ls -la ~/.local/state/nix/profiles/home-manager-* 2>/dev/null | wc -l | xargs echo "Count:"
   ls -lt ~/.local/state/nix/profiles/home-manager-* 2>/dev/null | head -5
+
+  if [[ "$IS_DARWIN" == "true" ]]; then
+    echo ""
+    echo "Brew"
+    echo "===="
+    echo "Packages: $(brew list | wc -l | xargs)"
+    echo "Casks: $(brew list --cask | wc -l | xargs)"
+  fi
 }
 
 cmd_help() {
@@ -72,11 +117,15 @@ cmd_help() {
   echo ""
   echo "Commands:"
   echo "  switch    Apply config changes"
-  echo "  update    Update nixpkgs + apply"
+  echo "  update    Update flake inputs + brew + apply"
   echo "  doctor    Check installed components"
   echo "  status    Show nix store size + generations"
   echo "  clean     Garbage collect old generations"
   echo "  edit      Open home.nix in editor"
+  echo ""
+  echo "Config files:"
+  echo "  home.nix  - Nix packages + dotfiles (cross-platform)"
+  echo "  Brewfile  - macOS brew packages"
   echo ""
   echo "Run without arguments for interactive menu."
 }
@@ -86,7 +135,7 @@ show_menu() {
   echo "========="
   echo ""
   echo "1) switch  - Apply config changes"
-  echo "2) update  - Update nixpkgs + apply"
+  echo "2) update  - Update flake inputs + brew + apply"
   echo "3) doctor  - Check installed components"
   echo "4) status  - Show nix store size + generations"
   echo "5) clean   - Garbage collect old generations"
@@ -107,7 +156,6 @@ show_menu() {
   esac
 }
 
-# Main
 case "${1:-}" in
   switch)  cmd_switch ;;
   update)  cmd_update ;;

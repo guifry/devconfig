@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cat << 'EOF'
-TMUX HOTKEYS (prefix = Ctrl+b)
+TMUX HOTKEYS (prefix = Ctrl+])
 
 WINDOWS
 ───────────────────────────────────
@@ -11,6 +11,8 @@ Previous window     prefix + p
 Switch to window N  prefix + 0-9
 Rename window       prefix + ,
 List windows        prefix + w
+Swap window         prefix + S  (custom)
+Insert window       prefix + I  (custom, shifts others)
 
 SESSIONS
 ───────────────────────────────────
@@ -21,13 +23,26 @@ Next session        prefix + )
 Previous session    prefix + (
 Rename session      prefix + $
 
-PANES / LAYOUT
+PANES
 ───────────────────────────────────
+Split vertical      prefix + %
+Split horizontal    prefix + "
+Navigate            prefix + h/j/k/l  (custom)
+Resize              prefix + H/J/K/L  (custom, repeatable)
+Equalise (tiled)    prefix + e  (custom)
 Cycle layouts       prefix + Space
 Rotate panes fwd    prefix + Ctrl+o
-Rotate panes back   prefix + Alt+o
 Swap with prev      prefix + {
 Swap with next      prefix + }
-Main-horizontal     prefix + Alt+2
-Main-vertical       prefix + Alt+3
+
+COPY MODE (vi)
+───────────────────────────────────
+Enter copy mode     prefix + [
+Start selection     v
+Copy & exit         y  or  Enter
+Scroll up/down      Ctrl+u / Ctrl+d
+
+PLUGINS
+───────────────────────────────────
+Thumbs (copy text)  prefix + f
 EOF

@@ -24,6 +24,7 @@ in {
     btop
     lazygit
     gh
+    mise
   ] ++ lib.optionals (!isDarwin) [
     xclip
   ];
@@ -32,6 +33,11 @@ in {
     enable = true;
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
+    sessionVariables = {
+      FZF_DEFAULT_COMMAND = "fd --type f --hidden --exclude .git";
+      EDITOR = "vim";
+      VISUAL = "vim";
+    };
     oh-my-zsh = {
       enable = true;
       theme = "robbyrussell";
@@ -81,6 +87,7 @@ in {
       alias sounds-off='rm -f ~/.claude/sounds/.enabled && echo "Sounds disabled"'
 
       alias lg='lazygit'
+      alias cortex="cd ~/projects/cortex && claude --dangerously-skip-permissions 'startup'"
 
       # Migrated from bashrc
       alias la='ls -A'
@@ -94,6 +101,11 @@ in {
 
       function killport () {
         lsof -ti tcp:$1 | xargs kill -9;
+      }
+
+      function reload () {
+        [[ -n "$TMUX" ]] && tmux source-file ~/.config/tmux/tmux.conf
+        exec zsh
       }
     '' + lib.optionalString isDarwin ''
       export PATH="/opt/homebrew/bin:$PATH"
@@ -113,6 +125,7 @@ in {
     keyMode = "vi";
     mouse = true;
     resizeAmount = 5;
+    escapeTime = 50;
     plugins = with pkgs.tmuxPlugins; [
       {
         plugin = tmux-thumbs;
@@ -140,6 +153,18 @@ in {
       bind j select-pane -D
       bind k select-pane -U
       bind l select-pane -R
+
+      bind -r H resize-pane -L 5
+      bind -r J resize-pane -D 5
+      bind -r K resize-pane -U 5
+      bind -r L resize-pane -R 5
+      bind e select-layout tiled
+
+      # Swap current window with target: prefix + S, then enter number
+      bind S command-prompt -p "swap with:" "swap-window -t '%%'"
+
+      # Insert current window at position (shifts others): prefix + I
+      bind I command-prompt -p "insert at:" "run-shell 'for i in $(tmux list-windows -F \"##I\" | sort -rn); do [ $i -ge %% ] && tmux move-window -s $i -t $((i+1)); done; tmux move-window -t %%'"
 
       bind '"' split-window -v -c "#{pane_current_path}"
       bind % split-window -h -c "#{pane_current_path}"
@@ -185,12 +210,24 @@ in {
       set colorcolumn=80
       set scrolloff=999
       set clipboard=unnamed
+      set wildmenu
+      set wildmode=full
+      set pastetoggle=<F2>
       set statusline=%f\ %m\ %=\ %l:%c
       highlight ColorColumn ctermbg=0 guibg=lightgrey
 
-      " Yankstack paste navigation
-      nmap <M-p> <Plug>yankstack_substitute_older_paste
-      nmap <M-n> <Plug>yankstack_substitute_newer_paste
+      " Bracketed paste fix for tmux
+      if !has('gui_running') && &term =~ '^\%(screen\|tmux\)'
+        let &t_BE = "\<Esc>[?2004h"
+        let &t_BD = "\<Esc>[?2004l"
+        let &t_PS = "\<Esc>[200~"
+        let &t_PE = "\<Esc>[201~"
+      endif
+
+      " Ergonomics
+      nnoremap ; :
+      nnoremap : ;
+      inoremap jj <Esc>
 
       " Keep selection when pasting in visual mode
       xnoremap p pgvy
@@ -210,24 +247,66 @@ in {
       Plug 'yuezk/vim-js'
       Plug 'HerringtonDarkholme/yats.vim'
       Plug 'maxmellon/vim-jsx-pretty'
-      Plug 'maxbrunsfeld/vim-yankstack'
       Plug 'preservim/nerdtree'
+      Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+      Plug 'junegunn/fzf.vim'
+      Plug 'tpope/vim-obsession'
+      Plug 'tpope/vim-commentary'
       Plug 'ojroques/vim-oscyank'
 
       call plug#end()
 
-      autocmd TextYankPost * if v:event.operator is 'y' && v:event.regname is '''' | call OSCYank(getreg('"')) | endif
+      " OSC52 clipboard (yank to system clipboard through tmux)
+      autocmd TextYankPost * if v:event.operator is 'y' | call OSCYank(getreg('"')) | endif
+
+      set background=dark
+      set termguicolors
+      colorscheme gruvbox
+
+      let g:coc_global_extensions = ['coc-pyright', 'coc-tsserver', 'coc-json']
+
+      " coc.nvim
+      nmap <silent> gd <Plug>(coc-definition)
+      nmap <silent> gr <Plug>(coc-references)
+      nmap <silent> gy <Plug>(coc-type-definition)
+      nmap <silent> gi <Plug>(coc-implementation)
+      nmap <silent> K :call CocAction('doHover')<CR>
+      nmap <silent> <leader>rn <Plug>(coc-rename)
+      nmap <silent> <leader>o :CocOutline<CR>
+      nmap <silent> <leader>u :UndotreeToggle<CR>
+
+      " fzf
+      nnoremap <C-p> :Files<CR>
+      nnoremap <leader>b :Buffers<CR>
+      nnoremap <leader>rg :Rg<CR>
+      let g:fzf_action = { 'ctrl-t': 'tab split', 'ctrl-s': 'split', 'ctrl-v': 'vsplit' }
+
+      " Sessions
+      nnoremap <leader>ss :Obsession<CR>
+      nnoremap <leader>sr :source Session.vim<CR>
 
       " NERDTree
       nnoremap <leader>n :NERDTreeToggle<CR>
       nnoremap <leader>f :NERDTreeFind<CR>
       let NERDTreeShowHidden=1
-    '';
+      let NERDTreeMapOpenVSplit='v'
+      let NERDTreeMapOpenSplit='s'
+    '' + (if isDarwin then ''
+      nnoremap <leader>p :r !pbpaste<CR>
+    '' else ''
+      nnoremap <leader>p :r !xclip -selection clipboard -o<CR>
+    '');
   };
 
   programs.git = {
     enable = true;
+    ignores = [
+      "Session.vim"
+      ".DS_Store"
+      "**/.claude/settings.local.json"
+    ];
     settings = {
+      core.editor = "vim";
       alias = {
         br = "branch";
         c = "commit";
@@ -268,4 +347,53 @@ in {
   home.activation.createVimUndoDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
     mkdir -p ~/.vim/undodir
   '';
+
+  # Set Bloom as default file viewer for "Reveal in Finder" actions
+  # https://bloomapp.club/user-guide#restore
+  home.activation.configureBloom = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
+    /usr/bin/defaults write -g NSFileViewer -string com.asiafu.Bloom
+    if ! /usr/bin/defaults read com.apple.LaunchServices/com.apple.launchservices.secure LSHandlers 2>/dev/null | grep -q "com.asiafu.Bloom"; then
+      /usr/bin/defaults write com.apple.LaunchServices/com.apple.launchservices.secure LSHandlers -array-add '{LSHandlerContentType="public.folder";LSHandlerRoleAll="com.asiafu.Bloom";}'
+    fi
+  '');
+
+  # Copy Mouseless config (keyboard-driven mouse control)
+  # https://mouseless.click/docs/keybindings.html
+  home.activation.configureMouseless = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
+    MOUSELESS_DIR="$HOME/Library/Containers/net.sonuscape.mouseless/Data/.mouseless/configs"
+    if [ -d "$MOUSELESS_DIR" ]; then
+      cp "${config.home.homeDirectory}/projects/devconfig/macos/mouseless-config.yaml" "$MOUSELESS_DIR/config.yaml"
+    fi
+  '');
+
+  # Configure iTerm2 to load preferences from devconfig
+  # https://iterm2.com/documentation-preferences.html
+  home.activation.configureIterm2 = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
+    /usr/bin/defaults write com.googlecode.iterm2 PrefsCustomFolder -string "${config.home.homeDirectory}/projects/devconfig/macos/iterm2"
+    /usr/bin/defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
+  '');
+
+  # Restore Homerow config (keyboard navigation)
+  # https://www.homerow.app
+  home.activation.configureHomerow = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
+    if [ -f "${config.home.homeDirectory}/projects/devconfig/macos/homerow.plist" ]; then
+      /usr/bin/defaults import com.superultra.Homerow "${config.home.homeDirectory}/projects/devconfig/macos/homerow.plist"
+    fi
+  '');
+
+  # Restore Default Folder X config (enhanced file dialogs)
+  # https://www.stclairsoft.com/DefaultFolderX/
+  home.activation.configureDefaultFolderX = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
+    if [ -f "${config.home.homeDirectory}/projects/devconfig/macos/default-folder-x.plist" ]; then
+      /usr/bin/defaults import com.stclairsoft.DefaultFolderX5 "${config.home.homeDirectory}/projects/devconfig/macos/default-folder-x.plist"
+    fi
+  '');
+
+  # Restore Click2Minimize config (Finder icon behaviour)
+  # https://click2minimize.com
+  home.activation.configureClick2Minimize = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
+    if [ -f "${config.home.homeDirectory}/projects/devconfig/macos/click2minimize.plist" ]; then
+      /usr/bin/defaults import com.idemfactor.Click2Minimize "${config.home.homeDirectory}/projects/devconfig/macos/click2minimize.plist"
+    fi
+  '');
 }
