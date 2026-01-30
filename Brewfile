@@ -6,7 +6,6 @@ tap "nikitabobko/tap"
 # Casks (GUI apps)
 cask "aerospace"
 cask "bloom"
-cask "wezterm"
 cask "homerow"
 cask "default-folder-x"
 cask "raycast"

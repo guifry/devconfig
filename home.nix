@@ -25,6 +25,8 @@ in {
     lazygit
     gh
     mise
+    yazi
+    wezterm
   ] ++ lib.optionals (!isDarwin) [
     xclip
   ];
