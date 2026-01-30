@@ -1,9 +1,12 @@
 # macOS Homebrew packages (managed by devconfig)
 # Run: brew bundle --file=Brewfile
 
+tap "nikitabobko/tap"
+
 # Casks (GUI apps)
+cask "aerospace"
 cask "bloom"
-cask "iterm2"
+cask "wezterm"
 cask "homerow"
 cask "default-folder-x"
 cask "raycast"

@@ -1,7 +1,9 @@
 #!/bin/bash
 
+# tmux is for SSH sessions only. Local terminal uses WezTerm.
+
 cat << 'EOF'
-TMUX HOTKEYS (prefix = Ctrl+])
+TMUX HOTKEYS (prefix = Ctrl+]) — SSH sessions only
 
 WINDOWS
 ───────────────────────────────────

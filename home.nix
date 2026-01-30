@@ -41,13 +41,9 @@ in {
     oh-my-zsh = {
       enable = true;
       theme = "robbyrussell";
-      plugins = [ "git" ];
+      plugins = [ "git" "vi-mode" ];
     };
     initContent = ''
-      if [[ -z "$TMUX" ]]; then
-        tmux new-session -A -s main
-      fi
-
       eval "$(direnv hook zsh)"
       export NIX_CONFIG="warn-dirty = false"
 
@@ -125,7 +121,7 @@ in {
     keyMode = "vi";
     mouse = true;
     resizeAmount = 5;
-    escapeTime = 50;
+    escapeTime = 10;
     plugins = with pkgs.tmuxPlugins; [
       {
         plugin = tmux-thumbs;
@@ -236,7 +232,6 @@ in {
       call plug#begin('~/.vim/plugged')
 
       Plug 'morhetz/gruvbox'
-      Plug 'jremmen/vim-ripgrep'
       Plug 'tpope/vim-fugitive'
       Plug 'leafgarland/typescript-vim'
       Plug 'vim-utils/vim-man'
@@ -248,6 +243,7 @@ in {
       Plug 'HerringtonDarkholme/yats.vim'
       Plug 'maxmellon/vim-jsx-pretty'
       Plug 'preservim/nerdtree'
+      Plug 'numEricL/nerdtree-live-preview'
       Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
       Plug 'junegunn/fzf.vim'
       Plug 'tpope/vim-obsession'
@@ -366,13 +362,6 @@ in {
     fi
   '');
 
-  # Configure iTerm2 to load preferences from devconfig
-  # https://iterm2.com/documentation-preferences.html
-  home.activation.configureIterm2 = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
-    /usr/bin/defaults write com.googlecode.iterm2 PrefsCustomFolder -string "${config.home.homeDirectory}/projects/devconfig/macos/iterm2"
-    /usr/bin/defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
-  '');
-
   # Restore Homerow config (keyboard navigation)
   # https://www.homerow.app
   home.activation.configureHomerow = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -396,4 +385,7 @@ in {
       /usr/bin/defaults import com.idemfactor.Click2Minimize "${config.home.homeDirectory}/projects/devconfig/macos/click2minimize.plist"
     fi
   '');
+
+  xdg.configFile."wezterm/wezterm.lua".source = ./wezterm.lua;
+  xdg.configFile."aerospace/aerospace.toml".source = ./aerospace.toml;
 }

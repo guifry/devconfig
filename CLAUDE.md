@@ -8,7 +8,7 @@ The user has software, packages, and configurations installed independently of d
 
 ### What devconfig IS:
 - A portable dev environment supplement
-- Adds dotfiles (zsh, vim, tmux, git)
+- Adds dotfiles (zsh, vim, tmux, git, wezterm, aerospace)
 - Adds nix packages (cross-platform CLI tools)
 - Adds brew casks on macOS (GUI apps only, declared in Brewfile)
 - Version controlled, reproducible
@@ -37,9 +37,9 @@ devconfig/
 ├── flake.nix                    # Nix flake - defines build targets per platform
 ├── home.nix                     # Home-manager config - dotfiles + nix packages (CROSS-PLATFORM)
 ├── Brewfile                     # macOS brew casks only - GUI apps (ADDITIVE ONLY)
+├── wezterm.lua                  # WezTerm terminal config (leader = Ctrl+])
+├── aerospace.toml               # AeroSpace tiling WM config (modifier = Ctrl+Alt)
 ├── macos/                       # macOS-specific app configs (restored on switch)
-│   ├── iterm2/                  # iTerm2 prefs (native sync - reads/writes directly)
-│   │   └── com.googlecode.iterm2.plist
 │   ├── mouseless-config.yaml    # Mouseless keyboard mouse control
 │   ├── homerow.plist            # Homerow keyboard navigation
 │   ├── default-folder-x.plist   # Default Folder X enhanced dialogs
@@ -64,7 +64,8 @@ devconfig/
   - `home.packages`: CLI tools installed via nix (ripgrep, fd, jq, etc.)
   - `programs.zsh`: Shell config, aliases, functions
   - `programs.vim`: Vim config, plugins
-  - `programs.tmux`: Tmux config, keybindings
+  - `programs.tmux`: Tmux config, keybindings (SSH sessions only)
+  - `xdg.configFile`: WezTerm config (local terminal), AeroSpace config (tiling WM)
   - `programs.git`: Git config, aliases, ignores
   - `programs.fzf`: Fuzzy finder config
   - `programs.direnv`: Directory environments
