@@ -40,8 +40,8 @@ cmd_switch() {
     brew bundle --file="$REPO/Brewfile"
   fi
 
-  echo "Syncing vim plugins..."
-  vim +PlugInstall +PlugClean! +qall 2>/dev/null || true
+  echo "Syncing nvim plugins..."
+  nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
 
   echo ""
   echo "Done. Run 'reload' or open new terminal to apply shell changes."
@@ -89,7 +89,7 @@ cmd_clean() {
 }
 
 cmd_edit() {
-  ${EDITOR:-vim} "$REPO/home.nix"
+  ${EDITOR:-nvim} "$REPO/home.nix"
 }
 
 cmd_status() {

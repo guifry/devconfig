@@ -23,7 +23,7 @@ check "nix" "nix" || missing+=("nix")
 check "home-manager" "home-manager" || missing+=("home-manager")
 check "zsh" "zsh" || missing+=("zsh")
 check "tmux" "tmux" || missing+=("tmux")
-check "vim" "vim" || missing+=("vim")
+check "nvim" "nvim" || missing+=("nvim")
 check "ripgrep" "rg" || missing+=("ripgrep")
 check "fd" "fd" || missing+=("fd")
 check "fzf" "fzf" || missing+=("fzf")
@@ -67,7 +67,7 @@ else
 
     for m in "${missing[@]}"; do
       case $m in
-        nix|home-manager|zsh|tmux|vim|ripgrep|fd|fzf|direnv|claude)
+        nix|home-manager|zsh|tmux|nvim|ripgrep|fd|fzf|direnv|claude)
           needs_light=true ;;
         ssh|uv)
           needs_full=true ;;

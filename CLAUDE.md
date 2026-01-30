@@ -8,7 +8,7 @@ The user has software, packages, and configurations installed independently of d
 
 ### What devconfig IS:
 - A portable dev environment supplement
-- Adds dotfiles (zsh, vim, tmux, git, wezterm, aerospace)
+- Adds dotfiles (zsh, neovim, tmux, git, wezterm, aerospace)
 - Adds nix packages (cross-platform CLI tools)
 - Adds brew casks on macOS (GUI apps only, declared in Brewfile)
 - Version controlled, reproducible
@@ -37,6 +37,8 @@ devconfig/
 ├── flake.nix                    # Nix flake - defines build targets per platform
 ├── home.nix                     # Home-manager config - dotfiles + nix packages (CROSS-PLATFORM)
 ├── Brewfile                     # macOS brew casks only - GUI apps (ADDITIVE ONLY)
+├── nvim/                        # Neovim config (kickstart.nvim)
+│   └── init.lua                 # Neovim init (lazy.nvim + LSP + treesitter + telescope)
 ├── wezterm.lua                  # WezTerm terminal config (leader = Ctrl+])
 ├── aerospace.toml               # AeroSpace tiling WM config (modifier = Ctrl+Alt)
 ├── macos/                       # macOS-specific app configs (restored on switch)
@@ -51,7 +53,7 @@ devconfig/
 │   ├── devconfig-cli.sh         # Main CLI tool
 │   ├── doctor.sh                # Health check script
 │   ├── tx                       # tmux cheat sheet
-│   └── vx                       # vim cheat sheet
+│   └── vx                       # nvim cheat sheet
 └── CLAUDE.md                    # This file
 ```
 
@@ -63,9 +65,8 @@ devconfig/
 - **Contains**:
   - `home.packages`: CLI tools installed via nix (ripgrep, fd, jq, etc.)
   - `programs.zsh`: Shell config, aliases, functions
-  - `programs.vim`: Vim config, plugins
   - `programs.tmux`: Tmux config, keybindings (SSH sessions only)
-  - `xdg.configFile`: WezTerm config (local terminal), AeroSpace config (tiling WM)
+  - `xdg.configFile`: Neovim config (kickstart.nvim), WezTerm config (local terminal), AeroSpace config (tiling WM)
   - `programs.git`: Git config, aliases, ignores
   - `programs.fzf`: Fuzzy finder config
   - `programs.direnv`: Directory environments
@@ -99,7 +100,7 @@ devconfig switch
 This runs:
 1. `home-manager switch` (nix packages + dotfiles)
 2. `brew bundle` on macOS (installs declared casks, touches nothing else)
-3. `vim +PlugInstall +PlugClean!` (sync vim plugins)
+3. `nvim --headless "+Lazy! sync" +qa` (sync neovim plugins)
 
 ### User: Update dependencies
 ```bash
@@ -166,11 +167,12 @@ initContent = ''
 '';
 ```
 
-## Adding Vim Plugins
+## Adding Neovim Plugins
 
-In home.nix under `programs.vim.extraConfig`, inside the plug#begin block:
-```vim
-Plug 'author/plugin-name'
+Edit `nvim/init.lua`. Plugins are managed by lazy.nvim inside the `require('lazy').setup({...})` call.
+Add a new entry to the plugin spec table:
+```lua
+{ 'author/plugin-name', opts = {} },
 ```
 
 ## Adding Tmux Config
@@ -187,7 +189,7 @@ extraConfig = ''
 1. Make changes to home.nix or Brewfile
 2. Run `devconfig switch`
 3. If shell changes: run `reload` or open new terminal
-4. If vim changes: restart vim
+4. If nvim changes: restart nvim
 
 ## Troubleshooting
 

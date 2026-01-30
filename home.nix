@@ -25,6 +25,7 @@ in {
     lazygit
     gh
     mise
+    neovim
     yazi
     wezterm
   ] ++ lib.optionals (!isDarwin) [
@@ -37,8 +38,8 @@ in {
     syntaxHighlighting.enable = true;
     sessionVariables = {
       FZF_DEFAULT_COMMAND = "fd --type f --hidden --exclude .git";
-      EDITOR = "vim";
-      VISUAL = "vim";
+      EDITOR = "nvim";
+      VISUAL = "nvim";
     };
     oh-my-zsh = {
       enable = true;
@@ -90,7 +91,7 @@ in {
       # Migrated from bashrc
       alias la='ls -A'
       alias ls='ls -GFA'
-      alias vi='vim'
+      alias vi='nvim'
       alias tf='terraform'
       alias dc='docker-compose'
       alias py='python3'
@@ -180,122 +181,6 @@ in {
     '');
   };
 
-  programs.vim = {
-    enable = true;
-    settings = {
-      number = true;
-      relativenumber = true;
-    };
-    extraConfig = ''
-      syntax on
-      set nocompatible
-      filetype plugin indent on
-
-      set belloff=all
-      set tabstop=4
-      set softtabstop=4
-      set shiftwidth=4
-      set expandtab
-      set smartindent
-      set wrap
-      set smartcase
-      set noswapfile
-      set nobackup
-      set undodir=~/.vim/undodir
-      set undofile
-      set incsearch
-      set ttimeoutlen=80
-      set colorcolumn=80
-      set scrolloff=999
-      set clipboard=unnamed
-      set wildmenu
-      set wildmode=full
-      set pastetoggle=<F2>
-      set statusline=%f\ %m\ %=\ %l:%c
-      highlight ColorColumn ctermbg=0 guibg=lightgrey
-
-      " Bracketed paste fix for tmux
-      if !has('gui_running') && &term =~ '^\%(screen\|tmux\)'
-        let &t_BE = "\<Esc>[?2004h"
-        let &t_BD = "\<Esc>[?2004l"
-        let &t_PS = "\<Esc>[200~"
-        let &t_PE = "\<Esc>[201~"
-      endif
-
-      " Ergonomics
-      nnoremap ; :
-      nnoremap : ;
-      inoremap jj <Esc>
-
-      " Keep selection when pasting in visual mode
-      xnoremap p pgvy
-
-      " vim-plug
-      call plug#begin('~/.vim/plugged')
-
-      Plug 'morhetz/gruvbox'
-      Plug 'tpope/vim-fugitive'
-      Plug 'leafgarland/typescript-vim'
-      Plug 'vim-utils/vim-man'
-      Plug 'git@github.com:kien/ctrlp.vim.git'
-      Plug 'neoclide/coc.nvim', {'branch': 'release'}
-      Plug 'mbbill/undotree'
-      Plug 'JamshedVesuna/vim-markdown-preview'
-      Plug 'yuezk/vim-js'
-      Plug 'HerringtonDarkholme/yats.vim'
-      Plug 'maxmellon/vim-jsx-pretty'
-      Plug 'preservim/nerdtree'
-      Plug 'numEricL/nerdtree-live-preview'
-      Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
-      Plug 'junegunn/fzf.vim'
-      Plug 'tpope/vim-obsession'
-      Plug 'tpope/vim-commentary'
-      Plug 'ojroques/vim-oscyank'
-
-      call plug#end()
-
-      " OSC52 clipboard (yank to system clipboard through tmux)
-      autocmd TextYankPost * if v:event.operator is 'y' | call OSCYank(getreg('"')) | endif
-
-      set background=dark
-      set termguicolors
-      colorscheme gruvbox
-
-      let g:coc_global_extensions = ['coc-pyright', 'coc-tsserver', 'coc-json']
-
-      " coc.nvim
-      nmap <silent> gd <Plug>(coc-definition)
-      nmap <silent> gr <Plug>(coc-references)
-      nmap <silent> gy <Plug>(coc-type-definition)
-      nmap <silent> gi <Plug>(coc-implementation)
-      nmap <silent> K :call CocAction('doHover')<CR>
-      nmap <silent> <leader>rn <Plug>(coc-rename)
-      nmap <silent> <leader>o :CocOutline<CR>
-      nmap <silent> <leader>u :UndotreeToggle<CR>
-
-      " fzf
-      nnoremap <C-p> :Files<CR>
-      nnoremap <leader>b :Buffers<CR>
-      nnoremap <leader>rg :Rg<CR>
-      let g:fzf_action = { 'ctrl-t': 'tab split', 'ctrl-s': 'split', 'ctrl-v': 'vsplit' }
-
-      " Sessions
-      nnoremap <leader>ss :Obsession<CR>
-      nnoremap <leader>sr :source Session.vim<CR>
-
-      " NERDTree
-      nnoremap <leader>n :NERDTreeToggle<CR>
-      nnoremap <leader>f :NERDTreeFind<CR>
-      let NERDTreeShowHidden=1
-      let NERDTreeMapOpenVSplit='v'
-      let NERDTreeMapOpenSplit='s'
-    '' + (if isDarwin then ''
-      nnoremap <leader>p :r !pbpaste<CR>
-    '' else ''
-      nnoremap <leader>p :r !xclip -selection clipboard -o<CR>
-    '');
-  };
-
   programs.git = {
     enable = true;
     ignores = [
@@ -304,7 +189,7 @@ in {
       "**/.claude/settings.local.json"
     ];
     settings = {
-      core.editor = "vim";
+      core.editor = "nvim";
       alias = {
         br = "branch";
         c = "commit";
@@ -341,10 +226,6 @@ in {
     enable = true;
     enableZshIntegration = true;
   };
-
-  home.activation.createVimUndoDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    mkdir -p ~/.vim/undodir
-  '';
 
   # Set Bloom as default file viewer for "Reveal in Finder" actions
   # https://bloomapp.club/user-guide#restore
@@ -388,6 +269,7 @@ in {
     fi
   '');
 
+  xdg.configFile."nvim/init.lua".source = ./nvim/init.lua;
   xdg.configFile."wezterm/wezterm.lua".source = ./wezterm.lua;
   xdg.configFile."aerospace/aerospace.toml".source = ./aerospace.toml;
 }
