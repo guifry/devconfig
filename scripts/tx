@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# tmux is for SSH sessions only. Local terminal uses WezTerm.
+# tmux is for SSH sessions only. Local terminal uses Ghostty.
 
 cat << 'EOF'
 TMUX HOTKEYS (prefix = Ctrl+]) — SSH sessions only

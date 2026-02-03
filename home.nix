@@ -24,11 +24,14 @@ in {
     btop
     lazygit
     gh
+    google-cloud-sdk
     mise
     neovim
     yazi
-    wezterm
+    fastfetch
+    pgformatter
   ] ++ lib.optionals (!isDarwin) [
+    ghostty
     xclip
   ];
 
@@ -47,6 +50,10 @@ in {
       plugins = [ "git" "vi-mode" ];
     };
     initContent = ''
+      if command -v tmux &>/dev/null && [ -z "$TMUX" ] && [ -n "$GHOSTTY_RESOURCES_DIR" ]; then
+        tmux new-session -A -s main
+      fi
+
       eval "$(direnv hook zsh)"
       export NIX_CONFIG="warn-dirty = false"
 
@@ -85,8 +92,11 @@ in {
       alias sounds-on='touch ~/.claude/sounds/.enabled && echo "Sounds enabled"'
       alias sounds-off='rm -f ~/.claude/sounds/.enabled && echo "Sounds disabled"'
 
+      alias cs='claude --dangerously-skip-permissions'
       alias lg='lazygit'
+      alias ff='fastfetch'
       alias cortex="cd ~/projects/cortex && claude --dangerously-skip-permissions 'startup'"
+      alias dvc="cd ~/projects/devconfig && claude --dangerously-skip-permissions --resume"
 
       # Migrated from bashrc
       alias la='ls -A'
@@ -98,6 +108,15 @@ in {
       alias ns='nix-shell'
       alias activate='source ./venv/bin/activate'
 
+      function y () {
+        local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+        yazi "$@" --cwd-file="$tmp"
+        if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+          cd -- "$cwd"
+        fi
+        rm -f -- "$tmp"
+      }
+
       function killport () {
         lsof -ti tcp:$1 | xargs kill -9;
       }
@@ -108,10 +127,6 @@ in {
       }
     '' + lib.optionalString isDarwin ''
       export PATH="/opt/homebrew/bin:$PATH"
-
-      # Google Cloud SDK
-      [[ -f ~/Downloads/google-cloud-sdk/path.zsh.inc ]] && source ~/Downloads/google-cloud-sdk/path.zsh.inc
-      [[ -f ~/Downloads/google-cloud-sdk/completion.zsh.inc ]] && source ~/Downloads/google-cloud-sdk/completion.zsh.inc
     '' + lib.optionalString (!isDarwin) ''
       alias pbcopy='xclip -selection clipboard'
       alias pbpaste='xclip -selection clipboard -o'
@@ -142,11 +157,35 @@ in {
           set -g @resurrect-capture-pane-contents 'on'
         '';
       }
+      {
+        plugin = continuum;
+        extraConfig = ''
+          set -g @continuum-restore 'on'
+          set -g @continuum-save-interval '15'
+        '';
+      }
     ];
     extraConfig = ''
       set -g renumber-windows on
       set -g set-clipboard on
       set -g allow-passthrough on
+
+      set -g window-style 'bg=#1a1b26'
+      set -g window-active-style 'bg=#24283b'
+
+      # tokyonight storm palette
+      set -g status-position top
+      set -g status-style "bg=#1f2335,fg=#a9b1d6"
+      set -g status-left "#[fg=#7aa2f7,bold] #S #[default]"
+      set -g status-left-length 20
+      set -g status-right "#[fg=#565f89]%H:%M"
+      set -g status-right-length 10
+      set -g window-status-format "#[fg=#565f89] #I:#W"
+      set -g window-status-current-format "#[fg=#7aa2f7,bold] #I:#W"
+      set -g window-status-separator ""
+      set -g pane-border-style "fg=#1f2335"
+      set -g pane-active-border-style "fg=#3b4261"
+      set -g message-style "bg=#1f2335,fg=#7aa2f7"
 
       bind h select-pane -L
       bind j select-pane -D
@@ -165,6 +204,7 @@ in {
       # Insert current window at position (shifts others): prefix + I
       bind I command-prompt -p "insert at:" "run-shell 'for i in $(tmux list-windows -F \"##I\" | sort -rn); do [ $i -ge %% ] && tmux move-window -s $i -t $((i+1)); done; tmux move-window -t %%'"
 
+      bind c new-window -c "#{pane_current_path}"
       bind '"' split-window -v -c "#{pane_current_path}"
       bind % split-window -h -c "#{pane_current_path}"
 
@@ -269,7 +309,21 @@ in {
     fi
   '');
 
-  xdg.configFile."nvim/init.lua".source = ./nvim/init.lua;
-  xdg.configFile."wezterm/wezterm.lua".source = ./wezterm.lua;
-  xdg.configFile."aerospace/aerospace.toml".source = ./aerospace.toml;
+  xdg.configFile."nvim/init.lua".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/nvim/init.lua";
+  xdg.configFile."aerospace/aerospace.toml".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/aerospace.toml";
+  xdg.configFile."ghostty/config".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/ghostty.config";
+
+  home.file.".claude/CLAUDE.md".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/CLAUDE.md";
+  home.file.".claude/settings.json".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/settings.json";
+  home.file.".claude/commands".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/commands";
+  home.file.".claude/skills".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/skills";
+  home.file.".claude/hooks".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/hooks";
+
+  home.file."bin/ax" = { source = ./scripts/ax; executable = true; };
+  home.file."bin/rx" = { source = ./scripts/rx; executable = true; };
+  home.file."bin/tx" = { source = ./scripts/tx; executable = true; };
+  home.file."bin/vx" = { source = ./scripts/vx; executable = true; };
+  home.file."bin/playwright-auth" = { source = ./scripts/playwright-auth; executable = true; };
+  home.file."bin/create_script" = { source = ./scripts/create_script; executable = true; };
+  home.file."bin/edscript" = { source = ./scripts/edscript; executable = true; };
 }
