@@ -1,6 +1,6 @@
 ---
 name: playwright-browser
-description: Manage Chrome profiles for Playwright - list profiles, add/refresh auth state, launch browser with saved credentials
+description: Use this skill for ALL Playwright and Chrome profile operations. Triggers: "playwright", "chrome profile", "browser automation", "web scraping with auth", "list profiles", "authenticated browsing", "storage state". Use cases: list Chrome profiles, check available auth profiles, add new profile for Playwright, refresh expired auth, run Playwright with saved credentials, automate authenticated websites, scrape behind login walls, test authenticated services. This skill MUST be invoked before any Playwright code is written or any Chrome profile inspection.
 allowed-tools: Bash, Read, Write
 ---
 
