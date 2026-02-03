@@ -1,3 +1,9 @@
+---
+name: pr-status
+description: GitHub PR status, reviews pending, CI checks. Use for PR review, standup prep, code review queue.
+allowed-tools: Bash, Read
+---
+
 # PR Status
 
 Fetch GitHub PR status and create actionable todos.

@@ -1,3 +1,9 @@
+---
+name: jira-debrief
+description: Fetch Jira sprint state, tickets, blockers. Use for standup prep, sprint review, ticket status.
+allowed-tools: Bash, Read
+---
+
 # Jira Board Debrief
 
 Fetch Guilhem's current sprint state using auto-detection via JQL.

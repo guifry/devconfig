@@ -1,3 +1,9 @@
+---
+name: standup-prep
+description: Daily standup preparation. Combines Jira, GitHub, Slack into talking points and priorities.
+allowed-tools: Bash, Read, Skill
+---
+
 # Standup Prep
 
 Orchestrate daily debrief and prepare standup talking points.

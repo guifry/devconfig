@@ -1,3 +1,9 @@
+---
+name: taisk-docs
+description: Taisk Forecast docs and roadmap management. Use for backlog, priorities, lane status, adding items.
+allowed-tools: Bash, Read, Edit, Write
+---
+
 # /taisk-docs - Documentation & Roadmap Agent
 
 You manage the Taisk Forecast documentation and roadmap system.

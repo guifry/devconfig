@@ -1,3 +1,9 @@
+---
+name: slack-debrief
+description: Summarise Slack mentions, DMs, threads. Use for daily catchup, standup prep, unread messages.
+allowed-tools: Bash, Read
+---
+
 # Slack Debrief
 
 Summarise unread Slack activity from last 24h.
