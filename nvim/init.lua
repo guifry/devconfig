@@ -91,18 +91,15 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
 -- NOTE: You can change these options as you wish!
 --  For more options, you can see `:help option-list`
 
--- Make line numbers default
 vim.o.number = true
--- You can also add relative line numbers, to help with jumping.
---  Experiment for yourself to see if you like it!
--- vim.o.relativenumber = true
+vim.o.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = 'a'
@@ -157,7 +154,7 @@ vim.o.inccommand = 'split'
 vim.o.cursorline = true
 
 -- Minimal number of screen lines to keep above and below the cursor.
-vim.o.scrolloff = 10
+vim.o.scrolloff = 999
 
 -- if performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
 -- instead raise a dialog asking if you wish to save the current file(s)
@@ -169,7 +166,21 @@ vim.o.confirm = true
 
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
+vim.keymap.set('n', ';', ':', { desc = 'Command mode without shift' })
+vim.keymap.set('n', ':', ';', { desc = 'Repeat f/t search' })
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
+vim.keymap.set('n', '<leader>w', function()
+  if vim.api.nvim_buf_get_name(0) == '' then
+    vim.ui.input({ prompt = 'Save as: ', completion = 'file' }, function(name)
+      if name and name ~= '' then
+        vim.cmd('saveas ' .. vim.fn.fnameescape(name))
+      end
+    end)
+  else
+    vim.cmd.w()
+  end
+end, { desc = '[W]rite file' })
+vim.keymap.set('n', '<leader>q', '<cmd>q<CR>', { desc = '[Q]uit' })
 
 -- Diagnostic Config & Keymaps
 -- See :help vim.diagnostic.Opts
@@ -187,7 +198,7 @@ vim.diagnostic.config {
   jump = { float = true },
 }
 
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+vim.keymap.set('n', '<leader>dq', vim.diagnostic.setloclist, { desc = '[D]iagnostic [Q]uickfix list' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -211,6 +222,10 @@ vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left wind
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+vim.keymap.set('n', '<leader><Left>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+vim.keymap.set('n', '<leader><Right>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+vim.keymap.set('n', '<leader><Down>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+vim.keymap.set('n', '<leader><Up>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
 -- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
@@ -283,6 +298,8 @@ require('lazy').setup({
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
+      current_line_blame = true,
+      current_line_blame_opts = { delay = 300 },
     },
   },
 
@@ -312,6 +329,7 @@ require('lazy').setup({
       spec = {
         { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
         { '<leader>t', group = '[T]oggle' },
+        { '<leader>d', group = '[D]ebug' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       },
     },
@@ -593,16 +611,8 @@ require('lazy').setup({
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
       --  See `:help lsp-config` for information about keys and how to configure
       local servers = {
-        -- clangd = {},
-        -- gopls = {},
-        -- pyright = {},
-        -- rust_analyzer = {},
-        --
-        -- Some languages (like typescript) have entire language plugins that can be useful:
-        --    https://github.com/pmizio/typescript-tools.nvim
-        --
-        -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
+        pyright = {},
+        ts_ls = {},
       }
 
       -- Ensure the servers and tools above are installed
@@ -612,12 +622,14 @@ require('lazy').setup({
       --    :Mason
       --
       -- You can press `g?` for help in this menu.
-      local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'lua_ls', -- Lua Language server
-        'stylua', -- Used to format Lua code
-        -- You can add other tools here that you want Mason to install
-      })
+      local ensure_installed = {
+        'pyright',
+        'typescript-language-server',
+        'lua-language-server',
+        'stylua',
+        'tree-sitter-cli',
+        'debugpy',
+      }
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -813,6 +825,16 @@ require('lazy').setup({
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
+  {
+    'max397574/better-escape.nvim',
+    opts = {
+      timeout = 200,
+      mappings = {
+        i = { k = { j = '<Esc>' } },
+      },
+    },
+  },
+
   { -- Collection of various small independent plugins/modules
     'nvim-mini/mini.nvim',
     config = function()
@@ -852,7 +874,7 @@ require('lazy').setup({
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     config = function()
-      local filetypes = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
+      local filetypes = { 'bash', 'c', 'css', 'diff', 'html', 'javascript', 'json', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'python', 'query', 'tsx', 'typescript', 'vim', 'vimdoc', 'yaml' }
       require('nvim-treesitter').install(filetypes)
       vim.api.nvim_create_autocmd('FileType', {
         pattern = filetypes,
@@ -874,7 +896,58 @@ require('lazy').setup({
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
+  {
+    'sphamba/smear-cursor.nvim',
+    opts = {
+      stiffness = 0.8,
+      trailing_stiffness = 0.6,
+      distance_stop_animating = 0.5,
+    },
+  },
+
+  {
+    'mfussenegger/nvim-dap',
+    dependencies = {
+      'mfussenegger/nvim-dap-python',
+      'rcarriga/nvim-dap-ui',
+      'nvim-neotest/nvim-nio',
+      'theHamsta/nvim-dap-virtual-text',
+    },
+    keys = {
+      { '<leader>db', function() require('dap').toggle_breakpoint() end, desc = '[D]ebug toggle [B]reakpoint' },
+      { '<leader>dB', function() require('dap').set_breakpoint(vim.fn.input('Condition: ')) end, desc = '[D]ebug conditional [B]reakpoint' },
+      { '<leader>dc', function() require('dap').continue() end, desc = '[D]ebug [C]ontinue' },
+      { '<leader>do', function() require('dap').step_over() end, desc = '[D]ebug step [O]ver' },
+      { '<leader>di', function() require('dap').step_into() end, desc = '[D]ebug step [I]nto' },
+      { '<leader>dO', function() require('dap').step_out() end, desc = '[D]ebug step [O]ut' },
+      { '<leader>dr', function() require('dap').repl.open() end, desc = '[D]ebug [R]EPL' },
+      { '<leader>dl', function() require('dap').run_last() end, desc = '[D]ebug run [L]ast' },
+      { '<leader>dt', function() require('dap-python').test_method() end, desc = '[D]ebug [T]est method' },
+      { '<leader>du', function() require('dapui').toggle() end, desc = '[D]ebug [U]I toggle' },
+      { '<leader>dx', function() require('dap').terminate() end, desc = '[D]ebug terminate' },
+      { '<F5>', function() require('dap').continue() end, desc = 'Debug continue' },
+      { '<F10>', function() require('dap').step_over() end, desc = 'Debug step over' },
+      { '<F11>', function() require('dap').step_into() end, desc = 'Debug step into' },
+      { '<F12>', function() require('dap').step_out() end, desc = 'Debug step out' },
+    },
+    config = function()
+      local dap = require('dap')
+      local dapui = require('dapui')
+      local debugpy_path = vim.fn.stdpath('data') .. '/mason/packages/debugpy/venv/bin/python'
+      require('dap-python').setup(debugpy_path)
+      require('nvim-dap-virtual-text').setup()
+      dapui.setup()
+      dap.listeners.after.event_initialized['dapui_config'] = function() dapui.open() end
+      dap.listeners.before.event_terminated['dapui_config'] = function() dapui.close() end
+      dap.listeners.before.event_exited['dapui_config'] = function() dapui.close() end
+    end,
+  },
+
+  {
+    'mikavilpas/yazi.nvim',
+    keys = { { '\\', '<cmd>Yazi toggle<CR>', desc = 'Toggle yazi' } },
+    opts = {},
+  },
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
@@ -909,5 +982,45 @@ require('lazy').setup({
   },
 })
 
--- The line beneath this is called `modeline`. See `:help modeline`
+-- Format visual selection with auto-detected filetype
+do
+  local cmds = {
+    json = 'jq .',
+    jsonc = 'jq .',
+    xml = 'xmllint --format -',
+    html = 'xmllint --html --format -',
+    yaml = 'yq .',
+    sql = 'pg_format -',
+  }
+
+  local function detect_filetype(lines)
+    local text = table.concat(lines, '\n')
+    local trimmed = text:match('^%s*(.-)%s*$')
+    if trimmed:match('^[{%[]') and trimmed:match('[}%]]%s*$') then return 'json' end
+    if trimmed:match('^<%?xml') then return 'xml' end
+    if trimmed:match('^<!DOCTYPE') or trimmed:match('^<html') then return 'html' end
+    if trimmed:match('^%-%-%-') then return 'yaml' end
+    if trimmed:upper():match('^SELECT%s') or trimmed:upper():match('^INSERT%s') or trimmed:upper():match('^UPDATE%s') or trimmed:upper():match('^DELETE%s') or trimmed:upper():match('^CREATE%s') or trimmed:upper():match('^ALTER%s') or trimmed:upper():match('^WITH%s') then return 'sql' end
+    return vim.filetype.match({ contents = lines })
+  end
+
+  vim.keymap.set('v', '<leader>F', function()
+    local s = math.min(vim.fn.line('v'), vim.fn.line('.'))
+    local e = math.max(vim.fn.line('v'), vim.fn.line('.'))
+    local lines = vim.api.nvim_buf_get_lines(0, s - 1, e, false)
+    local ft = detect_filetype(lines)
+    if not ft then
+      vim.notify('Could not detect format', vim.log.levels.WARN)
+      return
+    end
+    local cmd = cmds[ft]
+    if not cmd then
+      vim.notify('No formatter for: ' .. ft, vim.log.levels.WARN)
+      return
+    end
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'nx', false)
+    vim.cmd(s .. ',' .. e .. '!' .. cmd)
+  end, { desc = '[F]ormat selection (auto-detect)' })
+end
+
 -- vim: ts=2 sts=2 sw=2 et
