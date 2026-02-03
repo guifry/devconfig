@@ -4,6 +4,8 @@ set -euo pipefail
 AUTH_DIR="$HOME/.playwright-auth"
 PROFILES_MAP="$AUTH_DIR/profiles.json"
 HEADROOM_GB=3
+YES_FLAG=false
+JSON_FLAG=false
 
 case "$(uname)" in
   Darwin)
@@ -18,8 +20,21 @@ case "$(uname)" in
     ;;
 esac
 
+python3 -c "import playwright" 2>/dev/null || {
+  echo "Error: playwright not installed." >&2
+  echo "Run: pip install playwright && playwright install chromium" >&2
+  exit 1
+}
+
 mkdir -p "$AUTH_DIR"
 [ -f "$PROFILES_MAP" ] || echo '{}' > "$PROFILES_MAP"
+
+check_chrome_not_running() {
+  if pgrep -q "Google Chrome"; then
+    echo "Error: Chrome is running. Close it first." >&2
+    exit 1
+  fi
+}
 
 get_available_space_bytes() {
   local dir="$1"
@@ -115,6 +130,7 @@ snapshot_profile() {
   python3 - "$copy_dir" "$state_file" << 'PYTHON'
 import sys
 import asyncio
+import time
 from playwright.async_api import async_playwright
 
 async def export_state(user_data_dir, output_path):
@@ -124,8 +140,11 @@ async def export_state(user_data_dir, output_path):
             headless=False,
             args=['--disable-blink-features=AutomationControlled']
         )
-        print("Browser launched. Verify you're logged in, then press Enter here...")
-        input()
+        if sys.stdin.isatty():
+            print("Browser launched. Verify you're logged in, then press Enter here...")
+            input()
+        else:
+            time.sleep(2)
         await context.storage_state(path=output_path)
         await context.close()
         print(f"Storage state saved to {output_path}")
@@ -147,16 +166,18 @@ json.dump(m, open('$PROFILES_MAP', 'w'), indent=2)
 }
 
 cmd_list() {
+  if [[ "$JSON_FLAG" == "true" ]]; then
+    cmd_list_json
+    return
+  fi
+
   echo "Chrome profiles:"
-  echo "----------------"
+  printf "  %-12s %-20s %-30s %s\n" "FOLDER" "NAME" "EMAIL" "SIZE"
+  printf "  %-12s %-20s %-30s %s\n" "------" "----" "-----" "----"
   discover_chrome_profiles | while IFS='|' read -r dirname name email; do
     local size
     size=$(get_dir_size_bytes "$CHROME_DIR/$dirname")
-    if [[ -n "$email" ]]; then
-      echo "  $name <$email> ($dirname) - $(bytes_to_human $size)"
-    else
-      echo "  $name ($dirname) - $(bytes_to_human $size)"
-    fi
+    printf "  %-12s %-20s %-30s %s\n" "$dirname" "$name" "${email:--}" "$(bytes_to_human $size)"
   done
 
   echo ""
@@ -177,7 +198,94 @@ cmd_list() {
   fi
 }
 
+cmd_list_json() {
+  python3 - << PYTHON
+import json
+import os
+import subprocess
+
+chrome_dir = "$CHROME_DIR"
+auth_dir = "$AUTH_DIR"
+profiles_map = "$PROFILES_MAP"
+
+chrome_profiles = []
+for dirname in os.listdir(chrome_dir):
+    if dirname != "Default" and not dirname.startswith("Profile "):
+        continue
+    prefs_path = os.path.join(chrome_dir, dirname, "Preferences")
+    if not os.path.isfile(prefs_path):
+        continue
+    try:
+        with open(prefs_path) as f:
+            prefs = json.load(f)
+        name = prefs.get("profile", {}).get("name", "Unknown")
+        email = prefs.get("account_info", [{}])[0].get("email", "")
+        size_result = subprocess.run(
+            ["du", "-sk", os.path.join(chrome_dir, dirname)],
+            capture_output=True, text=True
+        )
+        size_bytes = int(size_result.stdout.split()[0]) * 1024 if size_result.returncode == 0 else 0
+        chrome_profiles.append({
+            "folder": dirname,
+            "name": name,
+            "email": email,
+            "size_bytes": size_bytes
+        })
+    except:
+        pass
+
+state_profiles = []
+try:
+    with open(profiles_map) as f:
+        mapping = json.load(f)
+except:
+    mapping = {}
+
+for fname in os.listdir(auth_dir):
+    if fname.endswith(".json") and fname != "profiles.json":
+        state_name = fname[:-5]
+        state_path = os.path.join(auth_dir, fname)
+        size_bytes = os.path.getsize(state_path) if os.path.isfile(state_path) else 0
+        state_profiles.append({
+            "name": state_name,
+            "source_folder": mapping.get(state_name, "unknown"),
+            "size_bytes": size_bytes
+        })
+
+print(json.dumps({
+    "chrome_profiles": chrome_profiles,
+    "state_profiles": state_profiles
+}, indent=2))
+PYTHON
+}
+
+find_chrome_profile() {
+  local search="$1"
+  if [[ "$search" == *"@"* ]]; then
+    local found=""
+    while IFS='|' read -r dirname name email; do
+      if [[ "$email" == "$search" ]]; then
+        found="$dirname"
+        break
+      fi
+    done < <(discover_chrome_profiles)
+    echo "$found"
+  else
+    if [[ -d "$CHROME_DIR/$search" ]]; then
+      echo "$search"
+    fi
+  fi
+}
+
 cmd_add() {
+  local profile_arg="${1:-}"
+  local state_arg="${2:-}"
+
+  if [[ -n "$profile_arg" ]] && [[ -n "$state_arg" ]]; then
+    cmd_add_noninteractive "$profile_arg" "$state_arg"
+    return
+  fi
+
   local existing_states
   existing_states=$(get_state_profiles | tr '\n' '|')
 
@@ -239,6 +347,41 @@ cmd_add() {
   snapshot_profile "$CHROME_DIR/$dirname" "$state_name" "$profile_size"
 }
 
+cmd_add_noninteractive() {
+  local profile_arg="$1"
+  local state_name="$2"
+
+  local dirname
+  dirname=$(find_chrome_profile "$profile_arg")
+
+  if [[ -z "$dirname" ]]; then
+    echo "Error: Chrome profile not found: $profile_arg" >&2
+    echo "Use 'playwright-auth list --json' to see available profiles." >&2
+    exit 1
+  fi
+
+  if [[ -f "$AUTH_DIR/${state_name}.json" ]]; then
+    echo "Error: State profile already exists: $state_name" >&2
+    exit 1
+  fi
+
+  local profile_size
+  profile_size=$(get_dir_size_bytes "$CHROME_DIR/$dirname")
+
+  if ! check_disk_space "$profile_size"; then
+    exit 1
+  fi
+
+  if [[ "$YES_FLAG" != "true" ]]; then
+    echo "Please close Chrome completely before continuing."
+    read -rp "Press Enter when Chrome is closed..."
+  else
+    check_chrome_not_running
+  fi
+
+  snapshot_profile "$CHROME_DIR/$dirname" "$state_name" "$profile_size"
+}
+
 cmd_refresh() {
   local state_name="$1"
 
@@ -269,9 +412,13 @@ cmd_refresh() {
     return 1
   fi
 
-  echo ""
-  echo "Please close Chrome completely before continuing."
-  read -rp "Press Enter when Chrome is closed..."
+  if [[ "$YES_FLAG" != "true" ]]; then
+    echo ""
+    echo "Please close Chrome completely before continuing."
+    read -rp "Press Enter when Chrome is closed..."
+  else
+    check_chrome_not_running
+  fi
 
   snapshot_profile "$chrome_profile_dir" "$state_name" "$profile_size"
 }
@@ -285,8 +432,10 @@ cmd_refresh_all() {
     return 0
   fi
 
-  echo "Checking for new Chrome profiles..."
-  cmd_add 2>/dev/null || true
+  if [[ "$YES_FLAG" != "true" ]]; then
+    echo "Checking for new Chrome profiles..."
+    cmd_add 2>/dev/null || true
+  fi
 
   echo ""
   echo "Collecting profile sizes..."
@@ -315,9 +464,13 @@ cmd_refresh_all() {
   fi
   echo "Disk space OK."
 
-  echo ""
-  echo "Please close Chrome completely before continuing."
-  read -rp "Press Enter when Chrome is closed..."
+  if [[ "$YES_FLAG" != "true" ]]; then
+    echo ""
+    echo "Please close Chrome completely before continuing."
+    read -rp "Press Enter when Chrome is closed..."
+  else
+    check_chrome_not_running
+  fi
 
   for state_name in "${!profile_sizes[@]}"; do
     echo ""
@@ -343,19 +496,27 @@ cmd_help() {
 playwright-auth - Manage Playwright storage state from Chrome profiles
 
 USAGE
-  playwright-auth <command> [args]
+  playwright-auth <command> [args] [options]
 
 COMMANDS
-  list          List Chrome profiles and existing state profiles
-  add           Add a new state profile (interactive)
-  refresh NAME  Refresh a specific state profile
-  refresh-all   Refresh all state profiles
-  help          Show this help
+  list [--json]                     List Chrome profiles and state profiles
+  add                               Add state profile (interactive)
+  add PROFILE STATE [--yes]         Add state profile (non-interactive)
+  refresh NAME [--yes]              Refresh a state profile
+  refresh-all [--yes]               Refresh all state profiles
+  help                              Show this help
+
+OPTIONS
+  --json    Output JSON (list only)
+  --yes     Skip "close Chrome" prompt; fails if Chrome running
+
+PROFILE ARGUMENT
+  Folder name: "Default", "Profile 1", "Profile 11"
+  Email: "user@example.com" (matches account_info in Chrome prefs)
 
 WORKFLOW
   1. First time setup:
-     $ playwright-auth add
-     Select a Chrome profile, close Chrome, confirm login state
+     $ playwright-auth add "Profile 1" work --yes
 
   2. Use in Playwright (Python):
      context = await browser.new_context(
@@ -363,7 +524,7 @@ WORKFLOW
      )
 
   3. When auth expires:
-     $ playwright-auth refresh work
+     $ playwright-auth refresh work --yes
 
 FILES
   ~/.playwright-auth/
@@ -374,26 +535,45 @@ FILES
 REQUIREMENTS
   - Python 3 with playwright: pip install playwright
   - Chromium browser: playwright install chromium
-  - Chrome must be closed during add/refresh operations
+  - Chrome MUST be closed during add/refresh operations
 
 DISK SPACE
   Requires 3GB + 2× profile size free space (profiles can be 100MB-1GB+).
   The script checks before copying and aborts if insufficient.
 
 EXAMPLES
-  playwright-auth list
-  playwright-auth add
-  playwright-auth refresh work
-  playwright-auth refresh-all
+  playwright-auth list --json
+  playwright-auth add user@example.com myprofile --yes
+  playwright-auth add "Profile 1" work --yes
+  playwright-auth refresh work --yes
+  playwright-auth refresh-all --yes
 EOF
 }
 
+parse_flags() {
+  for arg in "$@"; do
+    case "$arg" in
+      --yes) YES_FLAG=true ;;
+      --json) JSON_FLAG=true ;;
+    esac
+  done
+}
+
+parse_flags "$@"
+
 case "${1:-help}" in
   list) cmd_list ;;
-  add) cmd_add ;;
+  add)
+    shift
+    add_args=()
+    for arg in "$@"; do
+      [[ "$arg" == "--yes" ]] || add_args+=("$arg")
+    done
+    cmd_add "${add_args[@]:-}"
+    ;;
   refresh)
-    if [[ -z "${2:-}" ]]; then
-      echo "Usage: playwright-auth refresh NAME" >&2
+    if [[ -z "${2:-}" ]] || [[ "${2:-}" == "--yes" ]]; then
+      echo "Usage: playwright-auth refresh NAME [--yes]" >&2
       exit 1
     fi
     cmd_refresh "$2"

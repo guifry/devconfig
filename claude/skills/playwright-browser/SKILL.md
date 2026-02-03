@@ -6,35 +6,69 @@ allowed-tools: Bash, Read, Write
 
 # Playwright Browser — Web automation with Chrome auth
 
-Storage state snapshots from Chrome profiles let Playwright start "already logged in" to authenticated services. Chrome can stay open during all operations — the script copies profiles before reading them.
+Storage state snapshots from Chrome profiles let Playwright start "already logged in" to authenticated services.
+
+**Chrome MUST be closed for add/refresh operations.** The script copies Chrome profile data which is locked while Chrome runs.
+
+## Requirements
+
+- Python 3 with playwright: `pip install playwright`
+- Chromium browser: `playwright install chromium`
 
 ## CLI: `playwright-auth`
 
 ```bash
-playwright-auth list          # Show Chrome profiles + state profiles
-playwright-auth add           # Add new state profile (interactive)
-playwright-auth refresh NAME  # Refresh a state profile
-playwright-auth refresh-all   # Refresh all state profiles
+playwright-auth list [--json]           # Show profiles (--json for agent parsing)
+playwright-auth add                     # Add state profile (interactive)
+playwright-auth add PROFILE STATE [--yes]  # Add state profile (non-interactive)
+playwright-auth refresh NAME [--yes]    # Refresh a state profile
+playwright-auth refresh-all [--yes]     # Refresh all state profiles
 ```
 
-## Examples
+## Non-Interactive Usage (for agents)
 
-**User: "What Chrome profiles do I have?"**
+**List profiles (JSON for parsing)**
 ```bash
-playwright-auth list
+playwright-auth list --json
 ```
 
-**User: "Set up my work profile for Playwright"**
+**Create state profile by email**
 ```bash
-playwright-auth add
-# Then select "Work" from the list
+playwright-auth add guilhem@taisk.com taisk --yes
 ```
 
-**User: "Check my Jira dashboard using work profile"**
+**Create state profile by folder**
 ```bash
-playwright-auth list  # Verify work.json exists
+playwright-auth add "Profile 11" taisk --yes
 ```
-Then write Python:
+
+**Refresh a profile**
+```bash
+playwright-auth refresh work --yes
+```
+
+**Refresh all profiles**
+```bash
+playwright-auth refresh-all --yes
+```
+
+**Check if Chrome running (must close for add/refresh)**
+```bash
+pgrep -q "Google Chrome" && echo "Chrome running - close it first" || echo "Chrome not running - safe to proceed"
+```
+
+**Get profile folder from email**
+```bash
+playwright-auth list --json | jq -r '.chrome_profiles[] | select(.email=="guilhem@taisk.com") | .folder'
+```
+
+**Check if state profile exists**
+```bash
+playwright-auth list --json | jq -r '.state_profiles[].name' | grep -q "^work$" && echo "exists" || echo "not found"
+```
+
+**Use storage state in Python script**
+Write and execute:
 ```python
 import asyncio
 import os
@@ -44,58 +78,46 @@ async def main():
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False)
         context = await browser.new_context(
-            storage_state=os.path.expanduser('~/.playwright-auth/work.json')
+            storage_state=os.path.expanduser('~/.playwright-auth/taisk.json')
         )
         page = await context.new_page()
-        await page.goto('https://jira.atlassian.com')
-        # ... extract data ...
+        await page.goto('https://example.com')
+        # ... do stuff ...
         await browser.close()
 
 asyncio.run(main())
 ```
 
-**User: "My work profile auth seems expired"**
-```bash
-playwright-auth refresh work
-```
+## Interactive Usage (human only)
 
-**User: "Update all my Playwright profiles"**
-```bash
-playwright-auth refresh-all
-```
-
-**User: "Which profile has my AWS credentials?"**
-```bash
-playwright-auth list
-```
-Then ask user which profile name corresponds to their AWS account.
-
-**User: "Add my personal Chrome profile for Playwright"**
+**Add new profile interactively**
 ```bash
 playwright-auth add
-# Select "Personal" or equivalent from the interactive list
+# Follow prompts: select profile, enter name, close Chrome when prompted
 ```
 
-**User: "Set up my client-x profile" (name doesn't match exactly)**
-```bash
-playwright-auth list
-```
-Output shows available profiles. If no exact match for "client-x":
-> I don't see a profile named "client-x". Here are the available Chrome profiles:
-> - Work (Profile 1)
-> - Personal (Default)
-> - Acme Corp (Profile 2)
-> Which one would you like to use?
+## Examples
 
-**User: "Screenshot my GitHub notifications using personal profile"**
+**User: "What Chrome profiles do I have?"**
 ```bash
-playwright-auth list  # Verify personal.json exists
+playwright-auth list --json
 ```
-Then write Python script with `storage_state='~/.playwright-auth/personal.json'`
 
-**User: "How much disk space do profiles need?"**
+**User: "Set up my taisk profile for Playwright"**
 ```bash
-playwright-auth list  # Shows sizes for each profile
+playwright-auth list --json | jq -r '.chrome_profiles[] | select(.email | contains("taisk"))'
+playwright-auth add guilhem@taisk.com taisk --yes
+```
+
+**User: "Check my Jira dashboard using work profile"**
+```bash
+playwright-auth list --json | jq -r '.state_profiles[].name' | grep -q "^work$"
+```
+Then write Python with `storage_state='~/.playwright-auth/work.json'`
+
+**User: "My work profile auth seems expired"**
+```bash
+playwright-auth refresh work --yes
 ```
 
 **User: "Delete a state profile I no longer need"**
