@@ -1,0 +1,170 @@
+#!/usr/bin/env bash
+#
+# nvim-server-per-repo
+#
+# Automatic per-git-repo Neovim server management.
+# Inside a git repo: attaches to existing server or creates one.
+# Outside git repos: starts standalone nvim.
+#
+# USAGE:
+#   Source this file and use `nvim` function, OR
+#   alias nvim='nvim-server-per-repo'
+#
+# INSTALLATION:
+#   # Option 1: Source in .zshrc/.bashrc
+#   source /path/to/nvim-server-per-repo
+#
+#   # Option 2: Alias
+#   alias nvim='/path/to/nvim-server-per-repo'
+#
+# COMMANDS:
+#   nvim [files...]     Open files (attaches to repo server if exists)
+#   nvim --standalone   Force standalone instance (bypass server logic)
+#   nvim --server-info  Show server info for current repo
+#   nvim --server-kill  Kill server for current repo
+#   nvim --server-list  List all active repo servers
+
+# Note: no `set -e` as this is designed to be sourced into interactive shells
+
+NVIM_SERVER_DIR="${NVIM_SERVER_DIR:-/tmp/nvim-servers}"
+
+_nvim_get_socket_path() {
+  local git_root="$1"
+  local hash
+  if command -v md5 &>/dev/null; then
+    hash=$(echo -n "$git_root" | md5 -q | cut -c1-12)
+  else
+    hash=$(echo -n "$git_root" | md5sum | cut -c1-12)
+  fi
+  echo "${NVIM_SERVER_DIR}/${hash}.sock"
+}
+
+_nvim_server_alive() {
+  local socket="$1"
+  [[ -S "$socket" ]] && command nvim --server "$socket" --remote-expr "1" &>/dev/null
+}
+
+_nvim_cleanup_dead_socket() {
+  local socket="$1"
+  if [[ -S "$socket" ]] && ! _nvim_server_alive "$socket"; then
+    rm -f "$socket"
+  fi
+}
+
+_nvim_server_info() {
+  local git_root
+  git_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+    echo "Not in a git repository"
+    return 1
+  }
+  local socket
+  socket=$(_nvim_get_socket_path "$git_root")
+
+  echo "Repository: $git_root"
+  echo "Socket:     $socket"
+  if _nvim_server_alive "$socket"; then
+    echo "Status:     running"
+    local pid
+    pid=$(command nvim --server "$socket" --remote-expr "getpid()" 2>/dev/null)
+    echo "PID:        $pid"
+  else
+    echo "Status:     not running"
+  fi
+}
+
+_nvim_server_kill() {
+  local git_root
+  git_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+    echo "Not in a git repository"
+    return 1
+  }
+  local socket
+  socket=$(_nvim_get_socket_path "$git_root")
+
+  if _nvim_server_alive "$socket"; then
+    command nvim --server "$socket" --remote-send '<C-\><C-n>:qa!<CR>'
+    sleep 0.5
+    rm -f "$socket"
+    echo "Server killed: $git_root"
+  else
+    rm -f "$socket"
+    echo "No server running for: $git_root"
+  fi
+}
+
+_nvim_server_list() {
+  mkdir -p "$NVIM_SERVER_DIR"
+  local found=0
+  local socket
+  while IFS= read -r socket; do
+    [[ -n "$socket" ]] || continue
+    if _nvim_server_alive "$socket"; then
+      local cwd pid
+      cwd=$(command nvim --server "$socket" --remote-expr "getcwd()" 2>/dev/null)
+      pid=$(command nvim --server "$socket" --remote-expr "getpid()" 2>/dev/null)
+      echo "PID $pid: $cwd"
+      found=1
+    else
+      rm -f "$socket"
+    fi
+  done < <(find "$NVIM_SERVER_DIR" -maxdepth 1 -name "*.sock" 2>/dev/null)
+  [[ $found -eq 1 ]] || echo "No active servers"
+}
+
+nvim() {
+  case "${1:-}" in
+    --standalone)
+      shift
+      command nvim "$@"
+      return
+      ;;
+    --server-info)
+      _nvim_server_info
+      return
+      ;;
+    --server-kill)
+      _nvim_server_kill
+      return
+      ;;
+    --server-list)
+      _nvim_server_list
+      return
+      ;;
+  esac
+
+  local git_root
+  git_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+    command nvim "$@"
+    return
+  }
+
+  mkdir -p "$NVIM_SERVER_DIR"
+  local socket
+  socket=$(_nvim_get_socket_path "$git_root")
+
+  _nvim_cleanup_dead_socket "$socket"
+
+  if _nvim_server_alive "$socket"; then
+    if [[ $# -gt 0 ]]; then
+      local abs_files=()
+      for f in "$@"; do
+        if [[ -e "$f" || "$f" != -* ]]; then
+          abs_files+=("$(cd "$(dirname "$f")" 2>/dev/null && pwd)/$(basename "$f")")
+        fi
+      done
+      if [[ ${#abs_files[@]} -gt 0 ]]; then
+        command nvim --server "$socket" --remote "${abs_files[@]}"
+      fi
+    fi
+    command nvim --server "$socket" --remote-ui
+  else
+    command nvim --listen "$socket" "$@"
+  fi
+}
+
+# Run if executed directly (not sourced)
+if [[ -n "${BASH_SOURCE:-}" ]]; then
+  [[ "${BASH_SOURCE[0]}" == "${0}" ]] && nvim "$@"
+elif [[ "$ZSH_EVAL_CONTEXT" == "toplevel" ]]; then
+  nvim "$@"
+fi

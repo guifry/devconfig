@@ -70,6 +70,9 @@ in {
       export PATH="$HOME/bin:$PATH"
       export PATH="$HOME/.local/bin:$PATH"
 
+      # nvim server-per-repo (auto-attach to repo server)
+      source ~/bin/nvim-server-per-repo
+
       # NVM
       export NVM_DIR="$HOME/.nvm"
       [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
@@ -348,4 +351,5 @@ EOF
   home.file."bin/playwright-auth" = { source = ./scripts/playwright-auth; executable = true; };
   home.file."bin/create_script" = { source = ./scripts/create_script; executable = true; };
   home.file."bin/edscript" = { source = ./scripts/edscript; executable = true; };
+  home.file."bin/nvim-server-per-repo" = { source = ./scripts/nvim-server-per-repo; executable = true; };
 }
