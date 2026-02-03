@@ -60,11 +60,18 @@ discover_chrome_profiles() {
     [[ -d "$dir" ]] || continue
     local prefs="$dir/Preferences"
     [[ -f "$prefs" ]] || continue
-    local name
-    name=$(python3 -c "import json; print(json.load(open('$prefs')).get('profile',{}).get('name','Unknown'))" 2>/dev/null || echo "Unknown")
-    local dirname
+    local info
+    info=$(python3 -c "
+import json
+p = json.load(open('$prefs'))
+name = p.get('profile',{}).get('name','Unknown')
+email = p.get('account_info',[{}])[0].get('email','')
+print(name + '|' + email)
+" 2>/dev/null || echo "Unknown|")
+    local name email dirname
+    IFS='|' read -r name email <<< "$info"
     dirname=$(basename "$dir")
-    echo "$dirname|$name"
+    echo "$dirname|$name|$email"
   done
 }
 
@@ -142,10 +149,14 @@ json.dump(m, open('$PROFILES_MAP', 'w'), indent=2)
 cmd_list() {
   echo "Chrome profiles:"
   echo "----------------"
-  discover_chrome_profiles | while IFS='|' read -r dirname name; do
+  discover_chrome_profiles | while IFS='|' read -r dirname name email; do
     local size
     size=$(get_dir_size_bytes "$CHROME_DIR/$dirname")
-    echo "  $name ($dirname) - $(bytes_to_human $size)"
+    if [[ -n "$email" ]]; then
+      echo "  $name <$email> ($dirname) - $(bytes_to_human $size)"
+    else
+      echo "  $name ($dirname) - $(bytes_to_human $size)"
+    fi
   done
 
   echo ""
@@ -172,11 +183,11 @@ cmd_add() {
 
   echo "Detecting Chrome profiles without state profiles..."
   local candidates=()
-  while IFS='|' read -r dirname name; do
+  while IFS='|' read -r dirname name email; do
     local normalised
     normalised=$(echo "$name" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd '[:alnum:]-')
     if [[ "|$existing_states" != *"|$normalised|"* ]] && [[ ! -f "$AUTH_DIR/${normalised}.json" ]]; then
-      candidates+=("$dirname|$name|$normalised")
+      candidates+=("$dirname|$name|$email|$normalised")
     fi
   done < <(discover_chrome_profiles)
 
@@ -188,10 +199,14 @@ cmd_add() {
   echo "Profiles without state profiles:"
   local i=1
   for c in "${candidates[@]}"; do
-    IFS='|' read -r dirname name normalised <<< "$c"
+    IFS='|' read -r dirname name email normalised <<< "$c"
     local size
     size=$(get_dir_size_bytes "$CHROME_DIR/$dirname")
-    echo "  $i) $name ($dirname) - $(bytes_to_human $size)"
+    if [[ -n "$email" ]]; then
+      echo "  $i) $name <$email> ($dirname) - $(bytes_to_human $size)"
+    else
+      echo "  $i) $name ($dirname) - $(bytes_to_human $size)"
+    fi
     ((i++))
   done
 
@@ -205,7 +220,7 @@ cmd_add() {
     return 1
   fi
 
-  IFS='|' read -r dirname name normalised <<< "${candidates[$idx]}"
+  IFS='|' read -r dirname name email normalised <<< "${candidates[$idx]}"
 
   read -rp "State profile name [$normalised]: " custom_name
   local state_name="${custom_name:-$normalised}"
