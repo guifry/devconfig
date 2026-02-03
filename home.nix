@@ -97,6 +97,7 @@ in {
       alias sounds-off='rm -f ~/.claude/sounds/.enabled && echo "Sounds disabled"'
 
       alias cs='claude --dangerously-skip-permissions'
+      alias claude-status='open https://status.claude.com/'
       alias lg='lazygit'
       alias ff='fastfetch'
       alias treadmill='cat << "EOF"
