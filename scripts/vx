@@ -1,0 +1,61 @@
+#!/bin/bash
+
+cat << 'EOF'
+VIM HOTKEYS (leader = \)
+
+ERGONOMICS
+───────────────────────────────────
+Exit insert mode    jj
+Command mode        ;  (not :)
+Paste mode toggle   F2  (use before Cmd+V)
+Paste from system   \p  (normal mode)
+
+NAVIGATION
+───────────────────────────────────
+Go to definition    gd
+References          gr
+Type definition     gy
+Implementation      gi
+Hover docs          K
+Jump back           Ctrl+o
+Jump forward        Ctrl+i
+
+FILES & SEARCH
+───────────────────────────────────
+Fuzzy find files    Ctrl+p
+Buffers             \b
+Ripgrep search      \rg
+File tree toggle    \n
+Find file in tree   \f
+
+SPLITS & TABS (from fzf/NERDTree)
+───────────────────────────────────
+Vertical split      Ctrl+v / v
+Horizontal split    Ctrl+s / s
+New tab             Ctrl+t / t
+
+WINDOWS
+───────────────────────────────────
+Move left           Ctrl+w h
+Move down           Ctrl+w j
+Move up             Ctrl+w k
+Move right          Ctrl+w l
+Swap windows        Ctrl+w x
+Equalize size       Ctrl+w =
+Next tab            gt
+Previous tab        gT
+
+CODE
+───────────────────────────────────
+Rename symbol       \rn
+Outline             \o
+Undo tree           \u
+Comment line        gcc
+Comment selection   gc (visual mode)
+Colorscheme picker  ;Colors
+
+SESSIONS
+───────────────────────────────────
+Save session        \ss
+Restore session     \sr
+EOF

@@ -1,0 +1,112 @@
+#!/bin/bash
+set -euo pipefail
+
+MAX_ITERS=20
+FAIL_LIMIT=3
+DRY_RUN=false
+
+usage() {
+  cat <<'EOF'
+rx — ralph autonomous loop
+
+Spawns fresh claude sessions to implement stories from PRD.json.
+Each iteration: pick next story, implement, test, commit, exit.
+
+Usage: rx [options]
+  -n NUM    max iterations (default: 20)
+  -f NUM    consecutive fail limit (default: 3)
+  -d        dry run (show what would happen)
+  -h        help
+EOF
+  exit 0
+}
+
+while getopts "n:f:dh" opt; do
+  case $opt in
+    n) MAX_ITERS=$OPTARG ;;
+    f) FAIL_LIMIT=$OPTARG ;;
+    d) DRY_RUN=true ;;
+    h) usage ;;
+    *) usage ;;
+  esac
+done
+
+if [ ! -f PRD.json ]; then
+  echo "error: PRD.json not found in current directory" >&2
+  exit 1
+fi
+
+if [ ! -f PROMPT.md ]; then
+  echo "error: PROMPT.md not found — run /ralph-launch first" >&2
+  exit 1
+fi
+
+pending_count() {
+  jq '[.stories[] | select(.status == "pending")] | length' PRD.json
+}
+
+failed_count() {
+  jq '[.stories[] | select(.status == "failed")] | length' PRD.json
+}
+
+done_count() {
+  jq '[.stories[] | select(.status == "done")] | length' PRD.json
+}
+
+total_count() {
+  jq '.stories | length' PRD.json
+}
+
+log() {
+  local msg="[$(date '+%H:%M:%S')] $1"
+  echo "$msg"
+  echo "$msg" >> progress.txt
+}
+
+CONSECUTIVE_FAILS=0
+
+for ((i=1; i<=MAX_ITERS; i++)); do
+  PENDING=$(pending_count)
+  DONE=$(done_count)
+  TOTAL=$(total_count)
+
+  log "--- iteration $i/$MAX_ITERS | done=$DONE/$TOTAL pending=$PENDING fails=$CONSECUTIVE_FAILS ---"
+
+  if [ "$PENDING" -eq 0 ]; then
+    log "all stories done"
+    break
+  fi
+
+  if [ "$CONSECUTIVE_FAILS" -ge "$FAIL_LIMIT" ]; then
+    log "hit fail limit ($FAIL_LIMIT consecutive failures) — stopping"
+    break
+  fi
+
+  HEAD_BEFORE=$(git rev-parse HEAD)
+
+  if [ "$DRY_RUN" = true ]; then
+    log "[dry run] would run: cat PROMPT.md | claude --dangerously-skip-permissions -p -"
+    sleep 1
+    continue
+  fi
+
+  cat PROMPT.md | claude --dangerously-skip-permissions -p - 2>&1 | tee -a progress.txt || true
+
+  HEAD_AFTER=$(git rev-parse HEAD)
+
+  if [ "$HEAD_BEFORE" = "$HEAD_AFTER" ]; then
+    CONSECUTIVE_FAILS=$((CONSECUTIVE_FAILS + 1))
+    log "no commit detected — fail #$CONSECUTIVE_FAILS"
+  else
+    CONSECUTIVE_FAILS=0
+    NEW_COMMITS=$(git log --oneline "$HEAD_BEFORE".."$HEAD_AFTER")
+    log "committed: $NEW_COMMITS"
+  fi
+
+  sleep 2
+done
+
+DONE=$(done_count)
+FAILED=$(failed_count)
+TOTAL=$(total_count)
+log "=== loop finished | done=$DONE failed=$FAILED total=$TOTAL ==="

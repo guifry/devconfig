@@ -1,5 +1,11 @@
 # License keys (sensitive)
 macos-licenses.md
 
+# Claude Code runtime dirs (should not appear but safety net)
+claude/cache/
+claude/debug/
+claude/plans/
+claude/plugins/
+
 # macOS
 .DS_Store

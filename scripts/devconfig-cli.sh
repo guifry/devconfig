@@ -40,6 +40,11 @@ cmd_switch() {
     brew bundle --file="$REPO/Brewfile"
   fi
 
+  if [[ "$IS_DARWIN" == "true" ]] && [ -d "/Applications/AeroSpace.app" ]; then
+    echo "Registering AeroSpace as login item..."
+    osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/AeroSpace.app", hidden:false}' 2>/dev/null || true
+  fi
+
   echo "Syncing nvim plugins..."
   nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
 

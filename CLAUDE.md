@@ -41,6 +41,12 @@ devconfig/
 │   └── init.lua                 # Neovim init (lazy.nvim + LSP + treesitter + telescope)
 ├── wezterm.lua                  # WezTerm terminal config (leader = Ctrl+])
 ├── aerospace.toml               # AeroSpace tiling WM config (modifier = Ctrl+Alt)
+├── claude/                      # Claude Code user config (symlinked to ~/.claude/)
+│   ├── CLAUDE.md                # Global user instructions
+│   ├── settings.json            # Hooks, plugins, statusLine
+│   ├── commands/                # Slash commands (7 files)
+│   ├── skills/                  # Skills (10 files, incl. 4 ralph-* skills)
+│   └── hooks/                   # Pre/post hooks (block-git-writes.sh)
 ├── macos/                       # macOS-specific app configs (restored on switch)
 │   ├── mouseless-config.yaml    # Mouseless keyboard mouse control
 │   ├── homerow.plist            # Homerow keyboard navigation
@@ -52,10 +58,32 @@ devconfig/
 ├── scripts/
 │   ├── devconfig-cli.sh         # Main CLI tool
 │   ├── doctor.sh                # Health check script
+│   ├── rx                       # Ralph autonomous loop runner
 │   ├── tx                       # tmux cheat sheet
 │   └── vx                       # nvim cheat sheet
 └── CLAUDE.md                    # This file
 ```
+
+### claude/ (Claude Code Config)
+- **Scope**: Claude Code user-level config, symlinked to `~/.claude/`
+- **Symlinks**: `home.nix` creates directory-level symlinks for `commands/`, `skills/`, `hooks/` — new files created via Claude Code land directly in devconfig repo
+- **What's managed**: CLAUDE.md, settings.json, commands, skills, hooks
+- **What's NOT managed**: `~/.claude/sounds/`, `~/.claude/plugins/`, `~/.claude/projects/`, `~/.claude/cache/` — these stay local
+
+To add a command: create `claude/commands/my-command.md`
+To add a skill: create `claude/skills/my-skill.md`
+
+### Ralph Workflow (Autonomous Coding Loop)
+
+External bash loop spawning fresh claude sessions per iteration. Each session gets a clean 200K context window.
+
+**Flow**: `/ralph-plan` → `/ralph-launch` → `rx` runs → `/ralph-status` → `/ralph-review`
+
+1. `/ralph-plan` — decompose feature into PRD.json (atomic stories)
+2. `/ralph-launch` — generate PROMPT.md, initialise progress.txt, start `rx`
+3. `rx` — bash loop: for each iteration, pipes PROMPT.md into a fresh `claude --dangerously-skip-permissions` session
+4. `/ralph-status` — check progress (story table, commits, blockers)
+5. `/ralph-review` — review all commits against acceptance criteria, run tests, verdict
 
 ## Modules
 

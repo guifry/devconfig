@@ -1,0 +1,35 @@
+#!/bin/bash
+
+cat << 'EOF'
+AEROSPACE HOTKEYS
+
+FOCUS & MOVE
+───────────────────────────────────
+Focus window             Alt + h/j/k/l
+Move window              Alt-Shift + h/j/k/l
+
+WORKSPACES
+───────────────────────────────────
+Switch to workspace N    Ctrl + 1-9
+Send window to N         Ctrl-Alt + 1-9
+Previous workspace       Alt + Tab
+
+LAYOUT
+───────────────────────────────────
+Fullscreen toggle        Alt + f
+Float/tile toggle        Alt-Shift + Space
+Horizontal/vertical      Alt + /
+Accordion mode           Alt + ,
+
+RESIZE
+───────────────────────────────────
+Quick shrink/grow        Alt + -/=
+Resize mode              Alt + r
+  then h/j/k/l           shrink/grow
+  then -/=                smart resize
+  Esc                     exit resize mode
+
+CONFIG
+───────────────────────────────────
+Reload config            Alt-Shift + c
+EOF

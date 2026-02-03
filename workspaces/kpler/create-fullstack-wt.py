@@ -10,6 +10,10 @@ KPLER_DIR = Path.home() / "kpler"
 WEB_APP_REPO = KPLER_DIR / "web-app"
 CHARTERING_REPO = KPLER_DIR / "chartering-fast-api"
 WT_PREFIX = "FST-"
+CONVENTION_SYMLINKS = {
+    "CLAUDE.md": Path.home() / "projects/devconfig/conventions/chartering/CLAUDE.md",
+    "CHARTERING_AGENT_GUIDE.md": Path.home() / "projects/devconfig/conventions/chartering/CHARTERING_AGENT_GUIDE.md",
+}
 
 
 def log(msg: str) -> None:
@@ -75,7 +79,7 @@ def create_worktree(repo: Path, target_dir: Path, base_branch: str, new_branch: 
 
 
 def copy_extra_files(src_dir: Path, dst_dir: Path) -> None:
-    exclude = {"web-app", "chartering-fast-api"}
+    exclude = {"web-app", "chartering-fast-api"} | set(CONVENTION_SYMLINKS.keys())
     for item in src_dir.iterdir():
         if item.name in exclude:
             continue
@@ -85,6 +89,14 @@ def copy_extra_files(src_dir: Path, dst_dir: Path) -> None:
         else:
             shutil.copy2(item, dst)
     log(f"Copied extra files from {src_dir}")
+
+
+def create_convention_symlinks(wt_dir: Path) -> None:
+    for name, source in CONVENTION_SYMLINKS.items():
+        target = wt_dir / name
+        if source.exists() and not target.exists():
+            target.symlink_to(source)
+            log(f"Created symlink {target} -> {source}")
 
 
 def main():
@@ -118,6 +130,8 @@ def main():
         copy_extra_files(prev_wt, wt_dir)
     else:
         log("No previous worktree to copy files from")
+
+    create_convention_symlinks(wt_dir)
 
     log(f"\nDone! Worktree ready at: {wt_dir}")
     print(wt_dir)

@@ -3,6 +3,7 @@
 echo "Python Environment Setup"
 echo "========================"
 
+
 if command -v uv &> /dev/null; then
   echo "uv already installed: $(uv --version)"
 else
