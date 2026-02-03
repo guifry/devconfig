@@ -30,6 +30,7 @@ in {
     yazi
     fastfetch
     pgformatter
+    postgresql
   ] ++ lib.optionals (!isDarwin) [
     ghostty
     xclip
