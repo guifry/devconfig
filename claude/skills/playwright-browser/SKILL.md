@@ -1,6 +1,6 @@
 ---
 name: playwright-browser
-description: Launch Playwright browser with user's Chrome auth state for web automation
+description: Manage Chrome profiles for Playwright - list profiles, add/refresh auth state, launch browser with saved credentials
 allowed-tools: Bash, Read, Write
 ---
 
