@@ -40,6 +40,14 @@ in {
     enable = true;
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
+    history = {
+      size = 50000;
+      save = 50000;
+      share = true;           # share between sessions immediately
+      ignoreDups = true;
+      ignoreSpace = true;     # commands starting with space not saved
+      extended = true;        # save timestamps
+    };
     sessionVariables = {
       FZF_DEFAULT_COMMAND = "fd --type f --hidden --exclude .git";
       EDITOR = "nvim";
@@ -83,6 +91,23 @@ in {
       [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
       command -v pyenv &>/dev/null && eval "$(pyenv init - zsh)"
 
+      # Auto-activate poetry venv on cd. Needed because:
+      # - direnv requires explicit .envrc per project (security by design)
+      # - poetry shell is slow and doesn't set VIRTUAL_ENV properly
+      # - basedpyright LSP reads VIRTUAL_ENV to find packages
+      autoload -U add-zsh-hook
+      _auto_poetry_venv() {
+        if [[ -f pyproject.toml ]] && command -v poetry &>/dev/null; then
+          local venv=$(poetry env info -p 2>/dev/null)
+          if [[ -n "$venv" && -d "$venv" ]]; then
+            export VIRTUAL_ENV="$venv"
+            export PATH="$venv/bin:$PATH"
+          fi
+        fi
+      }
+      add-zsh-hook chpwd _auto_poetry_venv
+      _auto_poetry_venv
+
       # mise
       command -v mise &>/dev/null && eval "$(mise activate zsh)"
 
@@ -98,6 +123,7 @@ in {
 
       alias cs='claude --dangerously-skip-permissions'
       alias claude-status='open https://status.claude.com/'
+      alias go60='open https://my.moergo.com/go60/#/layout/go60-macos'
       alias lg='lazygit'
       alias ff='fastfetch'
       alias treadmill='cat << "EOF"
@@ -181,6 +207,8 @@ EOF
         plugin = resurrect;
         extraConfig = ''
           set -g @resurrect-capture-pane-contents 'on'
+          unbind S
+          set -g @resurrect-save 'S'
         '';
       }
       {
@@ -286,6 +314,24 @@ EOF
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
+    stdlib = ''
+      source_up 2>/dev/null || true
+
+      layout_poetry() {
+        if [[ ! -f pyproject.toml ]]; then
+          log_error 'No pyproject.toml found'
+          return 1
+        fi
+        local venv
+        venv=$(poetry env info -p 2>/dev/null)
+        if [[ -z "$venv" || ! -d "$venv" ]]; then
+          poetry install
+          venv=$(poetry env info -p)
+        fi
+        export VIRTUAL_ENV="$venv"
+        export PATH="$venv/bin:$PATH"
+      }
+    '';
   };
 
   programs.fzf = {
