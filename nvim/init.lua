@@ -168,8 +168,8 @@ vim.o.confirm = true
 
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
-vim.keymap.set("n", ";", ":", { desc = "Command mode without shift" })
-vim.keymap.set("n", ":", ";", { desc = "Repeat f/t search" })
+vim.keymap.set({ "n", "v", "x" }, ";", ":", { desc = "Command mode without shift" })
+vim.keymap.set({ "n", "v", "x" }, ":", ";", { desc = "Repeat f/t search" })
 vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>")
 vim.keymap.set("n", "<leader>w", function()
 	if vim.api.nvim_buf_get_name(0) == "" then
@@ -183,7 +183,7 @@ vim.keymap.set("n", "<leader>w", function()
 	end
 end, { desc = "[W]rite file" })
 vim.keymap.set("n", "<leader>q", "<cmd>qa<CR>", { desc = "[Q]uit all" })
-vim.keymap.set("n", "<leader>x", "<cmd>bd<CR>", { desc = "Close buffer" })
+vim.keymap.set("n", "<leader>x", "<cmd>bp|bd #<CR>", { desc = "Close buffer" })
 vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Show diagnostic [E]rror" })
 
 -- Diagnostic Config & Keymaps
@@ -192,7 +192,7 @@ vim.diagnostic.config({
 	update_in_insert = false,
 	severity_sort = true,
 	float = { border = "rounded", source = "if_many" },
-	underline = { severity = vim.diagnostic.severity.ERROR },
+	underline = true, -- Enable all severity levels (including HINT for unused vars)
 
 	-- Can switch between these as you prefer
 	virtual_text = true, -- Text shows up at the end of the line
@@ -201,6 +201,10 @@ vim.diagnostic.config({
 	-- Auto open the float, so you can easily read the errors when jumping with `[d` and `]d`
 	jump = { float = true },
 })
+
+-- Highlight unused/unnecessary code (like unused imports)
+vim.api.nvim_set_hl(0, "DiagnosticUnnecessary", { fg = "#565f89", italic = true })
+vim.api.nvim_set_hl(0, "@lsp.type.unresolvedReference", { fg = "#565f89", italic = true })
 
 vim.keymap.set("n", "<leader>dq", vim.diagnostic.setloclist, { desc = "[D]iagnostic [Q]uickfix list" })
 
@@ -655,6 +659,10 @@ require("lazy").setup({
 							analysis = {
 								autoImportCompletions = true,
 								typeCheckingMode = "basic",
+								diagnosticSeverityOverrides = {
+									reportUnusedImport = "information",
+									reportUnusedVariable = "information",
+								},
 							},
 						},
 					},
@@ -980,6 +988,17 @@ require("lazy").setup({
 	},
 
 	{
+		"nvim-treesitter/nvim-treesitter-context",
+		event = "VeryLazy",
+		opts = {
+			max_lines = 3,
+		},
+		keys = {
+			{ "<leader>tc", "<cmd>TSContextToggle<CR>", desc = "Toggle treesitter context" },
+		},
+	},
+
+	{
 		"nvim-treesitter/nvim-treesitter-textobjects",
 		branch = "main",
 		event = "VeryLazy",
@@ -993,6 +1012,99 @@ require("lazy").setup({
 			vim.keymap.set({ "n", "x", "o" }, "[c", function() move.goto_previous_start("@class.outer", "textobjects") end, { desc = "Previous class start" })
 			vim.keymap.set({ "n", "x", "o" }, "]c", function() move.goto_next_start("@class.outer", "textobjects") end, { desc = "Next class start" })
 		end,
+	},
+
+	{
+		"akinsho/bufferline.nvim",
+		version = "*",
+		dependencies = "nvim-tree/nvim-web-devicons",
+		event = "VeryLazy",
+		opts = {
+			options = {
+				mode = "buffers",
+				diagnostics = "nvim_lsp",
+				show_buffer_close_icons = false,
+				show_close_icon = false,
+				separator_style = "thin",
+			},
+		},
+		keys = {
+			{ "<S-h>", "<cmd>BufferLineCyclePrev<CR>", desc = "Prev buffer" },
+			{ "<S-l>", "<cmd>BufferLineCycleNext<CR>", desc = "Next buffer" },
+			{ "<leader>bp", "<cmd>BufferLineTogglePin<CR>", desc = "Pin buffer" },
+			{ "<leader>bo", "<cmd>BufferLineCloseOthers<CR>", desc = "Close other buffers" },
+		},
+	},
+
+	{
+		"folke/trouble.nvim",
+		dependencies = "nvim-tree/nvim-web-devicons",
+		cmd = "Trouble",
+		opts = {},
+		keys = {
+			{ "<leader>xx", "<cmd>Trouble diagnostics toggle<CR>", desc = "Diagnostics (Trouble)" },
+			{ "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<CR>", desc = "Buffer diagnostics (Trouble)" },
+			{ "<leader>xl", "<cmd>Trouble loclist toggle<CR>", desc = "Location list (Trouble)" },
+			{ "<leader>xq", "<cmd>Trouble qflist toggle<CR>", desc = "Quickfix list (Trouble)" },
+		},
+	},
+
+	{
+		"petertriho/nvim-scrollbar",
+		event = "VeryLazy",
+		opts = {
+			handle = { color = "#565f89" },
+			handlers = {
+				diagnostic = true,
+				search = true,
+			},
+			marks = {
+				Error = { color = "#db4b4b" },
+				Warn = { color = "#e0af68" },
+				Info = { color = "#0db9d7" },
+				Hint = { color = "#1abc9c" },
+				Search = { color = "#ff9e64" },
+			},
+		},
+	},
+
+	{
+		"olimorris/codecompanion.nvim",
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+			"nvim-treesitter/nvim-treesitter",
+		},
+		cmd = { "CodeCompanion", "CodeCompanionChat", "CodeCompanionActions" },
+		keys = {
+			{ "<leader>aa", "<cmd>CodeCompanionActions<CR>", mode = { "n", "v" }, desc = "AI actions" },
+			{ "<leader>ac", "<cmd>CodeCompanionChat Toggle<CR>", mode = { "n", "v" }, desc = "AI chat toggle" },
+			{ "<leader>ai", "<cmd>CodeCompanion<CR>", mode = { "n", "v" }, desc = "AI inline" },
+			{ "<leader>ap", "<cmd>CodeCompanionChat Add<CR>", mode = "v", desc = "AI add to chat" },
+		},
+		opts = {
+			strategies = {
+				chat = { adapter = "claude_code" },
+				inline = { adapter = "claude_code" },
+				cmd = { adapter = "claude_code" },
+			},
+			adapters = {
+				claude_code = function()
+					return require("codecompanion.adapters").extend("claude_code", {
+						env = {
+							CLAUDE_CODE_OAUTH_TOKEN = vim.env.CLAUDE_CODE_OAUTH_TOKEN,
+						},
+					})
+				end,
+			},
+		},
+	},
+
+	{
+		"chrisbra/NrrwRgn",
+		cmd = { "NR", "NW", "NarrowRegion", "NarrowWindow" },
+		keys = {
+			{ "<leader>nr", ":NR<CR>", mode = "v", desc = "Narrow region" },
+		},
 	},
 
 	-- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
