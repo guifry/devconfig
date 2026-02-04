@@ -1,14 +1,14 @@
 ---
 name: playwright-browser
-description: Chrome profiles and Playwright automation. Use for listing profiles, browser auth, web scraping behind logins, storage state management.
+description: Playwright browser profiles for authenticated web automation. Create profiles, log in once, reuse sessions.
 allowed-tools: Bash, Read, Write
 ---
 
-# Playwright Browser — Web automation with Chrome auth
+# Playwright Browser — Persistent profile automation
 
-Storage state snapshots from Chrome profiles let Playwright start "already logged in" to authenticated services.
+Self-contained Playwright profiles with full session persistence. Log in once, automate forever.
 
-**Chrome MUST be closed for add/refresh operations.** The script copies Chrome profile data which is locked while Chrome runs.
+**No Chrome dependency.** Runs as a separate Chromium instance while Chrome stays open.
 
 ## Requirements
 
@@ -18,57 +18,21 @@ Storage state snapshots from Chrome profiles let Playwright start "already logge
 ## CLI: `playwright-auth`
 
 ```bash
-playwright-auth list [--json]           # Show profiles (--json for agent parsing)
-playwright-auth add                     # Add state profile (interactive)
-playwright-auth add PROFILE STATE [--yes]  # Add state profile (non-interactive)
-playwright-auth refresh NAME [--yes]    # Refresh a state profile
-playwright-auth refresh-all [--yes]     # Refresh all state profiles
+playwright-auth list [--json]       # List profiles
+playwright-auth create <name>       # Create profile + launch browser for login
+playwright-auth open <name> [url]   # Open browser with profile
+playwright-auth delete <name>       # Delete a profile
 ```
 
-## Non-Interactive Usage (for agents)
+## Workflow
 
-**List profiles (JSON for parsing)**
+**1. Create profile and log in**
 ```bash
-playwright-auth list --json
+playwright-auth create foray
+# Browser opens → log into FreeAgent, Google, etc. → close browser
 ```
 
-**Create state profile by email**
-```bash
-playwright-auth add guilhem@taisk.com taisk --yes
-```
-
-**Create state profile by folder**
-```bash
-playwright-auth add "Profile 11" taisk --yes
-```
-
-**Refresh a profile**
-```bash
-playwright-auth refresh work --yes
-```
-
-**Refresh all profiles**
-```bash
-playwright-auth refresh-all --yes
-```
-
-**Check if Chrome running (must close for add/refresh)**
-```bash
-pgrep -q "Google Chrome" && echo "Chrome running - close it first" || echo "Chrome not running - safe to proceed"
-```
-
-**Get profile folder from email**
-```bash
-playwright-auth list --json | jq -r '.chrome_profiles[] | select(.email=="guilhem@taisk.com") | .folder'
-```
-
-**Check if state profile exists**
-```bash
-playwright-auth list --json | jq -r '.state_profiles[].name' | grep -q "^work$" && echo "exists" || echo "not found"
-```
-
-**Use storage state in Python script**
-Write and execute:
+**2. Use in scripts**
 ```python
 import asyncio
 import os
@@ -76,51 +40,101 @@ from playwright.async_api import async_playwright
 
 async def main():
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
-        context = await browser.new_context(
-            storage_state=os.path.expanduser('~/.playwright-auth/taisk.json')
+        context = await p.chromium.launch_persistent_context(
+            user_data_dir=os.path.expanduser('~/.playwright-profiles/foray'),
+            headless=False,
+            args=['--disable-blink-features=AutomationControlled']
         )
-        page = await context.new_page()
-        await page.goto('https://example.com')
-        # ... do stuff ...
-        await browser.close()
+        page = context.pages[0] if context.pages else await context.new_page()
+        await page.goto('https://www.freeagent.com/dashboard')
+        # Already logged in!
+        await context.close()
 
 asyncio.run(main())
 ```
 
-## Interactive Usage (human only)
-
-**Add new profile interactively**
+**3. Refresh sessions when needed**
 ```bash
-playwright-auth add
-# Follow prompts: select profile, enter name, close Chrome when prompted
+playwright-auth open foray https://accounts.google.com
+# Re-authenticate if sessions expired
 ```
 
-## Examples
+## Non-Interactive Usage (for agents)
 
-**User: "What Chrome profiles do I have?"**
+**List profiles (JSON)**
 ```bash
 playwright-auth list --json
 ```
 
-**User: "Set up my taisk profile for Playwright"**
+**Check if profile exists**
 ```bash
-playwright-auth list --json | jq -r '.chrome_profiles[] | select(.email | contains("taisk"))'
-playwright-auth add guilhem@taisk.com taisk --yes
+playwright-auth list --json | jq -r '.profiles[].name' | grep -q "^foray$" && echo "exists" || echo "not found"
 ```
 
-**User: "Check my Jira dashboard using work profile"**
+**Get profile path**
 ```bash
-playwright-auth list --json | jq -r '.state_profiles[].name' | grep -q "^work$"
-```
-Then write Python with `storage_state='~/.playwright-auth/work.json'`
-
-**User: "My work profile auth seems expired"**
-```bash
-playwright-auth refresh work --yes
+playwright-auth list --json | jq -r '.profiles[] | select(.name=="foray") | .path'
 ```
 
-**User: "Delete a state profile I no longer need"**
+**Delete without confirmation**
 ```bash
-rm ~/.playwright-auth/old-profile.json
+playwright-auth delete old-profile --yes
 ```
+
+## Files
+
+```
+~/.playwright-profiles/
+├── foray/           # Full Chromium profile (cookies, localStorage, IndexedDB)
+├── work/            # Another profile
+└── personal/        # Another profile
+```
+
+## What Persists
+
+| Data | Persisted |
+|------|-----------|
+| Cookies | ✅ |
+| localStorage | ✅ |
+| IndexedDB | ✅ |
+| Session tokens | ✅ |
+| Saved passwords | ✅ |
+| Extensions | ✅ (if installed) |
+
+## Examples
+
+**User: "Set up a profile for my work accounts"**
+```bash
+playwright-auth create work
+# Log in to Jira, GitHub, Slack, etc.
+```
+
+**User: "Check my FreeAgent dashboard"**
+```bash
+playwright-auth list --json | jq -r '.profiles[].name' | grep -q "^foray$"
+```
+Then write Python with `user_data_dir='~/.playwright-profiles/foray'`
+
+**User: "My Google session expired"**
+```bash
+playwright-auth open work https://accounts.google.com
+# Re-authenticate
+```
+
+**User: "Delete my old test profile"**
+```bash
+playwright-auth delete test --yes
+```
+
+## Headless Mode
+
+For background automation, change `headless=False` to `headless=True`:
+
+```python
+context = await p.chromium.launch_persistent_context(
+    user_data_dir=os.path.expanduser('~/.playwright-profiles/foray'),
+    headless=True
+)
+```
+
+Note: Some sites detect headless browsers. Use `headless=False` if you encounter issues.
