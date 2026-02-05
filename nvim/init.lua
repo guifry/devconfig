@@ -283,7 +283,7 @@ rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require("lazy").setup({
 	-- NOTE: Plugins can be added via a link or github org/name. To run setup automatically, use `opts = {}`
-	{ "NMAC427/guess-indent.nvim", opts = {} },
+	{ "NMAC427/guess-indent.nvim", opts = {} }, -- Auto-detect indentation (tabs vs spaces, width)
 
 	-- Alternatively, use `config = function() ... end` for full control over the configuration.
 	-- If you prefer to call `setup` explicitly, use:
@@ -906,7 +906,7 @@ require("lazy").setup({
 		opts = { signs = false },
 	},
 
-	{
+	{ -- Escape insert mode with 'jk' combo
 		"max397574/better-escape.nvim",
 		opts = {
 			timeout = 200,
@@ -987,7 +987,7 @@ require("lazy").setup({
 		end,
 	},
 
-	{
+	{ -- Sticky function/class header at top of window
 		"nvim-treesitter/nvim-treesitter-context",
 		event = "VeryLazy",
 		opts = {
@@ -998,7 +998,7 @@ require("lazy").setup({
 		},
 	},
 
-	{
+	{ -- Navigate code by functions/methods ([m ]m) and classes ([c ]c)
 		"nvim-treesitter/nvim-treesitter-textobjects",
 		branch = "main",
 		event = "VeryLazy",
@@ -1014,7 +1014,7 @@ require("lazy").setup({
 		end,
 	},
 
-	{
+	{ -- VSCode-style buffer tabs at top (Shift+h/l to cycle)
 		"akinsho/bufferline.nvim",
 		version = "*",
 		dependencies = "nvim-tree/nvim-web-devicons",
@@ -1036,7 +1036,7 @@ require("lazy").setup({
 		},
 	},
 
-	{
+	{ -- VSCode-style diagnostics panel (<leader>xx for all errors/warnings)
 		"folke/trouble.nvim",
 		dependencies = "nvim-tree/nvim-web-devicons",
 		cmd = "Trouble",
@@ -1049,7 +1049,7 @@ require("lazy").setup({
 		},
 	},
 
-	{
+	{ -- Scrollbar with diagnostic/search markers (VSCode-style)
 		"petertriho/nvim-scrollbar",
 		event = "VeryLazy",
 		opts = {
@@ -1068,7 +1068,7 @@ require("lazy").setup({
 		},
 	},
 
-	{
+	{ -- AI coding assistant (Claude Code via ACP) - <leader>aa for actions, <leader>ac for chat
 		"olimorris/codecompanion.nvim",
 		dependencies = {
 			"nvim-lua/plenary.nvim",
@@ -1099,7 +1099,7 @@ require("lazy").setup({
 		},
 	},
 
-	{
+	{ -- Isolate selection in separate buffer for focused editing (<leader>nr in visual mode)
 		"chrisbra/NrrwRgn",
 		cmd = { "NR", "NW", "NarrowRegion", "NarrowWindow" },
 		keys = {
@@ -1120,7 +1120,7 @@ require("lazy").setup({
 	-- require 'kickstart.plugins.indent_line',
 	-- require 'kickstart.plugins.lint',
 	-- require 'kickstart.plugins.autopairs',
-	{
+	{ -- Animated cursor motion trail
 		"sphamba/smear-cursor.nvim",
 		opts = {
 			stiffness = 0.8,
@@ -1129,7 +1129,7 @@ require("lazy").setup({
 		},
 	},
 
-	{
+	{ -- Debug Adapter Protocol (breakpoints, stepping, REPL) - <leader>d* keymaps
 		"mfussenegger/nvim-dap",
 		dependencies = {
 			"mfussenegger/nvim-dap-python",
@@ -1263,7 +1263,7 @@ require("lazy").setup({
 		end,
 	},
 
-	{ "ThePrimeagen/vim-be-good", cmd = "VimBeGood" },
+	{ "ThePrimeagen/vim-be-good", cmd = "VimBeGood" }, -- Vim practice game (:VimBeGood)
 
 	-- Auto-import for Python (workaround for neovim#31655 - basedpyright code actions bug)
 	{
@@ -1285,7 +1285,7 @@ require("lazy").setup({
 		opts = {},
 	},
 
-	{
+	{ -- File manager (yazi terminal file manager integration) - \ to open at current file
 		"mikavilpas/yazi.nvim",
 		keys = {
 			{ "\\", "<cmd>Yazi<CR>", desc = "Open yazi at current file" },
@@ -1294,7 +1294,7 @@ require("lazy").setup({
 		opts = {},
 	},
 
-	{
+	{ -- Session management (auto-save/restore buffers per directory)
 		"folke/persistence.nvim",
 		event = "BufReadPre",
 		opts = {},
