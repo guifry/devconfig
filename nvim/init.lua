@@ -186,6 +186,14 @@ vim.keymap.set("n", "<leader>q", "<cmd>qa<CR>", { desc = "[Q]uit all" })
 vim.keymap.set("n", "<leader>x", "<cmd>bp|bd #<CR>", { desc = "Close buffer" })
 vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Show diagnostic [E]rror" })
 
+-- Git merge conflict resolution shortcuts (in 3-way diff)
+vim.keymap.set("n", "g1", ":diffget //2<CR>", { desc = "Diff get ours (left)" })
+vim.keymap.set("n", "g2", ":diffget //3<CR>", { desc = "Diff get theirs (right)" })
+vim.keymap.set("n", "gb", function()
+	vim.cmd("diffget //2")
+	vim.cmd("diffget //3")
+end, { desc = "Diff get both" })
+
 -- Diagnostic Config & Keymaps
 -- See :help vim.diagnostic.Opts
 vim.diagnostic.config({
@@ -205,6 +213,12 @@ vim.diagnostic.config({
 -- Highlight unused/unnecessary code (like unused imports)
 vim.api.nvim_set_hl(0, "DiagnosticUnnecessary", { fg = "#565f89", italic = true })
 vim.api.nvim_set_hl(0, "@lsp.type.unresolvedReference", { fg = "#565f89", italic = true })
+
+-- Better diff colors for merge conflicts
+vim.api.nvim_set_hl(0, "DiffAdd", { bg = "#1a3a1a", fg = "#7dcfff" })
+vim.api.nvim_set_hl(0, "DiffChange", { bg = "#2a2a1a", fg = "#e0af68" })
+vim.api.nvim_set_hl(0, "DiffDelete", { bg = "#3a1a1a", fg = "#f7768e" })
+vim.api.nvim_set_hl(0, "DiffText", { bg = "#3a3a1a", fg = "#ff9e64", bold = true })
 
 vim.keymap.set("n", "<leader>dq", vim.diagnostic.setloclist, { desc = "[D]iagnostic [Q]uickfix list" })
 
@@ -663,6 +677,15 @@ require("lazy").setup({
 									reportUnusedImport = "information",
 									reportUnusedVariable = "information",
 								},
+								exclude = {
+									"**/node_modules",
+									"**/.venv",
+									"**/venv",
+									"**/__pycache__",
+									"**/.git",
+									"**/build",
+									"**/dist",
+								},
 							},
 						},
 					},
@@ -1099,12 +1122,32 @@ require("lazy").setup({
 		},
 	},
 
-	{ -- Isolate selection in separate buffer for focused editing (<leader>nr in visual mode)
+	{ -- Isolate selection in separate buffer for focused editing (visual select + :NR)
 		"chrisbra/NrrwRgn",
 		cmd = { "NR", "NW", "NarrowRegion", "NarrowWindow" },
+	},
+
+	{ -- Git integration (blame, :G commands, :Gvdiffsplit for merge conflicts)
+		"tpope/vim-fugitive",
+		cmd = { "G", "Git", "Gdiffsplit", "Gvdiffsplit", "Gread", "Gwrite", "Ggrep" },
 		keys = {
-			{ "<leader>nr", ":NR<CR>", mode = "v", desc = "Narrow region" },
+			{ "<leader>gs", "<cmd>Git<CR>", desc = "Git status" },
+			{ "<leader>gb", "<cmd>Git blame<CR>", desc = "Git blame" },
+			{ "<leader>gd", "<cmd>Gvdiffsplit<CR>", desc = "Git diff" },
+			{ "<leader>gx", "<cmd>Telescope git_status<CR>", desc = "Git changed files" },
 		},
+	},
+
+	{ -- Modern UI for diffs and merge conflicts (:DiffviewOpen)
+		"sindrets/diffview.nvim",
+		dependencies = "nvim-lua/plenary.nvim",
+		cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewToggleFiles", "DiffviewFocusFiles" },
+		keys = {
+			{ "<leader>gv", "<cmd>DiffviewOpen<CR>", desc = "Open diffview" },
+			{ "<leader>gc", "<cmd>DiffviewClose<CR>", desc = "Close diffview" },
+			{ "<leader>gh", "<cmd>DiffviewFileHistory<CR>", desc = "File history" },
+		},
+		opts = {},
 	},
 
 	-- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
