@@ -31,6 +31,10 @@ in {
     fastfetch
     pgformatter
     postgresql
+    rainfrog
+    lazydocker
+    mitmproxy
+    glow
   ] ++ lib.optionals (!isDarwin) [
     ghostty
     xclip
@@ -125,6 +129,8 @@ in {
       alias claude-status='open https://status.claude.com/'
       alias go60='open https://my.moergo.com/go60/#/layout/go60-macos'
       alias lg='lazygit'
+      alias ld='lazydocker'
+      alias mp='mitmproxy'
       alias ff='fastfetch'
       alias treadmill='cat << "EOF"
 ┌──────────┬──────────┬──────────────────┬───────────────────────┐
@@ -221,8 +227,12 @@ EOF
     ];
     extraConfig = ''
       set -g renumber-windows on
+      set -g automatic-rename off
+      set-hook -g pane-focus-in "run-shell 'tmux-smart-rename'"
+      set-hook -g window-pane-changed "run-shell 'tmux-smart-rename'"
       set -g set-clipboard on
       set -g allow-passthrough on
+      set -g display-panes-time 3000
 
       set -g window-style 'bg=#1a1b26'
       set -g window-active-style 'bg=#24283b'
@@ -399,4 +409,6 @@ EOF
   home.file."bin/create_script" = { source = ./scripts/create_script; executable = true; };
   home.file."bin/edscript" = { source = ./scripts/edscript; executable = true; };
   home.file."bin/nvim-server-per-repo" = { source = ./scripts/nvim-server-per-repo; executable = true; };
+  home.file."bin/aerospace-reorganise" = { source = ./scripts/aerospace-reorganise; executable = true; };
+  home.file."bin/tmux-smart-rename" = { source = ./scripts/tmux-smart-rename; executable = true; };
 }

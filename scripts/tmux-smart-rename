@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+pane_pid=$(tmux display-message -p '#{pane_pid}')
+pane_path=$(tmux display-message -p '#{pane_current_path}')
+
+proc=$(ps -o comm= -t "$(ps -o tty= -p "$pane_pid" 2>/dev/null)" 2>/dev/null \
+  | grep -v -E '^(bash|zsh|fish|sh|tmux|login)$' \
+  | tail -1 || true)
+
+dir=$(basename "$pane_path")
+
+git_root=$(git -C "$pane_path" rev-parse --show-toplevel 2>/dev/null || true)
+repo=""
+if [[ -n "$git_root" ]]; then
+  repo=$(basename "$git_root")
+fi
+
+label=""
+case "$proc" in
+  nvim|vim|vi)
+    label="nvim:${repo:-$dir}" ;;
+  lazygit)
+    label="git:${repo:-$dir}" ;;
+  lazydocker)
+    label="docker" ;;
+  node|ts-node|npx|tsx)
+    label="node:${repo:-$dir}" ;;
+  python|python3)
+    label="py:${repo:-$dir}" ;;
+  pytest)
+    label="test:${repo:-$dir}" ;;
+  psql|rainfrog)
+    label="db" ;;
+  mitmproxy|mitmweb)
+    label="proxy" ;;
+  htop|btop)
+    label="monitor" ;;
+  ssh)
+    label="ssh" ;;
+  claude)
+    label="claude:${repo:-$dir}" ;;
+  make)
+    label="make:${repo:-$dir}" ;;
+  docker|docker-compose)
+    label="docker:${repo:-$dir}" ;;
+  cargo|rustc)
+    label="rust:${repo:-$dir}" ;;
+  go)
+    label="go:${repo:-$dir}" ;;
+  *)
+    label="${repo:-$dir}" ;;
+esac
+
+tmux rename-window "$label"
