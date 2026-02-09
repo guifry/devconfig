@@ -4,6 +4,42 @@ default-root-container-orientation = 'auto'
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 accordion-padding = 30
 
+# Workspace 1: Terminal
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+run = 'move-node-to-workspace 1'
+
+# Workspace 2: Browser (accordion = stacked tabs, cycle with alt-h/l)
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'
+run = ['move-node-to-workspace 2', 'layout accordion horizontal']
+
+# Workspace 3: Slack
+[[on-window-detected]]
+if.app-id = 'com.tinyspeck.slackmacgap'
+run = 'move-node-to-workspace 3'
+
+# Float utility apps
+[[on-window-detected]]
+if.app-id = 'com.apple.systempreferences'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.finder'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.calculator'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.ActivityMonitor'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.Preview'
+run = 'layout floating'
+
 [mode.main.binding]
 alt-h = 'focus left'
 alt-j = 'focus down'
@@ -43,6 +79,7 @@ alt-minus = 'resize smart -50'
 alt-equal = 'resize smart +50'
 alt-tab = 'workspace-back-and-forth'
 alt-shift-c = 'reload-config'
+alt-shift-r = 'exec-and-forget aerospace-reorganise'
 alt-r = 'mode resize'
 
 ctrl-alt-q = 'mode tens'
@@ -61,6 +98,16 @@ ctrl-w = 'mode goto-twenties'
 7 = ['move-node-to-workspace 17', 'mode main']
 8 = ['move-node-to-workspace 18', 'mode main']
 9 = ['move-node-to-workspace 19', 'mode main']
+ctrl-alt-0 = ['move-node-to-workspace 10', 'mode main']
+ctrl-alt-1 = ['move-node-to-workspace 11', 'mode main']
+ctrl-alt-2 = ['move-node-to-workspace 12', 'mode main']
+ctrl-alt-3 = ['move-node-to-workspace 13', 'mode main']
+ctrl-alt-4 = ['move-node-to-workspace 14', 'mode main']
+ctrl-alt-5 = ['move-node-to-workspace 15', 'mode main']
+ctrl-alt-6 = ['move-node-to-workspace 16', 'mode main']
+ctrl-alt-7 = ['move-node-to-workspace 17', 'mode main']
+ctrl-alt-8 = ['move-node-to-workspace 18', 'mode main']
+ctrl-alt-9 = ['move-node-to-workspace 19', 'mode main']
 esc = 'mode main'
 
 [mode.twenties.binding]
@@ -74,6 +121,16 @@ esc = 'mode main'
 7 = ['move-node-to-workspace 27', 'mode main']
 8 = ['move-node-to-workspace 28', 'mode main']
 9 = ['move-node-to-workspace 29', 'mode main']
+ctrl-alt-0 = ['move-node-to-workspace 20', 'mode main']
+ctrl-alt-1 = ['move-node-to-workspace 21', 'mode main']
+ctrl-alt-2 = ['move-node-to-workspace 22', 'mode main']
+ctrl-alt-3 = ['move-node-to-workspace 23', 'mode main']
+ctrl-alt-4 = ['move-node-to-workspace 24', 'mode main']
+ctrl-alt-5 = ['move-node-to-workspace 25', 'mode main']
+ctrl-alt-6 = ['move-node-to-workspace 26', 'mode main']
+ctrl-alt-7 = ['move-node-to-workspace 27', 'mode main']
+ctrl-alt-8 = ['move-node-to-workspace 28', 'mode main']
+ctrl-alt-9 = ['move-node-to-workspace 29', 'mode main']
 esc = 'mode main'
 
 [mode.goto-tens.binding]
@@ -87,6 +144,16 @@ esc = 'mode main'
 7 = ['workspace 17', 'mode main']
 8 = ['workspace 18', 'mode main']
 9 = ['workspace 19', 'mode main']
+ctrl-0 = ['workspace 10', 'mode main']
+ctrl-1 = ['workspace 11', 'mode main']
+ctrl-2 = ['workspace 12', 'mode main']
+ctrl-3 = ['workspace 13', 'mode main']
+ctrl-4 = ['workspace 14', 'mode main']
+ctrl-5 = ['workspace 15', 'mode main']
+ctrl-6 = ['workspace 16', 'mode main']
+ctrl-7 = ['workspace 17', 'mode main']
+ctrl-8 = ['workspace 18', 'mode main']
+ctrl-9 = ['workspace 19', 'mode main']
 esc = 'mode main'
 
 [mode.goto-twenties.binding]
@@ -100,6 +167,16 @@ esc = 'mode main'
 7 = ['workspace 27', 'mode main']
 8 = ['workspace 28', 'mode main']
 9 = ['workspace 29', 'mode main']
+ctrl-0 = ['workspace 20', 'mode main']
+ctrl-1 = ['workspace 21', 'mode main']
+ctrl-2 = ['workspace 22', 'mode main']
+ctrl-3 = ['workspace 23', 'mode main']
+ctrl-4 = ['workspace 24', 'mode main']
+ctrl-5 = ['workspace 25', 'mode main']
+ctrl-6 = ['workspace 26', 'mode main']
+ctrl-7 = ['workspace 27', 'mode main']
+ctrl-8 = ['workspace 28', 'mode main']
+ctrl-9 = ['workspace 29', 'mode main']
 esc = 'mode main'
 
 [mode.resize.binding]

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+aerospace list-windows --all --format '%{window-id} %{app-bundle-id}' | while read -r id bundle; do
+  case "$bundle" in
+    com.mitchellh.ghostty)       aerospace move-node-to-workspace 1 --window-id "$id" ;;
+    com.google.Chrome)           aerospace move-node-to-workspace 2 --window-id "$id" ;;
+    com.tinyspeck.slackmacgap)   aerospace move-node-to-workspace 3 --window-id "$id" ;;
+  esac
+done
