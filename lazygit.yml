@@ -1,0 +1,4 @@
+keybinding:
+  universal:
+    undo: <c-z>
+    redo: <c-y>
