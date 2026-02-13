@@ -4,6 +4,38 @@ default-root-container-orientation = 'auto'
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 accordion-padding = 30
 
+[workspace-to-monitor-force-assignment]
+1 = 'DELL SE2723DS \(2\)'
+2 = 'DELL SE2723DS \(2\)'
+3 = 'DELL SE2723DS \(2\)'
+4 = 'DELL SE2723DS \(1\)'
+5 = 'DELL SE2723DS \(1\)'
+6 = 'DELL SE2723DS \(1\)'
+7 = 'Built-in Retina Display'
+8 = 'Built-in Retina Display'
+9 = 'Built-in Retina Display'
+10 = 'Built-in Retina Display'
+11 = 'DELL SE2723DS \(2\)'
+12 = 'DELL SE2723DS \(2\)'
+13 = 'DELL SE2723DS \(2\)'
+14 = 'DELL SE2723DS \(1\)'
+15 = 'DELL SE2723DS \(1\)'
+16 = 'DELL SE2723DS \(1\)'
+17 = 'Built-in Retina Display'
+18 = 'Built-in Retina Display'
+19 = 'Built-in Retina Display'
+20 = 'Built-in Retina Display'
+21 = 'DELL SE2723DS \(2\)'
+22 = 'DELL SE2723DS \(2\)'
+23 = 'DELL SE2723DS \(2\)'
+24 = 'DELL SE2723DS \(1\)'
+25 = 'DELL SE2723DS \(1\)'
+26 = 'DELL SE2723DS \(1\)'
+27 = 'Built-in Retina Display'
+28 = 'Built-in Retina Display'
+29 = 'Built-in Retina Display'
+30 = 'Built-in Retina Display'
+
 # Workspace 1: Terminal
 [[on-window-detected]]
 if.app-id = 'com.mitchellh.ghostty'

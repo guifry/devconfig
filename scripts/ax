@@ -3,33 +3,32 @@
 cat << 'EOF'
 AEROSPACE HOTKEYS
 
-FOCUS & MOVE
-───────────────────────────────────
-Focus window             Alt + h/j/k/l
-Move window              Alt-Shift + h/j/k/l
+FOCUS
+  alt-h/j/k/l              Focus left/down/up/right
 
-WORKSPACES
-───────────────────────────────────
-Switch to workspace N    Ctrl + 1-9
-Send window to N         Ctrl-Alt + 1-9
-Previous workspace       Alt + Tab
+MOVE WINDOW
+  alt-shift-h/j/k/l        Move window left/down/up/right
+
+WORKSPACE (GOTO)
+  ctrl-1 to ctrl-9         Goto workspace 1-9
+  ctrl-q then 0-9          Goto workspace 10-19
+  ctrl-w then 0-9          Goto workspace 20-29
+
+WORKSPACE (SEND WINDOW)
+  ctrl-alt-1 to ctrl-alt-9 Send to workspace 1-9
+  ctrl-alt-q then 0-9      Send to workspace 10-19
+  ctrl-alt-w then 0-9      Send to workspace 20-29
 
 LAYOUT
-───────────────────────────────────
-Fullscreen toggle        Alt + f
-Float/tile toggle        Alt-Shift + Space
-Horizontal/vertical      Alt + /
-Accordion mode           Alt + ,
+  alt-f                     Fullscreen
+  alt-shift-space           Toggle floating/tiling
+  alt-/                     Toggle tiles horizontal/vertical
+  alt-,                     Toggle accordion horizontal/vertical
+  alt-minus / alt-equal     Resize smaller/bigger
+  alt-r then h/j/k/l       Resize mode
 
-RESIZE
-───────────────────────────────────
-Quick shrink/grow        Alt + -/=
-Resize mode              Alt + r
-  then h/j/k/l           shrink/grow
-  then -/=                smart resize
-  Esc                     exit resize mode
-
-CONFIG
-───────────────────────────────────
-Reload config            Alt-Shift + c
+UTILITY
+  alt-tab                   Workspace back-and-forth
+  alt-shift-c               Reload config
+  alt-shift-r               Reorganise all windows
 EOF
