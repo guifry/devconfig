@@ -41,15 +41,38 @@ accordion-padding = 30
 if.app-id = 'com.mitchellh.ghostty'
 run = 'move-node-to-workspace 1'
 
-# Workspace 2: Browser (accordion = stacked tabs, cycle with alt-h/l)
+# Workspace 2: ChatGPT
+[[on-window-detected]]
+if.app-id = 'com.openai.chat'
+run = 'move-node-to-workspace 2'
+
+# Workspace 3: Mail
+[[on-window-detected]]
+if.app-id = 'com.apple.mail'
+run = 'move-node-to-workspace 3'
+
+# Workspace 4: Chrome personal ("no" profile)
 [[on-window-detected]]
 if.app-id = 'com.google.Chrome'
-run = ['move-node-to-workspace 2', 'layout accordion horizontal']
+if.window-title-regex-substring = '– Personal$'
+run = 'move-node-to-workspace 4'
 
-# Workspace 3: Slack
+# Workspace 5: Chrome Kpler work profile
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'
+if.window-title-regex-substring = '– Kpler$'
+run = 'move-node-to-workspace 5'
+
+# Workspace 6: Chrome foreysoftware (Guilhem profile)
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'
+if.window-title-regex-substring = '– ForeySoftware$'
+run = 'move-node-to-workspace 6'
+
+# Workspace 7: Slack
 [[on-window-detected]]
 if.app-id = 'com.tinyspeck.slackmacgap'
-run = 'move-node-to-workspace 3'
+run = 'move-node-to-workspace 7'
 
 # Float utility apps
 [[on-window-detected]]

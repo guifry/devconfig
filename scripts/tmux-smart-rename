@@ -52,4 +52,4 @@ case "$proc" in
     label="${repo:-$dir}" ;;
 esac
 
-tmux rename-window "$label"
+tmux select-pane -T "$label"
