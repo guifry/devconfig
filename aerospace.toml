@@ -8,32 +8,32 @@ accordion-padding = 30
 1 = 'DELL SE2723DS \(2\)'
 2 = 'DELL SE2723DS \(2\)'
 3 = 'DELL SE2723DS \(2\)'
-4 = 'DELL SE2723DS \(1\)'
-5 = 'DELL SE2723DS \(1\)'
+4 = 'DELL SE2723DS \(2\)'
+5 = 'DELL SE2723DS \(2\)'
 6 = 'DELL SE2723DS \(1\)'
-7 = 'Built-in Retina Display'
-8 = 'Built-in Retina Display'
-9 = 'Built-in Retina Display'
+7 = 'DELL SE2723DS \(1\)'
+8 = 'DELL SE2723DS \(1\)'
+9 = 'DELL SE2723DS \(1\)'
 10 = 'Built-in Retina Display'
 11 = 'DELL SE2723DS \(2\)'
 12 = 'DELL SE2723DS \(2\)'
 13 = 'DELL SE2723DS \(2\)'
-14 = 'DELL SE2723DS \(1\)'
-15 = 'DELL SE2723DS \(1\)'
+14 = 'DELL SE2723DS \(2\)'
+15 = 'DELL SE2723DS \(2\)'
 16 = 'DELL SE2723DS \(1\)'
-17 = 'Built-in Retina Display'
-18 = 'Built-in Retina Display'
-19 = 'Built-in Retina Display'
+17 = 'DELL SE2723DS \(1\)'
+18 = 'DELL SE2723DS \(1\)'
+19 = 'DELL SE2723DS \(1\)'
 20 = 'Built-in Retina Display'
 21 = 'DELL SE2723DS \(2\)'
 22 = 'DELL SE2723DS \(2\)'
 23 = 'DELL SE2723DS \(2\)'
-24 = 'DELL SE2723DS \(1\)'
-25 = 'DELL SE2723DS \(1\)'
+24 = 'DELL SE2723DS \(2\)'
+25 = 'DELL SE2723DS \(2\)'
 26 = 'DELL SE2723DS \(1\)'
-27 = 'Built-in Retina Display'
-28 = 'Built-in Retina Display'
-29 = 'Built-in Retina Display'
+27 = 'DELL SE2723DS \(1\)'
+28 = 'DELL SE2723DS \(1\)'
+29 = 'DELL SE2723DS \(1\)'
 30 = 'Built-in Retina Display'
 
 # Workspace 1: Terminal
@@ -41,38 +41,51 @@ accordion-padding = 30
 if.app-id = 'com.mitchellh.ghostty'
 run = 'move-node-to-workspace 1'
 
-# Workspace 2: ChatGPT
+# Workspace 2: ChatGPT + Notion
 [[on-window-detected]]
 if.app-id = 'com.openai.chat'
 run = 'move-node-to-workspace 2'
 
-# Workspace 3: Mail
+[[on-window-detected]]
+if.app-id = 'notion.id'
+run = 'move-node-to-workspace 2'
+
+# Workspace 3: Mail + WhatsApp
 [[on-window-detected]]
 if.app-id = 'com.apple.mail'
 run = 'move-node-to-workspace 3'
 
-# Workspace 4: Chrome personal ("no" profile)
 [[on-window-detected]]
-if.app-id = 'com.google.Chrome'
-if.window-title-regex-substring = '– Personal$'
+if.app-id = 'net.whatsapp.WhatsApp'
+run = 'move-node-to-workspace 3'
+
+# Workspace 4: Bloom
+[[on-window-detected]]
+if.app-id = 'com.asiafu.Bloom'
 run = 'move-node-to-workspace 4'
 
-# Workspace 5: Chrome Kpler work profile
+# Workspace 6: Chrome personal
 [[on-window-detected]]
 if.app-id = 'com.google.Chrome'
-if.window-title-regex-substring = '– Kpler$'
-run = 'move-node-to-workspace 5'
-
-# Workspace 6: Chrome foreysoftware (Guilhem profile)
-[[on-window-detected]]
-if.app-id = 'com.google.Chrome'
-if.window-title-regex-substring = '– ForeySoftware$'
+if.window-title-regex-substring = '\(Personal\)$'
 run = 'move-node-to-workspace 6'
 
-# Workspace 7: Slack
+# Workspace 7: Chrome Kpler (or WP 10 if single-tab Calendar)
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'
+if.window-title-regex-substring = '\(Kpler\)$'
+run = ['move-node-to-workspace 7', 'exec-and-forget $HOME/bin/chrome-kpler-route']
+
+# Workspace 8: Chrome ForeySoftware
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'
+if.window-title-regex-substring = '\(ForeySoftware\)$'
+run = 'move-node-to-workspace 8'
+
+# Workspace 10: Slack
 [[on-window-detected]]
 if.app-id = 'com.tinyspeck.slackmacgap'
-run = 'move-node-to-workspace 7'
+run = 'move-node-to-workspace 10'
 
 # Float utility apps
 [[on-window-detected]]

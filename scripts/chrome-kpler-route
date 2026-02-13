@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# Chrome Kpler profile window router for AeroSpace.
+#
+# WHAT: Scans all Chrome Kpler windows on WP 7 for single-tab Google Calendar.
+#       If found, re-routes to WP 10 (built-in screen), sized 1/4 width on
+#       the right alongside Slack. Forces day view.
+#
+# WHY:  AeroSpace on-window-detected can only match app ID and window title,
+#       not tab count or URL. This script bridges AeroSpace with Chrome's
+#       internal state via AppleScript to make smarter routing decisions.
+#
+# WHEN: Called by AeroSpace on-window-detected after the window is already
+#       moved to WP 7. Runs in background via exec-and-forget.
+#
+# HOW:  1. Window is already on WP 7 (AeroSpace moved it before this runs)
+#       2. Lists ALL Chrome Kpler windows on WP 7
+#       3. Maps each to AppleScript index via CoreGraphics CGWindowList
+#       4. Skips any with >1 tab
+#       5. For single-tab windows, waits 1s then checks URL
+#       6. If calendar.google.com → forces day view URL, re-routes to WP 10,
+#          right side, 1/4 width
+#
+# NOTE: Written for bash 3.2 (macOS default) — no mapfile/associative arrays.
+set -euo pipefail
+
+kpler_wids=""
+while IFS='|' read -r wid title; do
+  kpler_wids="$kpler_wids $wid"
+done < <(aerospace list-windows --workspace 7 --format '%{window-id}|%{window-title}' 2>/dev/null \
+  | grep '(Kpler)')
+kpler_wids=$(echo "$kpler_wids" | xargs)
+
+[[ -z "$kpler_wids" ]] && exit 0
+
+cg_ids=""
+while read -r cgid; do
+  cg_ids="$cg_ids $cgid"
+done < <(swift -e '
+import CoreGraphics
+let options = CGWindowListOption(arrayLiteral: .optionOnScreenOnly)
+if let list = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] {
+    for w in list {
+        if let owner = w["kCGWindowOwnerName"] as? String, owner == "Google Chrome",
+           let layer = w["kCGWindowLayer"] as? Int, layer == 0 {
+            let wid = w["kCGWindowNumber"] as? Int ?? 0
+            print(wid)
+        }
+    }
+}')
+
+find_as_index() {
+  local target=$1
+  local idx=0
+  for cgid in $cg_ids; do
+    idx=$((idx + 1))
+    if [[ "$cgid" == "$target" ]]; then
+      echo "$idx"
+      return
+    fi
+  done
+  echo ""
+}
+
+has_single_tab=false
+for wid in $kpler_wids; do
+  as_index=$(find_as_index "$wid")
+  [[ -z "$as_index" ]] && continue
+  tabs=$(osascript -e "tell application \"Google Chrome\" to return count of tabs of window $as_index")
+  if [[ "$tabs" == "1" ]]; then
+    has_single_tab=true
+  fi
+done
+
+[[ "$has_single_tab" == "false" ]] && exit 0
+
+sleep 1
+
+for wid in $kpler_wids; do
+  as_index=$(find_as_index "$wid")
+  [[ -z "$as_index" ]] && continue
+  tabs=$(osascript -e "tell application \"Google Chrome\" to return count of tabs of window $as_index")
+  [[ "$tabs" != "1" ]] && continue
+  url=$(osascript -e "tell application \"Google Chrome\" to return URL of tab 1 of window $as_index")
+  if echo "$url" | grep -q "calendar.google.com"; then
+    osascript -e "tell application \"Google Chrome\" to set URL of active tab of window $as_index to \"https://calendar.google.com/calendar/u/0/r/day\""
+    aerospace move-node-to-workspace 10 --window-id "$wid"
+    sleep 0.3
+    aerospace focus --window-id "$wid"
+    aerospace move right
+    aerospace resize width -400
+    exit 0
+  fi
+done

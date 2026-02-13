@@ -132,6 +132,7 @@ in {
       alias lg='lazygit'
       alias ld='lazydocker'
       alias mp='mitmproxy'
+      alias cal='chrome-kpler-calendar'
       alias ff='fastfetch'
       alias treadmill='cat << "EOF"
 ┌──────────┬──────────┬──────────────────┬───────────────────────┐
@@ -279,6 +280,7 @@ EOF
       bind '"' split-window -v -c "#{pane_current_path}"
       bind % split-window -h -c "#{pane_current_path}"
 
+      bind [ copy-mode \; send-keys -X top-line
       bind -T copy-mode-vi v send -X begin-selection
       set -g mode-style "fg=black,bg=yellow"
     '' + (if isDarwin then ''
@@ -419,4 +421,6 @@ EOF
   home.file."bin/nvim-server-per-repo" = { source = ./scripts/nvim-server-per-repo; executable = true; };
   home.file."bin/aerospace-reorganise" = { source = ./scripts/aerospace-reorganise; executable = true; };
   home.file."bin/tmux-smart-rename" = { source = ./scripts/tmux-smart-rename; executable = true; };
+  home.file."bin/chrome-kpler-route" = { source = ./scripts/chrome-kpler-route; executable = true; };
+  home.file."bin/chrome-kpler-calendar" = { source = ./scripts/chrome-kpler-calendar; executable = true; };
 }

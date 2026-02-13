@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Opens Google Calendar (day view) in a new Chrome window with the Kpler profile.
+# AeroSpace's on-window-detected + chrome-kpler-route will intercept this and
+# move it to WP 10, right side, 1/4 width alongside Slack.
+# Looks up the Chrome profile directory dynamically by profile name.
+set -euo pipefail
+
+chrome_dir="$HOME/Library/Application Support/Google/Chrome"
+profile_dir=""
+for dir in "$chrome_dir"/*/; do
+  name=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['profile']['name'])" "${dir}Preferences" 2>/dev/null) || continue
+  if echo "$name" | grep -qi "kpler"; then
+    profile_dir=$(basename "$dir")
+    break
+  fi
+done
+
+if [[ -z "$profile_dir" ]]; then
+  echo "Chrome profile 'Kpler' not found" >&2
+  exit 1
+fi
+
+open -na "Google Chrome" --args --profile-directory="$profile_dir" --new-window "https://calendar.google.com/calendar/u/0/r/day"
