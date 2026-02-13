@@ -33,6 +33,7 @@ in {
     postgresql
     rainfrog
     lazydocker
+    oxker
     mitmproxy
     glow
   ] ++ lib.optionals (!isDarwin) [
@@ -224,6 +225,12 @@ EOF
           set -g @continuum-save-interval '15'
         '';
       }
+      {
+        plugin = fzf-tmux-url;
+        extraConfig = ''
+          set -g @fzf-url-bind 'u'
+        '';
+      }
     ];
     extraConfig = ''
       set -g renumber-windows on
@@ -262,8 +269,8 @@ EOF
       bind -r L resize-pane -R 5
       bind e select-layout tiled
 
-      # Swap current window with target: prefix + S, then enter number
-      bind S command-prompt -p "swap with:" "swap-window -t '%%'"
+      # Swap current window with target: prefix + W, then enter number
+      bind W command-prompt -p "swap with:" "swap-window -t '%%'"
 
       # Insert current window at position (shifts others): prefix + I
       bind I command-prompt -p "insert at:" "run-shell 'for i in $(tmux list-windows -F \"##I\" | sort -rn); do [ $i -ge %% ] && tmux move-window -s $i -t $((i+1)); done; tmux move-window -t %%'"
