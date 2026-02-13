@@ -1144,10 +1144,34 @@ require("lazy").setup({
 		cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewToggleFiles", "DiffviewFocusFiles" },
 		keys = {
 			{ "<leader>gv", "<cmd>DiffviewOpen<CR>", desc = "Open diffview" },
+			{ "<leader>gV", "<cmd>DiffviewOpen main<CR>", desc = "Diffview against main" },
 			{ "<leader>gc", "<cmd>DiffviewClose<CR>", desc = "Close diffview" },
 			{ "<leader>gh", "<cmd>DiffviewFileHistory<CR>", desc = "File history" },
 		},
 		opts = {},
+		config = function(_, opts)
+			require("diffview").setup(opts)
+			local updating = false
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = "DiffviewFiles",
+				callback = function(ev)
+					vim.api.nvim_create_autocmd("CursorMoved", {
+						buffer = ev.buf,
+						callback = function()
+							if updating then return end
+							updating = true
+							vim.schedule(function()
+								local col = vim.fn.col("$") - 1
+								if vim.fn.col(".") < col then
+									vim.api.nvim_win_set_cursor(0, { vim.fn.line("."), col - 1 })
+								end
+								updating = false
+							end)
+						end,
+					})
+				end,
+			})
+		end,
 	},
 
 	-- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
