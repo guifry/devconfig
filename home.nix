@@ -36,6 +36,9 @@ in {
     oxker
     mitmproxy
     glow
+    imagemagick
+    mermaid-cli
+    posting
   ] ++ lib.optionals (!isDarwin) [
     ghostty
     xclip
@@ -423,4 +426,5 @@ EOF
   home.file."bin/tmux-smart-rename" = { source = ./scripts/tmux-smart-rename; executable = true; };
   home.file."bin/chrome-kpler-route" = { source = ./scripts/chrome-kpler-route; executable = true; };
   home.file."bin/chrome-kpler-calendar" = { source = ./scripts/chrome-kpler-calendar; executable = true; };
+  home.file."bin/aerospace-swap-center" = { source = ./scripts/aerospace-swap-center; executable = true; };
 }

@@ -185,6 +185,22 @@ end, { desc = "[W]rite file" })
 vim.keymap.set("n", "<leader>q", "<cmd>qa<CR>", { desc = "[Q]uit all" })
 vim.keymap.set("n", "<leader>x", "<cmd>bp|bd #<CR>", { desc = "Close buffer" })
 vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Show diagnostic [E]rror" })
+vim.keymap.set("n", "<leader>+", function()
+	if vim.fn.tabpagenr("$") > 1 and vim.t.zoomed then
+		vim.cmd("tabclose")
+	else
+		vim.cmd("tab split")
+		vim.t.zoomed = true
+	end
+end, { desc = "Toggle pane fullscreen" })
+
+vim.keymap.set("n", "<leader>ob", function()
+	vim.fn.jobstart("gh pr view --web", { detach = true })
+end, { desc = "Open PR in browser" })
+
+vim.keymap.set("n", "<leader>yf", function() vim.fn.setreg("+", vim.fn.expand("%:t")) end, { desc = "Yank filename" })
+vim.keymap.set("n", "<leader>yp", function() vim.fn.setreg("+", vim.fn.expand("%:p")) end, { desc = "Yank full path" })
+vim.keymap.set("n", "<leader>yr", function() vim.fn.setreg("+", vim.fn.expand("%:.")) end, { desc = "Yank relative path" })
 
 -- Git merge conflict resolution shortcuts (in 3-way diff)
 vim.keymap.set("n", "g1", ":diffget //2<CR>", { desc = "Diff get ours (left)" })
@@ -267,6 +283,15 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	callback = function()
 		vim.hl.on_yank()
 	end,
+})
+
+vim.api.nvim_create_autocmd({ "BufReadPre", "BufNewFile", "BufNew" }, {
+	pattern = { "octo://*", "*/octo/null" },
+	callback = function() vim.bo.swapfile = false end,
+})
+vim.api.nvim_create_autocmd("BufEnter", {
+	pattern = "octo://*",
+	command = "if &diff | set nofoldenable | endif",
 })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
@@ -357,6 +382,7 @@ require("lazy").setup({
 				{ "<leader>t", group = "[T]oggle" },
 				{ "<leader>d", group = "[D]ebug" },
 				{ "<leader>h", group = "Git [H]unk", mode = { "n", "v" } },
+				{ "<leader>o", group = "[O]cto (PR review)" },
 			},
 		},
 	},
@@ -1032,8 +1058,12 @@ require("lazy").setup({
 			vim.keymap.set({ "n", "x", "o" }, "]m", function() move.goto_next_start("@function.outer", "textobjects") end, { desc = "Next method start" })
 			vim.keymap.set({ "n", "x", "o" }, "[M", function() move.goto_previous_end("@function.outer", "textobjects") end, { desc = "Previous method end" })
 			vim.keymap.set({ "n", "x", "o" }, "]M", function() move.goto_next_end("@function.outer", "textobjects") end, { desc = "Next method end" })
-			vim.keymap.set({ "n", "x", "o" }, "[c", function() move.goto_previous_start("@class.outer", "textobjects") end, { desc = "Previous class start" })
-			vim.keymap.set({ "n", "x", "o" }, "]c", function() move.goto_next_start("@class.outer", "textobjects") end, { desc = "Next class start" })
+			vim.keymap.set({ "n", "x", "o" }, "[c", function()
+				if vim.wo.diff then vim.cmd("normal! [c") else move.goto_previous_start("@class.outer", "textobjects") end
+			end, { desc = "Previous class/change" })
+			vim.keymap.set({ "n", "x", "o" }, "]c", function()
+				if vim.wo.diff then vim.cmd("normal! ]c") else move.goto_next_start("@class.outer", "textobjects") end
+			end, { desc = "Next class/change" })
 		end,
 	},
 
@@ -1135,6 +1165,56 @@ require("lazy").setup({
 			{ "<leader>gb", "<cmd>Git blame<CR>", desc = "Git blame" },
 			{ "<leader>gd", "<cmd>Gvdiffsplit<CR>", desc = "Git diff" },
 			{ "<leader>gx", "<cmd>Telescope git_status<CR>", desc = "Git changed files" },
+		},
+	},
+
+	{ -- Rendered markdown in buffers (headings, bullets, checkboxes, code blocks)
+		"MeanderingProgrammer/render-markdown.nvim",
+		dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
+		ft = { "markdown" },
+		opts = {},
+	},
+
+	{ -- Inline diagram rendering (mermaid, plantuml, d2, gnuplot)
+		"3rd/diagram.nvim",
+		dependencies = {
+			{ "3rd/image.nvim", build = false, opts = { processor = "magick_cli" } },
+		},
+		ft = { "markdown" },
+		keys = {
+			{ "<leader>td", function() require("diagram").show_diagram_hover() end, ft = { "markdown" }, desc = "Show [D]iagram in tab" },
+		},
+		opts = {
+			renderer_options = {
+				mermaid = {
+					theme = "dark",
+				},
+			},
+		},
+	},
+
+	{ -- GitHub PR review in Neovim (:Octo pr 123, :Octo pr list)
+		"pwntester/octo.nvim",
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+			"nvim-telescope/telescope.nvim",
+			"nvim-tree/nvim-web-devicons",
+		},
+		cmd = "Octo",
+		keys = {
+			{ "<leader>ol", "<cmd>Octo pr list<CR>", desc = "List PRs" },
+			{ "<leader>oc", "<cmd>Octo pr checkout<CR>", desc = "Checkout PR" },
+			{ "<leader>od", "<cmd>Octo review<CR>", desc = "Start/resume review" },
+			{ "<leader>os", "<cmd>Octo review submit<CR>", desc = "Submit review" },
+			{ "<leader>oa", "<cmd>Octo comment add<CR>", desc = "Add comment" },
+			{ "<leader>or", "<cmd>Octo thread resolve<CR>", desc = "Resolve thread" },
+		},
+		opts = {
+			ssh_aliases = {
+				["github.com-guifry"] = "github.com",
+				["github.com-gforey-ext"] = "github.com",
+				["github.com-bp"] = "github.com",
+			},
 		},
 	},
 
