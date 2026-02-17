@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Swaps the focused workspace with the visible workspace on the center monitor.
+# Press once to bring side content to center, press again to swap back.
+# Center monitor is DELL SE2723DS (2) = AeroSpace monitor 2.
+set -euo pipefail
+
+CENTER="2"
+
+focused_monitor=$(aerospace list-monitors --focused --format '%{monitor-id}')
+
+if [[ "$focused_monitor" == "$CENTER" ]]; then
+  exit 0
+fi
+
+focused_ws=$(aerospace list-workspaces --monitor focused --visible)
+center_ws=$(aerospace list-workspaces --monitor "$CENTER" --visible)
+
+aerospace move-workspace-to-monitor --workspace "$focused_ws" "$CENTER"
+aerospace move-workspace-to-monitor --workspace "$center_ws" "$focused_monitor"
+aerospace workspace "$focused_ws"

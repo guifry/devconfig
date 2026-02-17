@@ -139,6 +139,7 @@ ctrl-alt-7 = 'move-node-to-workspace 7'
 ctrl-alt-8 = 'move-node-to-workspace 8'
 ctrl-alt-9 = 'move-node-to-workspace 9'
 
+alt-s = 'exec-and-forget $HOME/bin/aerospace-swap-center'
 alt-f = 'fullscreen'
 alt-shift-space = 'layout floating tiling'
 alt-slash = 'layout tiles horizontal vertical'
