@@ -111,6 +111,8 @@ op.execute("GRANT SELECT, INSERT, UPDATE ON TABLE public.email_fixtures TO ais_u
 
 **Always check for missing migrations** when adding ORM columns.
 
+**Migration history must be linear — NEVER create merge migrations.** If multiple heads exist, rebase onto main and update `down_revision` to chain after the latest migration. Run `alembic heads` to verify a single head before committing.
+
 **NEVER use `flush()` or `commit()` in repository code:**
 Sessions are managed at endpoint level via middleware context manager. Commit happens automatically at end of request.
 ```python

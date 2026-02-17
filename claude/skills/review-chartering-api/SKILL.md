@@ -148,7 +148,17 @@ pre-commit run --all-files
 
 Fix any failures and re-run until all checks pass.
 
-### 11. Index Review (Report Only)
+### 11. Alembic Linear History Check
+
+If the diff includes Alembic migrations, verify a single head exists:
+
+```bash
+cd src/kpler/infrastructure/database && alembic heads
+```
+
+If multiple heads exist: **do NOT create a merge migration.** Migration history must remain linear. Instead, report it as an unfixable issue requiring a rebase — the branch must be rebased onto main and the migration's `down_revision` updated to chain after the latest migration on main.
+
+### 12. Index Review (Report Only)
 
 **Only run this step if the diff includes Alembic migrations or changes to `{Entity}Db` schemas.**
 
@@ -160,7 +170,7 @@ For each new or modified table/column:
 
 **This step is report-only — unlike all other steps which auto-fix issues, index review findings are ONLY reported in the final summary for manual review. This exception applies exclusively to this step (step 11). All other steps must continue to auto-fix as instructed.**
 
-### 12. Report Status
+### 13. Report Status
 
 Summarise:
 - Convention violations found and fixed
