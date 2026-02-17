@@ -285,13 +285,12 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	end,
 })
 
-vim.api.nvim_create_autocmd({ "BufReadPre", "BufNewFile", "BufNew" }, {
-	pattern = { "octo://*", "*/octo/null" },
-	callback = function() vim.bo.swapfile = false end,
-})
-vim.api.nvim_create_autocmd("BufEnter", {
-	pattern = "octo://*",
-	command = "if &diff | set nofoldenable | endif",
+vim.api.nvim_create_autocmd({ "BufAdd", "BufReadPre", "BufNewFile", "BufNew", "BufEnter" }, {
+	pattern = { "octo://*", "*/octo/null", "octo:*" },
+	callback = function()
+		vim.bo.swapfile = false
+		if vim.wo.diff then vim.wo.foldenable = false end
+	end,
 })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
@@ -1130,7 +1129,14 @@ require("lazy").setup({
 		cmd = { "CodeCompanion", "CodeCompanionChat", "CodeCompanionActions" },
 		keys = {
 			{ "<leader>aa", "<cmd>CodeCompanionActions<CR>", mode = { "n", "v" }, desc = "AI actions" },
-			{ "<leader>ac", "<cmd>CodeCompanionChat Toggle<CR>", mode = { "n", "v" }, desc = "AI chat toggle" },
+			{ "<leader>ac", "<cmd>CodeCompanionChat Toggle<CR>", mode = "n", desc = "AI chat toggle" },
+			{ "<leader>ac", function()
+				local file = vim.fn.expand("%:.")
+				local s = vim.fn.line("v")
+				local e = vim.fn.line(".")
+				if s > e then s, e = e, s end
+				vim.cmd("'<,'>CodeCompanionChat " .. file .. ":" .. s .. "-" .. e)
+			end, mode = "v", desc = "AI chat with selection" },
 			{ "<leader>ai", "<cmd>CodeCompanion<CR>", mode = { "n", "v" }, desc = "AI inline" },
 			{ "<leader>ap", "<cmd>CodeCompanionChat Add<CR>", mode = "v", desc = "AI add to chat" },
 		},
@@ -1444,7 +1450,16 @@ require("lazy").setup({
 	{ -- Session management (auto-save/restore buffers per directory)
 		"folke/persistence.nvim",
 		event = "BufReadPre",
-		opts = {},
+		opts = {
+			pre_save = function()
+				for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+					local name = vim.api.nvim_buf_get_name(buf)
+					if name:match("^octo://") or name:match("/octo/null$") then
+						vim.api.nvim_buf_delete(buf, { force = true })
+					end
+				end
+			end,
+		},
 		init = function()
 			vim.api.nvim_create_autocmd("VimEnter", {
 				nested = true,
