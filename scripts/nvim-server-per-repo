@@ -2,6 +2,16 @@
 #
 # nvim-server-per-repo
 #
+# CURRENTLY UNUSED — kept in repo for reference. Opening a second nvim in the
+# same repo attaches to the existing server (shared buffers/panels), and closing
+# either instance closes both. This was deemed undesirable.
+#
+# TO RE-ENABLE: add these two lines to home.nix:
+#   1. In programs.zsh.initContent:
+#        source ~/bin/nvim-server-per-repo
+#   2. In home.file symlinks:
+#        home.file."bin/nvim-server-per-repo" = { source = ./scripts/nvim-server-per-repo; executable = true; };
+#
 # Automatic per-git-repo Neovim server management.
 # Inside a git repo: attaches to existing server or creates one.
 # Outside git repos: starts standalone nvim.
@@ -9,13 +19,6 @@
 # USAGE:
 #   Source this file and use `nvim` function, OR
 #   alias nvim='nvim-server-per-repo'
-#
-# INSTALLATION:
-#   # Option 1: Source in .zshrc/.bashrc
-#   source /path/to/nvim-server-per-repo
-#
-#   # Option 2: Alias
-#   alias nvim='/path/to/nvim-server-per-repo'
 #
 # COMMANDS:
 #   nvim [files...]     Open files (attaches to repo server if exists)

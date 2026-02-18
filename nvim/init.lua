@@ -1130,13 +1130,7 @@ require("lazy").setup({
 		keys = {
 			{ "<leader>aa", "<cmd>CodeCompanionActions<CR>", mode = { "n", "v" }, desc = "AI actions" },
 			{ "<leader>ac", "<cmd>CodeCompanionChat Toggle<CR>", mode = "n", desc = "AI chat toggle" },
-			{ "<leader>ac", function()
-				local file = vim.fn.expand("%:.")
-				local s = vim.fn.line("v")
-				local e = vim.fn.line(".")
-				if s > e then s, e = e, s end
-				vim.cmd("'<,'>CodeCompanionChat " .. file .. ":" .. s .. "-" .. e)
-			end, mode = "v", desc = "AI chat with selection" },
+			{ "<leader>ac", "<Esc><cmd>CodeCompanionChat Toggle<CR>gv<cmd>'<,'>CodeCompanionChat Add<CR>", mode = "v", desc = "AI chat with selection" },
 			{ "<leader>ai", "<cmd>CodeCompanion<CR>", mode = { "n", "v" }, desc = "AI inline" },
 			{ "<leader>ap", "<cmd>CodeCompanionChat Add<CR>", mode = "v", desc = "AI add to chat" },
 		},

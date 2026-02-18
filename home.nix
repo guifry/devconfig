@@ -86,8 +86,6 @@ in {
       export PATH="$HOME/bin:$PATH"
       export PATH="$HOME/.local/bin:$PATH"
 
-      # nvim server-per-repo (auto-attach to repo server)
-      source ~/bin/nvim-server-per-repo
 
       # NVM
       export NVM_DIR="$HOME/.nvm"
@@ -421,7 +419,6 @@ EOF
   home.file."bin/playwright-auth" = { source = ./scripts/playwright-auth; executable = true; };
   home.file."bin/create_script" = { source = ./scripts/create_script; executable = true; };
   home.file."bin/edscript" = { source = ./scripts/edscript; executable = true; };
-  home.file."bin/nvim-server-per-repo" = { source = ./scripts/nvim-server-per-repo; executable = true; };
   home.file."bin/aerospace-reorganise" = { source = ./scripts/aerospace-reorganise; executable = true; };
   home.file."bin/tmux-smart-rename" = { source = ./scripts/tmux-smart-rename; executable = true; };
   home.file."bin/chrome-kpler-route" = { source = ./scripts/chrome-kpler-route; executable = true; };
