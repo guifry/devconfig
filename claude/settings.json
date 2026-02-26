@@ -2,7 +2,6 @@
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
-  "model": "opus",
   "hooks": {
     "Stop": [
       {
@@ -38,5 +37,6 @@
     "ralph-wiggum@claude-plugins-official": true,
     "claude-hud@claude-hud": true
   },
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "model": "opus"
 }

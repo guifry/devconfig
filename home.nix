@@ -134,6 +134,7 @@ in {
       alias ld='lazydocker'
       alias mp='mitmproxy'
       alias cal='chrome-kpler-calendar'
+      alias f='fzf'
       alias ff='fastfetch'
       alias treadmill='cat << "EOF"
 ┌──────────┬──────────┬──────────────────┬───────────────────────┐
@@ -276,6 +277,13 @@ EOF
 
       # Insert current window at position (shifts others): prefix + I
       bind I command-prompt -p "insert at:" "run-shell 'for i in $(tmux list-windows -F \"##I\" | sort -rn); do [ $i -ge %% ] && tmux move-window -s $i -t $((i+1)); done; tmux move-window -t %%'"
+
+      # Claude Code conversation navigation: jump between messages in scrollback.
+      # prefix+/ = user messages (❯), prefix+? = Claude responses (⏺).
+      # Then n/N to repeat whichever search was last used.
+      # Overrides: / was key-lookup (list-keys), ? was list-keys -N.
+      bind / copy-mode \; send-keys -X search-backward "❯"
+      bind ? copy-mode \; send-keys -X search-backward "⏺"
 
       bind c new-window -c "#{pane_current_path}"
       bind '"' split-window -v -c "#{pane_current_path}"
