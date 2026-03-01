@@ -1,10 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-aerospace list-windows --all --format '%{window-id} %{app-bundle-id}' | while read -r id bundle; do
+# Re-route all app windows to their assigned workspaces, then fix up
+# monitor placement for the HP single-external-monitor setup.
+# WP 9/19/29 have no HP force-assignment (would conflict with DELL at home),
+# so this script moves them to Built-in when HP is detected.
+
+aerospace list-windows --all --format '%{window-id}|%{app-bundle-id}|%{window-title}' | while IFS='|' read -r id bundle title; do
   case "$bundle" in
     com.mitchellh.ghostty)       aerospace move-node-to-workspace 1 --window-id "$id" ;;
-    com.google.Chrome)           aerospace move-node-to-workspace 2 --window-id "$id" ;;
-    com.tinyspeck.slackmacgap)   aerospace move-node-to-workspace 3 --window-id "$id" ;;
+    com.openai.chat)             aerospace move-node-to-workspace 2 --window-id "$id" ;;
+    notion.id)                   aerospace move-node-to-workspace 2 --window-id "$id" ;;
+    com.apple.mail)              aerospace move-node-to-workspace 3 --window-id "$id" ;;
+    net.whatsapp.WhatsApp)       aerospace move-node-to-workspace 3 --window-id "$id" ;;
+    com.asiafu.Bloom)            aerospace move-node-to-workspace 4 --window-id "$id" ;;
+    com.tinyspeck.slackmacgap)   aerospace move-node-to-workspace 10 --window-id "$id" ;;
+    com.google.Chrome)
+      case "$title" in
+        *'(Personal)')       aerospace move-node-to-workspace 6 --window-id "$id" ;;
+        *'(Kpler)')          aerospace move-node-to-workspace 7 --window-id "$id" ;;
+        *'(ForeySoftware)')  aerospace move-node-to-workspace 8 --window-id "$id" ;;
+      esac
+      ;;
   esac
 done
+
+# HP setup: move free workspaces (9/19/29) to built-in
+if aerospace list-monitors --format '%{monitor-name}' | grep -q 'HP ENVY 27s'; then
+  for ws in 9 19 29; do
+    aerospace move-workspace-to-monitor --workspace "$ws" 'Built-in Retina Display' 2>/dev/null || true
+  done
+fi

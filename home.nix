@@ -284,6 +284,8 @@ EOF
       # Overrides: / was key-lookup (list-keys), ? was list-keys -N.
       bind / copy-mode \; send-keys -X search-backward "❯"
       bind ? copy-mode \; send-keys -X search-backward "⏺"
+      # Yank Claude's last response to system clipboard
+      bind y run-shell "tmux-yank-claude"
 
       bind c new-window -c "#{pane_current_path}"
       bind '"' split-window -v -c "#{pane_current_path}"
@@ -432,4 +434,5 @@ EOF
   home.file."bin/chrome-kpler-route" = { source = ./scripts/chrome-kpler-route; executable = true; };
   home.file."bin/chrome-kpler-calendar" = { source = ./scripts/chrome-kpler-calendar; executable = true; };
   home.file."bin/aerospace-swap-center" = { source = ./scripts/aerospace-swap-center; executable = true; };
+  home.file."bin/tmux-yank-claude" = { source = ./scripts/tmux-yank-claude; executable = true; };
 }

@@ -214,10 +214,11 @@ extraConfig = ''
 
 ## Testing Changes
 
-1. Make changes to home.nix or Brewfile
-2. Run `devconfig switch`
-3. If shell changes: run `reload` or open new terminal
-4. If nvim changes: restart nvim
+1. Make changes to home.nix, Brewfile, or any nix-managed file
+2. **Commit changes first** — `home-manager switch` builds from the git tree, uncommitted changes are ignored
+3. Run `devconfig switch`
+4. If shell changes: run `reload` or open new terminal
+5. If nvim changes: restart nvim
 
 ## Troubleshooting
 
