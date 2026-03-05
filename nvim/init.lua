@@ -163,6 +163,10 @@ vim.o.scrolloff = 999
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
+	callback = function() vim.cmd("silent! checktime") end,
+})
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 

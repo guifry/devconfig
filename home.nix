@@ -295,13 +295,13 @@ EOF
       bind -T copy-mode-vi v send -X begin-selection
       set -g mode-style "fg=black,bg=yellow"
     '' + (if isDarwin then ''
-      bind -T copy-mode-vi y send -X copy-pipe-and-cancel "pbcopy"
-      bind -T copy-mode-vi Enter send -X copy-pipe-and-cancel "pbcopy"
-      bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-pipe-and-cancel "pbcopy"
+      bind -T copy-mode-vi y send -X copy-pipe-no-clear "pbcopy"
+      bind -T copy-mode-vi Enter send -X copy-pipe-no-clear "pbcopy"
+      bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-pipe-no-clear "pbcopy"
     '' else ''
-      bind -T copy-mode-vi y send -X copy-pipe-and-cancel "xclip -selection clipboard"
-      bind -T copy-mode-vi Enter send -X copy-pipe-and-cancel "xclip -selection clipboard"
-      bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-pipe-and-cancel "xclip -selection clipboard"
+      bind -T copy-mode-vi y send -X copy-pipe-no-clear "xclip -selection clipboard"
+      bind -T copy-mode-vi Enter send -X copy-pipe-no-clear "xclip -selection clipboard"
+      bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-pipe-no-clear "xclip -selection clipboard"
     '');
   };
 
@@ -435,4 +435,5 @@ EOF
   home.file."bin/chrome-kpler-calendar" = { source = ./scripts/chrome-kpler-calendar; executable = true; };
   home.file."bin/aerospace-swap-center" = { source = ./scripts/aerospace-swap-center; executable = true; };
   home.file."bin/tmux-yank-claude" = { source = ./scripts/tmux-yank-claude; executable = true; };
+  home.file.".secrets.example" = { source = ./secrets.example; };
 }
