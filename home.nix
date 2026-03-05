@@ -240,7 +240,7 @@ EOF
       set -g automatic-rename off
       set-hook -g pane-focus-in "run-shell 'tmux-smart-rename'"
       set-hook -g window-pane-changed "run-shell 'tmux-smart-rename'"
-      set -g set-clipboard on
+      set -g set-clipboard off
       set -g allow-passthrough on
       set -g display-panes-time 3000
 
@@ -278,12 +278,14 @@ EOF
       # Insert current window at position (shifts others): prefix + I
       bind I command-prompt -p "insert at:" "run-shell 'for i in $(tmux list-windows -F \"##I\" | sort -rn); do [ $i -ge %% ] && tmux move-window -s $i -t $((i+1)); done; tmux move-window -t %%'"
 
-      # Claude Code conversation navigation: jump between messages in scrollback.
-      # prefix+/ = user messages (❯), prefix+? = Claude responses (⏺).
+      # Scrollback navigation: jump between prompts in copy mode.
+      # prefix+/ = Claude Code user messages (❯)
+      # prefix+? = Claude Code responses (⏺)
+      # prefix+. = shell prompts (➜)
       # Then n/N to repeat whichever search was last used.
-      # Overrides: / was key-lookup (list-keys), ? was list-keys -N.
       bind / copy-mode \; send-keys -X search-backward "❯"
       bind ? copy-mode \; send-keys -X search-backward "⏺"
+      bind . copy-mode \; send-keys -X search-backward "➜"
       # Yank Claude's last response to system clipboard
       bind y run-shell "tmux-yank-claude"
 
