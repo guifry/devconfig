@@ -27,11 +27,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1774032336,
-        "narHash": "sha256-kqeQUmjfNmVI9Bi9qcbGdoiPbxAeZEQzcf3Hg0cn8yA=",
+        "lastModified": 1774032398,
+        "narHash": "sha256-PrUuEjfjmBX0FVHRMhMY5FV+LmRs/LTcrzM/hxVlFNM=",
         "owner": "guifry",
         "repo": "jiggly-baby",
-        "rev": "8ca3e3166bdea311726a7fec2003a48a93aaa159",
+        "rev": "bf1f60a8fe998a16fb95766225a8e6e2ef419d31",
         "type": "github"
       },
       "original": {
