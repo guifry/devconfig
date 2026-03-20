@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, inputs, ... }:
 
 let
   isDarwin = pkgs.stdenv.isDarwin;
@@ -39,6 +39,7 @@ in {
     imagemagick
     mermaid-cli
     posting
+    inputs.jiggly-baby.packages.${pkgs.system}.default
   ] ++ lib.optionals (!isDarwin) [
     ghostty
     xclip
