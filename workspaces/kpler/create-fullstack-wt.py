@@ -11,7 +11,9 @@ from pathlib import Path
 KPLER_DIR = Path.home() / "kpler"
 WEB_APP_REPO = KPLER_DIR / "web-app"
 CHARTERING_REPO = KPLER_DIR / "chartering-fast-api"
+FIXING_REPO = KPLER_DIR / "chartering-fixing-api"
 WT_PREFIX = "FST-"
+REPO_DIRS = {"web-app", "chartering-fast-api", "chartering-fixing-api"}
 CONVENTION_SYMLINKS = {
     "CLAUDE.md": Path.home() / "projects/devconfig/conventions/chartering/CLAUDE.md",
     "CHARTERING_AGENT_GUIDE.md": Path.home() / "projects/devconfig/conventions/chartering/CHARTERING_AGENT_GUIDE.md",
@@ -43,8 +45,9 @@ def get_next_wt_number() -> int:
             match = re.search(rf"{WT_PREFIX}(\d+)(?:-|$)", d.name)
             if match:
                 numbers.append(int(match.group(1)))
-    numbers.extend(get_branch_numbers(WEB_APP_REPO))
-    numbers.extend(get_branch_numbers(CHARTERING_REPO))
+    for repo in (WEB_APP_REPO, CHARTERING_REPO, FIXING_REPO):
+        if repo.exists():
+            numbers.extend(get_branch_numbers(repo))
     return max(numbers, default=0) + 1
 
 
@@ -81,7 +84,7 @@ def create_worktree(repo: Path, target_dir: Path, base_branch: str, new_branch: 
 
 
 def copy_extra_files(src_dir: Path, dst_dir: Path) -> None:
-    exclude = {"web-app", "chartering-fast-api"} | set(CONVENTION_SYMLINKS.keys())
+    exclude = REPO_DIRS | set(CONVENTION_SYMLINKS.keys())
     for item in src_dir.iterdir():
         if item.name in exclude:
             continue
@@ -106,10 +109,9 @@ def main():
     parser.add_argument("suffix", nargs="?", default="", help="optional suffix for worktree name")
     args = parser.parse_args()
 
-    if not WEB_APP_REPO.exists():
-        raise SystemExit(f"web-app not found at {WEB_APP_REPO}")
-    if not CHARTERING_REPO.exists():
-        raise SystemExit(f"chartering-fast-api not found at {CHARTERING_REPO}")
+    for repo in (WEB_APP_REPO, CHARTERING_REPO, FIXING_REPO):
+        if not repo.exists():
+            raise SystemExit(f"{repo.name} not found at {repo}")
 
     wt_num = get_next_wt_number()
     suffix_part = f"-{args.suffix}" if args.suffix else ""
@@ -118,14 +120,10 @@ def main():
     wt_dir.mkdir()
     log(f"Created {wt_dir}")
 
-    web_app_base = get_default_branch(WEB_APP_REPO)
-    chartering_base = get_default_branch(CHARTERING_REPO)
-
-    log(f"Creating web-app worktree (branch {wt_name} from {web_app_base})...")
-    create_worktree(WEB_APP_REPO, wt_dir / "web-app", web_app_base, wt_name)
-
-    log(f"Creating chartering-fast-api worktree (branch {wt_name} from {chartering_base})...")
-    create_worktree(CHARTERING_REPO, wt_dir / "chartering-fast-api", chartering_base, wt_name)
+    for repo, name in ((WEB_APP_REPO, "web-app"), (CHARTERING_REPO, "chartering-fast-api"), (FIXING_REPO, "chartering-fixing-api")):
+        base = get_default_branch(repo)
+        log(f"Creating {name} worktree (branch {wt_name} from {base})...")
+        create_worktree(repo, wt_dir / name, base, wt_name)
 
     prev_wt = get_previous_wt_dir(wt_num)
     if prev_wt:
