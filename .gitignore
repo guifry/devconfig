@@ -7,5 +7,8 @@ claude/debug/
 claude/plans/
 claude/plugins/
 
+# Nix build output
+result
+
 # macOS
 .DS_Store
