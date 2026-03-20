@@ -20,6 +20,26 @@
         "type": "github"
       }
     },
+    "jiggly-baby": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1774032336,
+        "narHash": "sha256-kqeQUmjfNmVI9Bi9qcbGdoiPbxAeZEQzcf3Hg0cn8yA=",
+        "owner": "guifry",
+        "repo": "jiggly-baby",
+        "rev": "8ca3e3166bdea311726a7fec2003a48a93aaa159",
+        "type": "github"
+      },
+      "original": {
+        "owner": "guifry",
+        "repo": "jiggly-baby",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1772624091,
@@ -39,6 +59,7 @@
     "root": {
       "inputs": {
         "home-manager": "home-manager",
+        "jiggly-baby": "jiggly-baby",
         "nixpkgs": "nixpkgs"
       }
     }
