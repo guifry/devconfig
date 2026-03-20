@@ -31,9 +31,38 @@ run_home_manager() {
   fi
 }
 
+ensure_gh_auth() {
+  if ! command -v gh &>/dev/null; then
+    echo "Installing GitHub CLI..."
+    nix profile install nixpkgs#gh
+  fi
+  while true; do
+    if gh auth status &>/dev/null 2>&1; then
+      GH_TOKEN=$(gh auth token 2>/dev/null)
+      if [[ -n "$GH_TOKEN" ]]; then
+        export NIX_CONFIG="$NIX_CONFIG
+access-tokens = github.com=$GH_TOKEN"
+      fi
+      return 0
+    fi
+    echo ""
+    echo "GitHub auth required (private flake inputs)."
+    echo "Run:  gh auth login"
+    echo ""
+    read -p "Press Enter when done (q to skip)... " reply < /dev/tty
+    [[ "$reply" == "q" ]] && echo "Skipping — private packages won't build." && return 1
+  done
+}
+
 cmd_switch() {
   echo "Applying nix config..."
-  run_home_manager switch --impure --flake ".#$CONFIG" || return 1
+  if ! run_home_manager switch --impure --flake ".#$CONFIG" 2>&1; then
+    echo ""
+    echo "Build failed. Checking GitHub auth..."
+    ensure_gh_auth || return 1
+    echo "Retrying..."
+    run_home_manager switch --impure --flake ".#$CONFIG" || return 1
+  fi
 
   if [[ "$IS_DARWIN" == "true" && -f "$REPO/Brewfile" ]]; then
     echo "Applying brew packages..."
@@ -69,6 +98,7 @@ cmd_switch() {
 
 cmd_update() {
   echo "Updating flake inputs..."
+  ensure_gh_auth
   nix flake update
 
   if [[ "$IS_DARWIN" == "true" ]]; then
