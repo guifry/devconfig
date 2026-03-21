@@ -134,6 +134,8 @@ if [[ "$SKIP_GH" == "0" ]]; then
   if [[ -n "$GH_TOKEN" ]]; then
     export NIX_CONFIG="access-tokens = github.com=${GH_TOKEN}"
   fi
+  # Remove standalone gh to avoid conflict with home-manager's gh package
+  nix profile remove gh 2>/dev/null || true
 else
   echo "Skipping GitHub auth (--skip-gh). Private packages won't be installed."
 fi
