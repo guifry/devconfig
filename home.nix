@@ -316,6 +316,7 @@ EOF
       "**/.claude/settings.local.json"
     ];
     settings = {
+      credential."https://github.com".helper = "!/usr/bin/env gh auth git-credential";
       core.editor = "nvim";
       alias = {
         br = "branch";
