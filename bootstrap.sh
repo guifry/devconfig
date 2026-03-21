@@ -104,11 +104,15 @@ else
   [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
 fi
 
-# Install Homebrew on macOS (needed for GUI apps in Brewfile)
+# Check Homebrew on macOS (needed for GUI apps in Brewfile)
 if [[ "$UNAME" == "Darwin" ]] && ! command -v brew &>/dev/null; then
-  echo "Installing Homebrew..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
+  echo ""
+  echo "WARNING: Homebrew not installed. GUI apps (Raycast, AeroSpace, etc.) won't be installed."
+  echo "Install it first:  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+  echo "Then re-run this script."
+  echo ""
+  read -p "Continue without brew? [y/N]: " skip_brew < /dev/tty
+  [[ "$skip_brew" != "y" && "$skip_brew" != "Y" ]] && exit 1
 fi
 
 # Backup existing dotfiles
