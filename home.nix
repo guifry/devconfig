@@ -414,6 +414,11 @@ EOF
     fi
   '');
 
+  home.activation.configureKeyboard = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
+    /usr/bin/defaults write NSGlobalDomain KeyRepeat -int 1
+    /usr/bin/defaults write NSGlobalDomain InitialKeyRepeat -int 12
+  '');
+
   xdg.configFile."nvim/init.lua".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/nvim/init.lua";
   xdg.configFile."aerospace/aerospace.toml".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/aerospace.toml";
   xdg.configFile."ghostty/config".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/ghostty.config";
