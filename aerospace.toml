@@ -1,15 +1,29 @@
+# Multi-machine AeroSpace config
+#
+# Machines:
+#   MBP1 — primary MacBook Pro (work + personal)
+#   MBP2 — secondary MacBook Pro (personal only, no Kpler)
+#
+# Monitor setups (MBP1):
+#   Home:     2x DELL SE2723DS (1) & (2) + Built-in  → 5-4-1 per decile
+#   External: 1x HP ENVY 27s + Built-in              → 8-2 per decile
+#   Undocked: Built-in only                           → all no-op
+#
+# Chrome profile name mapping (title bar suffix):
+#   Profile       MBP1              MBP2         Workspace
+#   Personal      (Personal)        – no         6
+#   Kpler         (Kpler)           n/a          7
+#   ForeySoftware (ForeySoftware)   – Guilhem    8
+#
+# Regex alternation in on-window-detected rules matches both machines.
+# Monitor assignments use alternation to match both DELL and HP setups.
+# WP 9/19/29 = DELL(1) only; free when HP connected, script places on Built-in.
+
 start-at-login = true
 default-root-container-layout = 'tiles'
 default-root-container-orientation = 'auto'
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 accordion-padding = 30
-
-# Monitor setups:
-#   Home:     2x DELL SE2723DS (1) & (2) + Built-in  → 5-4-1 per decile
-#   External: 1x HP ENVY 27s + Built-in              → 8-2 per decile
-#   Undocked: Built-in only                           → all no-op
-# Regex alternation lets one assignment match both DELL and HP setups.
-# WP 9/19/29 = DELL(1) only; free when HP connected, script places on Built-in.
 [workspace-to-monitor-force-assignment]
 1 = 'DELL SE2723DS \(2\)|HP ENVY 27s'
 2 = 'DELL SE2723DS \(2\)|HP ENVY 27s'
@@ -73,7 +87,7 @@ run = 'move-node-to-workspace 4'
 # Workspace 6: Chrome personal
 [[on-window-detected]]
 if.app-id = 'com.google.Chrome'
-if.window-title-regex-substring = '\(Personal\)$'
+if.window-title-regex-substring = '\(Personal\)$|– no$'
 run = 'move-node-to-workspace 6'
 
 # Workspace 7: Chrome Kpler (or WP 10 if single-tab Calendar)
@@ -85,7 +99,7 @@ run = ['move-node-to-workspace 7', 'exec-and-forget $HOME/bin/chrome-kpler-route
 # Workspace 8: Chrome ForeySoftware
 [[on-window-detected]]
 if.app-id = 'com.google.Chrome'
-if.window-title-regex-substring = '\(ForeySoftware\)$'
+if.window-title-regex-substring = '\(ForeySoftware\)$|– Guilhem$'
 run = 'move-node-to-workspace 8'
 
 # Workspace 10: Slack
