@@ -107,16 +107,20 @@ fi
 # Check Homebrew on macOS (needed for GUI apps in Brewfile)
 if [[ "$UNAME" == "Darwin" ]] && ! command -v brew &>/dev/null; then
   echo ""
-  echo "  ╔═══════════════════════════════════════════════════════════════════════════════════════════════════╗"
-  echo "  ║                                                                                               ║"
-  echo "  ║   Homebrew is required on macOS.                                                              ║"
-  echo "  ║                                                                                               ║"
-  echo "  ║   GUI apps (Raycast, AeroSpace, Ghostty, etc.) are managed via brew casks.                    ║"
-  echo "  ║   Install Homebrew first, then re-run this script.                                            ║"
-  echo "  ║                                                                                               ║"
-  echo "  ║   /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"  ║"
-  echo "  ║                                                                                               ║"
-  echo "  ╚═══════════════════════════════════════════════════════════════════════════════════════════════════╝"
+  CMD='/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+  W=100
+  border=$(printf '═%.0s' $(seq 1 $W))
+  pad() { printf "%-${W}s" "  $1"; }
+  echo "  ╔${border}╗"
+  echo "  ║$(printf '%*s' $W '')║"
+  echo "  ║$(pad 'Homebrew is required on macOS.')║"
+  echo "  ║$(printf '%*s' $W '')║"
+  echo "  ║$(pad 'GUI apps (Raycast, AeroSpace, Ghostty, etc.) are managed via brew casks.')║"
+  echo "  ║$(pad 'Install Homebrew first, then re-run this script.')║"
+  echo "  ║$(printf '%*s' $W '')║"
+  echo "  ║$(pad "$CMD")║"
+  echo "  ║$(printf '%*s' $W '')║"
+  echo "  ╚${border}╝"
   echo ""
   exit 1
 fi
