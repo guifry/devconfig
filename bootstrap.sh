@@ -104,6 +104,13 @@ else
   [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
 fi
 
+# Install Homebrew on macOS (needed for GUI apps in Brewfile)
+if [[ "$UNAME" == "Darwin" ]] && ! command -v brew &>/dev/null; then
+  echo "Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
+fi
+
 # Backup existing dotfiles
 ./scripts/backup-existing.sh || { echo "Setup cancelled."; exit 0; }
 
