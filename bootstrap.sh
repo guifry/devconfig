@@ -125,6 +125,11 @@ if [[ "$UNAME" == "Darwin" ]] && ! command -v brew &>/dev/null; then
   exit 1
 fi
 
+if [[ "$UNAME" == "Darwin" ]] && command -v brew &>/dev/null; then
+  echo "Updating brew index..."
+  brew update --quiet
+fi
+
 # Backup existing dotfiles
 ./scripts/backup-existing.sh || { echo "Setup cancelled."; exit 0; }
 
