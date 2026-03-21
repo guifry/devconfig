@@ -67,6 +67,8 @@ cmd_switch() {
   if [[ "$IS_DARWIN" == "true" && -f "$REPO/Brewfile" ]]; then
     if command -v brew &>/dev/null; then
       echo "Applying brew packages..."
+      brew tap homebrew/cask 2>/dev/null || true
+      brew tap nikitabobko/tap 2>/dev/null || true
       brew update
       brew bundle --file="$REPO/Brewfile" --verbose
     else
