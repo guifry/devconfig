@@ -65,8 +65,13 @@ cmd_switch() {
   fi
 
   if [[ "$IS_DARWIN" == "true" && -f "$REPO/Brewfile" ]]; then
-    echo "Applying brew packages..."
-    brew bundle --file="$REPO/Brewfile"
+    if command -v brew &>/dev/null; then
+      echo "Applying brew packages..."
+      brew update --quiet
+      brew bundle --file="$REPO/Brewfile"
+    else
+      echo "WARNING: brew not installed — skipping GUI apps (Raycast, AeroSpace, etc.)"
+    fi
   fi
 
   if [[ "$IS_DARWIN" == "true" ]] && [ -d "/Applications/AeroSpace.app" ]; then
