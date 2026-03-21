@@ -107,12 +107,22 @@ fi
 # Check Homebrew on macOS (needed for GUI apps in Brewfile)
 if [[ "$UNAME" == "Darwin" ]] && ! command -v brew &>/dev/null; then
   echo ""
-  echo "WARNING: Homebrew not installed. GUI apps (Raycast, AeroSpace, etc.) won't be installed."
-  echo "Install it first:  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
-  echo "Then re-run this script."
+  echo "  ╔══════════════════════════════════════════════════════════════╗"
+  echo "  ║                                                              ║"
+  echo "  ║   Homebrew is required on macOS.                             ║"
+  echo "  ║                                                              ║"
+  echo "  ║   GUI apps (Raycast, AeroSpace, Ghostty, etc.) are managed   ║"
+  echo "  ║   via brew casks. Install Homebrew first, then re-run.       ║"
+  echo "  ║                                                              ║"
+  echo "  ║   Run this:                                                  ║"
+  echo "  ║                                                              ║"
+  echo "  ║   /bin/bash -c \"\$(curl -fsSL                                ║"
+  echo "  ║     https://raw.githubusercontent.com/Homebrew/              ║"
+  echo "  ║     install/HEAD/install.sh)\"                                ║"
+  echo "  ║                                                              ║"
+  echo "  ╚══════════════════════════════════════════════════════════════╝"
   echo ""
-  read -p "Continue without brew? [y/N]: " skip_brew < /dev/tty
-  [[ "$skip_brew" != "y" && "$skip_brew" != "Y" ]] && exit 1
+  exit 1
 fi
 
 # Backup existing dotfiles
