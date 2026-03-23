@@ -5,6 +5,13 @@ Cross-platform terminal environment. One command setup.
 ## Setup
 
 ### macOS
+
+**Prerequisites:** Install Homebrew first (needed for GUI apps: Raycast, AeroSpace, Ghostty, etc.)
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Then run:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash
 ```

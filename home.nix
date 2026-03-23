@@ -435,7 +435,6 @@ EOF
   home.file."bin/rx" = { source = ./scripts/rx; executable = true; };
   home.file."bin/tx" = { source = ./scripts/tx; executable = true; };
   home.file."bin/vx" = { source = ./scripts/vx; executable = true; };
-  home.file."bin/playwright-auth" = { source = ./scripts/playwright-auth; executable = true; };
   home.file."bin/create_script" = { source = ./scripts/create_script; executable = true; };
   home.file."bin/edscript" = { source = ./scripts/edscript; executable = true; };
   home.file."bin/aerospace-reorganise" = { source = ./scripts/aerospace-reorganise; executable = true; };
