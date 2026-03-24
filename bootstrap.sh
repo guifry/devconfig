@@ -158,7 +158,7 @@ if [[ "$SKIP_GH" == "0" ]]; then
   fi
   GH_TOKEN=$(gh auth token 2>/dev/null)
   if [[ -n "$GH_TOKEN" ]]; then
-    export NIX_CONFIG="extra-access-tokens = github.com=${GH_TOKEN}"
+    export NIX_CONFIG="access-tokens = github.com=${GH_TOKEN}"
     mkdir -p ~/.config/nix
     grep -q "access-tokens" ~/.config/nix/nix.conf 2>/dev/null && \
       sed -i.bak "s|access-tokens.*|access-tokens = github.com=${GH_TOKEN}|" ~/.config/nix/nix.conf || \
@@ -178,12 +178,7 @@ fi
 
 # Run home-manager (--impure needed for builtins.getEnv)
 echo "Running home-manager..."
-NIX_FLAGS=""
-GH_TOKEN=$(gh auth token 2>/dev/null)
-if [[ -n "$GH_TOKEN" ]]; then
-  NIX_FLAGS="--option access-tokens github.com=${GH_TOKEN}"
-fi
-nix run $NIX_FLAGS home-manager -- switch --impure --flake ".#$CONFIG"
+nix run home-manager -- switch --impure --flake ".#$CONFIG"
 
 # Setup aliases
 ./scripts/aliases-setup.sh
