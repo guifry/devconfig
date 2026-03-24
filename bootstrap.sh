@@ -159,6 +159,10 @@ if [[ "$SKIP_GH" == "0" ]]; then
   GH_TOKEN=$(gh auth token 2>/dev/null)
   if [[ -n "$GH_TOKEN" ]]; then
     export NIX_CONFIG="access-tokens = github.com=${GH_TOKEN}"
+    mkdir -p ~/.config/nix
+    grep -q "access-tokens" ~/.config/nix/nix.conf 2>/dev/null && \
+      sed -i.bak "s|access-tokens.*|access-tokens = github.com=${GH_TOKEN}|" ~/.config/nix/nix.conf || \
+      echo "access-tokens = github.com=${GH_TOKEN}" >> ~/.config/nix/nix.conf
   fi
   # Remove standalone gh to avoid conflict with home-manager's gh package
   nix profile remove gh 2>/dev/null || true

@@ -42,6 +42,10 @@ ensure_gh_auth() {
       if [[ -n "$GH_TOKEN" ]]; then
         export NIX_CONFIG="$NIX_CONFIG
 access-tokens = github.com=$GH_TOKEN"
+        mkdir -p ~/.config/nix
+        grep -q "access-tokens" ~/.config/nix/nix.conf 2>/dev/null && \
+          sed -i.bak "s|access-tokens.*|access-tokens = github.com=$GH_TOKEN|" ~/.config/nix/nix.conf || \
+          echo "access-tokens = github.com=$GH_TOKEN" >> ~/.config/nix/nix.conf
       fi
       return 0
     fi
