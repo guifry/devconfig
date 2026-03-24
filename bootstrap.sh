@@ -158,17 +158,27 @@ if [[ "$SKIP_GH" == "0" ]]; then
   fi
   GH_TOKEN=$(gh auth token 2>/dev/null)
   if [[ -n "$GH_TOKEN" ]]; then
+    # Write token everywhere nix might read it:
+    # 1. NIX_CONFIG env var (works if user is trusted)
     export NIX_CONFIG="access-tokens = github.com=${GH_TOKEN}"
+    # 2. User nix config
     mkdir -p ~/.config/nix
     grep -q "access-tokens" ~/.config/nix/nix.conf 2>/dev/null && \
       sed -i.bak "s|access-tokens.*|access-tokens = github.com=${GH_TOKEN}|" ~/.config/nix/nix.conf || \
       echo "access-tokens = github.com=${GH_TOKEN}" >> ~/.config/nix/nix.conf
-    mkdir -p /etc/nix 2>/dev/null || true
-    if [ -w /etc/nix/nix.conf ] 2>/dev/null; then
-      grep -q "access-tokens" /etc/nix/nix.conf 2>/dev/null && \
-        sed -i.bak "s|access-tokens.*|access-tokens = github.com=${GH_TOKEN}|" /etc/nix/nix.conf || \
-        echo "access-tokens = github.com=${GH_TOKEN}" >> /etc/nix/nix.conf
-    fi
+    # 3. Netrc file (HTTP-level auth, always works regardless of daemon trust)
+    NETRC_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nix"
+    mkdir -p "$NETRC_DIR"
+    cat > "$NETRC_DIR/netrc" <<NETRC
+machine api.github.com
+login oauth
+password ${GH_TOKEN}
+
+machine github.com
+login oauth
+password ${GH_TOKEN}
+NETRC
+    chmod 600 "$NETRC_DIR/netrc"
   fi
   # Remove standalone gh to avoid conflict with home-manager's gh package
   nix profile remove gh 2>/dev/null || true

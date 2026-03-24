@@ -56,6 +56,18 @@ access-tokens = github.com=$GH_TOKEN"
         grep -q "access-tokens" ~/.config/nix/nix.conf 2>/dev/null && \
           sed -i.bak "s|access-tokens.*|access-tokens = github.com=$GH_TOKEN|" ~/.config/nix/nix.conf || \
           echo "access-tokens = github.com=$GH_TOKEN" >> ~/.config/nix/nix.conf
+        NETRC_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nix"
+        mkdir -p "$NETRC_DIR"
+        cat > "$NETRC_DIR/netrc" <<NETRC
+machine api.github.com
+login oauth
+password ${GH_TOKEN}
+
+machine github.com
+login oauth
+password ${GH_TOKEN}
+NETRC
+        chmod 600 "$NETRC_DIR/netrc"
       fi
       return 0
     fi
