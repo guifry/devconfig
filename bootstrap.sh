@@ -178,7 +178,12 @@ fi
 
 # Run home-manager (--impure needed for builtins.getEnv)
 echo "Running home-manager..."
-nix run home-manager -- switch --impure --flake ".#$CONFIG"
+NIX_FLAGS=""
+GH_TOKEN=$(gh auth token 2>/dev/null)
+if [[ -n "$GH_TOKEN" ]]; then
+  NIX_FLAGS="--option access-tokens github.com=${GH_TOKEN}"
+fi
+nix run $NIX_FLAGS home-manager -- switch --impure --flake ".#$CONFIG"
 
 # Setup aliases
 ./scripts/aliases-setup.sh

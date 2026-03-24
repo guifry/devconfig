@@ -23,11 +23,21 @@ else
   [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
 fi
 
+nix_gh_flags() {
+  local token
+  token=$(gh auth token 2>/dev/null)
+  if [[ -n "$token" ]]; then
+    echo "--option access-tokens github.com=${token}"
+  fi
+}
+
 run_home_manager() {
+  local flags
+  flags=$(nix_gh_flags)
   if command -v home-manager &>/dev/null; then
     home-manager "$@"
   else
-    nix run home-manager -- "$@"
+    nix run $flags home-manager -- "$@"
   fi
 }
 
