@@ -2,10 +2,8 @@
 set -e
 
 # Parse flags
-SKIP_GH=0
 for arg in "$@"; do
   case "$arg" in
-    --skip-gh) SKIP_GH=1 ;;
   esac
 done
 
@@ -139,44 +137,6 @@ if [[ "$UNAME" != "Darwin" ]] && [[ -z "$DISPLAY" ]] && [[ -z "$WAYLAND_DISPLAY"
   echo "Note: No display detected (headless server)."
   echo "      Clipboard integration (xclip) will not work."
   echo ""
-fi
-
-# GitHub auth for private flake inputs (e.g. jiggly-baby).
-# Nix needs a GitHub token to fetch private repos referenced in flake.nix.
-# --skip-gh bypasses this for environments where gh auth isn't possible
-# (CI, containers, fresh machines without browser access), at the cost of
-# skipping any private-repo packages.
-if [[ "$SKIP_GH" == "0" ]]; then
-  if ! command -v gh &>/dev/null; then
-    echo "Installing GitHub CLI..."
-    nix profile install nixpkgs#gh
-  fi
-  if ! gh auth status &>/dev/null 2>&1; then
-    echo "GitHub auth required for private packages (e.g. jiggly-baby)."
-    echo "Use --skip-gh to skip this and proceed without private packages."
-    gh auth login
-  fi
-  GH_TOKEN=$(gh auth token 2>/dev/null)
-  if [[ -n "$GH_TOKEN" ]]; then
-    export NIX_CONFIG="access-tokens = github.com=${GH_TOKEN}"
-    # System-level netrc for nix daemon (multi-user mode runs downloads as root)
-    echo "Writing GitHub token to /etc/nix/netrc (requires sudo)..."
-    sudo mkdir -p /etc/nix
-    sudo tee /etc/nix/netrc > /dev/null <<NETRC
-machine api.github.com
-login oauth
-password ${GH_TOKEN}
-
-machine github.com
-login oauth
-password ${GH_TOKEN}
-NETRC
-    sudo chmod 600 /etc/nix/netrc
-  fi
-  # Remove standalone gh to avoid conflict with home-manager's gh package
-  nix profile remove gh 2>/dev/null || true
-else
-  echo "Skipping GitHub auth (--skip-gh). Private packages won't be installed."
 fi
 
 # Run home-manager (--impure needed for builtins.getEnv)

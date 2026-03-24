@@ -23,72 +23,17 @@ else
   [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
 fi
 
-nix_gh_flags() {
-  local token
-  token=$(gh auth token 2>/dev/null)
-  if [[ -n "$token" ]]; then
-    echo "--option access-tokens github.com=${token}"
-  fi
-}
-
 run_home_manager() {
-  local flags
-  flags=$(nix_gh_flags)
   if command -v home-manager &>/dev/null; then
     home-manager "$@"
   else
-    nix run $flags home-manager -- "$@"
+    nix run home-manager -- "$@"
   fi
-}
-
-ensure_gh_auth() {
-  if ! command -v gh &>/dev/null; then
-    echo "Installing GitHub CLI..."
-    nix profile install nixpkgs#gh
-  fi
-  while true; do
-    if gh auth status &>/dev/null 2>&1; then
-      GH_TOKEN=$(gh auth token 2>/dev/null)
-      if [[ -n "$GH_TOKEN" ]]; then
-        export NIX_CONFIG="$NIX_CONFIG
-access-tokens = github.com=$GH_TOKEN"
-        mkdir -p ~/.config/nix
-        grep -q "access-tokens" ~/.config/nix/nix.conf 2>/dev/null && \
-          sed -i.bak "s|access-tokens.*|access-tokens = github.com=$GH_TOKEN|" ~/.config/nix/nix.conf || \
-          echo "access-tokens = github.com=$GH_TOKEN" >> ~/.config/nix/nix.conf
-        NETRC_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nix"
-        mkdir -p "$NETRC_DIR"
-        cat > "$NETRC_DIR/netrc" <<NETRC
-machine api.github.com
-login oauth
-password ${GH_TOKEN}
-
-machine github.com
-login oauth
-password ${GH_TOKEN}
-NETRC
-        chmod 600 "$NETRC_DIR/netrc"
-      fi
-      return 0
-    fi
-    echo ""
-    echo "GitHub auth required (private flake inputs)."
-    echo "Run:  gh auth login"
-    echo ""
-    read -p "Press Enter when done (q to skip)... " reply < /dev/tty
-    [[ "$reply" == "q" ]] && echo "Skipping — private packages won't build." && return 1
-  done
 }
 
 cmd_switch() {
   echo "Applying nix config..."
-  if ! run_home_manager switch --impure --flake ".#$CONFIG" 2>&1; then
-    echo ""
-    echo "Build failed. Checking GitHub auth..."
-    ensure_gh_auth || return 1
-    echo "Retrying..."
-    run_home_manager switch --impure --flake ".#$CONFIG" || return 1
-  fi
+  run_home_manager switch --impure --flake ".#$CONFIG" || return 1
 
   if [[ "$IS_DARWIN" == "true" && -f "$REPO/Brewfile" ]]; then
     if command -v brew &>/dev/null; then
@@ -131,7 +76,6 @@ cmd_switch() {
 
 cmd_update() {
   echo "Updating flake inputs..."
-  ensure_gh_auth
   nix flake update
 
   if [[ "$IS_DARWIN" == "true" ]]; then
