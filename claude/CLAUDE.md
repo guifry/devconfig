@@ -2,6 +2,8 @@ In all interactions and commit messages, be extremely concise, and sacrifice gra
 
 Never mention Claude Code authorship in commits. No "Generated with Claude Code", no "Co-Authored-By: Claude", nothing.
 
+Commit messages are strict one-liners. Format: `verb: description`. No body, no paragraphs, no multi-line.
+
 At the end of each plan, give me a list of unresolved questions if any. Make the questions extremely concise, but still precise. Sacrifice grammar for the sake of concision.
 
 <When coding>
