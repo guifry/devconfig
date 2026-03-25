@@ -206,6 +206,11 @@ vim.keymap.set("n", "<leader>yf", function() vim.fn.setreg("+", vim.fn.expand("%
 vim.keymap.set("n", "<leader>yp", function() vim.fn.setreg("+", vim.fn.expand("%:p")) end, { desc = "Yank full path" })
 vim.keymap.set("n", "<leader>yr", function() vim.fn.setreg("+", vim.fn.expand("%:.")) end, { desc = "Yank relative path" })
 
+vim.keymap.set("n", "<A-j>", "<cmd>m .+1<CR>==", { desc = "Move line down" })
+vim.keymap.set("n", "<A-k>", "<cmd>m .-2<CR>==", { desc = "Move line up" })
+vim.keymap.set("v", "<A-j>", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
+vim.keymap.set("v", "<A-k>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
+
 -- Git merge conflict resolution shortcuts (in 3-way diff)
 vim.keymap.set("n", "g1", ":diffget //2<CR>", { desc = "Diff get ours (left)" })
 vim.keymap.set("n", "g2", ":diffget //3<CR>", { desc = "Diff get theirs (right)" })
@@ -326,6 +331,19 @@ rtp:prepend(lazypath)
 require("lazy").setup({
 	-- NOTE: Plugins can be added via a link or github org/name. To run setup automatically, use `opts = {}`
 	{ "NMAC427/guess-indent.nvim", opts = {} }, -- Auto-detect indentation (tabs vs spaces, width)
+
+	{
+		"nvim-orgmode/orgmode",
+		event = "VeryLazy",
+		ft = { "org" },
+		config = function()
+			require("orgmode").setup({
+				org_agenda_files = "~/org/**/*",
+				org_default_notes_file = "~/org/refile.org",
+				org_startup_folded = "content",
+			})
+		end,
+	},
 
 	-- Alternatively, use `config = function() ... end` for full control over the configuration.
 	-- If you prefer to call `setup` explicitly, use:
