@@ -206,10 +206,10 @@ vim.keymap.set("n", "<leader>yf", function() vim.fn.setreg("+", vim.fn.expand("%
 vim.keymap.set("n", "<leader>yp", function() vim.fn.setreg("+", vim.fn.expand("%:p")) end, { desc = "Yank full path" })
 vim.keymap.set("n", "<leader>yr", function() vim.fn.setreg("+", vim.fn.expand("%:.")) end, { desc = "Yank relative path" })
 
-vim.keymap.set("n", "<A-j>", "<cmd>m .+1<CR>==", { desc = "Move line down" })
-vim.keymap.set("n", "<A-k>", "<cmd>m .-2<CR>==", { desc = "Move line up" })
-vim.keymap.set("v", "<A-j>", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
-vim.keymap.set("v", "<A-k>", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
+vim.keymap.set("n", "<leader>j", "<cmd>m .+1<CR>==", { desc = "Move line down" })
+vim.keymap.set("n", "<leader>k", "<cmd>m .-2<CR>==", { desc = "Move line up" })
+vim.keymap.set("v", "<leader>j", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
+vim.keymap.set("v", "<leader>k", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 
 -- Git merge conflict resolution shortcuts (in 3-way diff)
 vim.keymap.set("n", "g1", ":diffget //2<CR>", { desc = "Diff get ours (left)" })
