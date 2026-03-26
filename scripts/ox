@@ -1,0 +1,35 @@
+#!/bin/bash
+
+cat << 'EOF'
+ORGMODE HOTKEYS (nvim-orgmode)
+
+HEADINGS
+───────────────────────────────────
+New heading below    <Leader>Enter
+Promote heading      <<
+Demote heading       >>
+Next heading         }
+Previous heading     {
+Fold/unfold          Tab
+Fold/unfold all      Shift+Tab
+
+TODO STATES
+───────────────────────────────────
+Cycle state          cit
+  (unmarked → TODO → DONE → unmarked)
+
+CHECKBOXES
+───────────────────────────────────
+Toggle checkbox      Ctrl+Space
+New checkbox below   <Leader>Enter  (on a checkbox line)
+
+AGENDA & CAPTURE
+───────────────────────────────────
+Open agenda          <Leader>oa
+Quick capture        <Leader>oc
+
+LINES
+───────────────────────────────────
+Move line down       <Leader>j
+Move line up         <Leader>k
+EOF

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+cat << 'EOF'
+CHEATSHEETS
+───────────────────────────────────
+ax    AeroSpace (tiling WM)
+ox    Orgmode (nvim todo/notes)
+tx    tmux (SSH sessions)
+vx    Vim/Neovim
+xx    This list
+EOF

@@ -432,7 +432,9 @@ EOF
 
   home.file."bin/ax" = { source = ./scripts/ax; executable = true; };
   home.file."bin/rx" = { source = ./scripts/rx; executable = true; };
+  home.file."bin/ox" = { source = ./scripts/ox; executable = true; };
   home.file."bin/tx" = { source = ./scripts/tx; executable = true; };
+  home.file."bin/xx" = { source = ./scripts/xx; executable = true; };
   home.file."bin/vx" = { source = ./scripts/vx; executable = true; };
   home.file."bin/create_script" = { source = ./scripts/create_script; executable = true; };
   home.file."bin/edscript" = { source = ./scripts/edscript; executable = true; };
