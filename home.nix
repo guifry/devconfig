@@ -259,6 +259,8 @@ EOF
       set -g window-status-separator ""
       set -g pane-border-style "fg=#1f2335"
       set -g pane-active-border-style "fg=#3b4261"
+      set -g pane-border-status top
+      set -g pane-border-format " #{?@label,#{@label},#{pane_index}} "
       set -g message-style "bg=#1f2335,fg=#7aa2f7"
 
       bind h select-pane -L
@@ -271,6 +273,9 @@ EOF
       bind -r K resize-pane -U 5
       bind -r L resize-pane -R 5
       bind e select-layout tiled
+
+      bind T command-prompt -p "pane label:" "set -p @label '%%'"
+      bind t set -p @label ""
 
       # Swap current window with target: prefix + W, then enter number
       bind W command-prompt -p "swap with:" "swap-window -t '%%'"
