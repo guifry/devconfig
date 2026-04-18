@@ -240,7 +240,7 @@ EOF
       set -g automatic-rename off
       set-hook -g pane-focus-in "run-shell 'tmux-smart-rename'"
       set-hook -g window-pane-changed "run-shell 'tmux-smart-rename'"
-      set -g set-clipboard off
+      set -g set-clipboard on
       set -g allow-passthrough on
       set -g display-panes-time 3000
 
@@ -296,15 +296,11 @@ EOF
       bind [ copy-mode \; send-keys -X top-line
       bind -T copy-mode-vi v send -X begin-selection
       set -g mode-style "fg=black,bg=yellow"
-    '' + (if isDarwin then ''
-      bind -T copy-mode-vi y send -X copy-pipe-no-clear "pbcopy"
-      bind -T copy-mode-vi Enter send -X copy-pipe-no-clear "pbcopy"
-      bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-pipe-no-clear "pbcopy"
-    '' else ''
-      bind -T copy-mode-vi y send -X copy-pipe-no-clear "xclip -selection clipboard"
-      bind -T copy-mode-vi Enter send -X copy-pipe-no-clear "xclip -selection clipboard"
-      bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-pipe-no-clear "xclip -selection clipboard"
-    '');
+    '' + ''
+      bind -T copy-mode-vi y send -X copy-pipe-no-clear
+      bind -T copy-mode-vi Enter send -X copy-pipe-no-clear
+      bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-pipe-no-clear
+    '';
   };
 
   programs.git = {
