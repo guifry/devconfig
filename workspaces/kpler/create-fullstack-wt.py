@@ -9,11 +9,16 @@ import sys
 from pathlib import Path
 
 KPLER_DIR = Path.home() / "kpler"
-WEB_APP_REPO = KPLER_DIR / "web-app"
-CHARTERING_REPO = KPLER_DIR / "chartering-fast-api"
-FIXING_REPO = KPLER_DIR / "chartering-fixing-api"
+REPO_NAMES = [
+    "web-app",
+    "chartering-fast-api",
+    "chartering-fixing-api",
+    "chartering-email-parser",
+    "chartering-gitops",
+    "contacts-api",
+]
+REPO_DIRS = set(REPO_NAMES)
 WT_PREFIX = "FST-"
-REPO_DIRS = {"web-app", "chartering-fast-api", "chartering-fixing-api"}
 CONVENTION_SYMLINKS = {
     "CLAUDE.md": Path.home() / "projects/devconfig/conventions/chartering/CLAUDE.md",
     "CHARTERING_AGENT_GUIDE.md": Path.home() / "projects/devconfig/conventions/chartering/CHARTERING_AGENT_GUIDE.md",
@@ -22,6 +27,10 @@ CONVENTION_SYMLINKS = {
 
 def log(msg: str) -> None:
     print(msg, file=sys.stderr)
+
+
+def repo_path(name: str) -> Path:
+    return KPLER_DIR / name
 
 
 def get_branch_numbers(repo: Path) -> list[int]:
@@ -45,7 +54,8 @@ def get_next_wt_number() -> int:
             match = re.search(rf"{WT_PREFIX}(\d+)(?:-|$)", d.name)
             if match:
                 numbers.append(int(match.group(1)))
-    for repo in (WEB_APP_REPO, CHARTERING_REPO, FIXING_REPO):
+    for name in REPO_NAMES:
+        repo = repo_path(name)
         if repo.exists():
             numbers.extend(get_branch_numbers(repo))
     return max(numbers, default=0) + 1
@@ -73,12 +83,19 @@ def get_default_branch(repo: Path) -> str:
         )
         if result.returncode == 0:
             return branch
-    return "main"
+    raise SystemExit(f"could not determine default branch for {repo}")
 
 
-def create_worktree(repo: Path, target_dir: Path, base_branch: str, new_branch: str) -> None:
+def fetch_branch(repo: Path, branch: str) -> None:
     subprocess.run(
-        ["git", "worktree", "add", "-b", new_branch, str(target_dir), base_branch],
+        ["git", "fetch", "origin", branch],
+        cwd=repo, check=True, stdout=sys.stderr, stderr=sys.stderr
+    )
+
+
+def create_worktree(repo: Path, target_dir: Path, base_ref: str, new_branch: str) -> None:
+    subprocess.run(
+        ["git", "worktree", "add", "-b", new_branch, str(target_dir), base_ref],
         cwd=repo, check=True, stdout=sys.stderr
     )
 
@@ -106,12 +123,13 @@ def create_convention_symlinks(wt_dir: Path) -> None:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("suffix", nargs="?", default="", help="optional suffix for worktree name")
+    parser.add_argument("suffix", nargs="?", default="", help="optional suffix for worktree directory name")
     args = parser.parse_args()
 
-    for repo in (WEB_APP_REPO, CHARTERING_REPO, FIXING_REPO):
+    for name in REPO_NAMES:
+        repo = repo_path(name)
         if not repo.exists():
-            raise SystemExit(f"{repo.name} not found at {repo}")
+            raise SystemExit(f"{name} not found at {repo}")
 
     wt_num = get_next_wt_number()
     suffix_part = f"-{args.suffix}" if args.suffix else ""
@@ -120,10 +138,14 @@ def main():
     wt_dir.mkdir()
     log(f"Created {wt_dir}")
 
-    for repo, name in ((WEB_APP_REPO, "web-app"), (CHARTERING_REPO, "chartering-fast-api"), (FIXING_REPO, "chartering-fixing-api")):
+    for name in REPO_NAMES:
+        repo = repo_path(name)
         base = get_default_branch(repo)
-        log(f"Creating {name} worktree (branch {wt_name} from {base})...")
-        create_worktree(repo, wt_dir / name, base, wt_name)
+        log(f"Fetching origin/{base} in {name}...")
+        fetch_branch(repo, base)
+        new_branch = f"{WT_PREFIX}{wt_num}-{base}"
+        log(f"Creating {name} worktree (branch {new_branch} from origin/{base})...")
+        create_worktree(repo, wt_dir / name, f"origin/{base}", new_branch)
 
     prev_wt = get_previous_wt_dir(wt_num)
     if prev_wt:

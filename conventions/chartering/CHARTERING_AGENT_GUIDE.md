@@ -2,6 +2,19 @@
 
 Reference documentation for AI agents working on the chartering codebase.
 
+## Repositories in the Fullstack Workspace
+
+A fullstack worktree (`fst`) provisions one branch per repo from latest `origin/<default>`:
+
+| Repo | Stack | Purpose |
+|------|-------|---------|
+| `web-app` | Vue 3, RxJS, ag-Grid, TS | Frontend monorepo; chartering domain at `apps/terminal/src/domains/chartering/`. |
+| `chartering-fast-api` | FastAPI, SQLAlchemy 2.0 async, Postgres, Py 3.11 | Primary backend: cargo, fixture, tonnage CRUD + filters. |
+| `chartering-fixing-api` | Python | Fixing/fixtures-related backend service (sibling to `chartering-fast-api`). |
+| `chartering-email-parser` | Python, LLM, Kafka | Ingests emails from Inbox Ruby, LLM-parses open positions, publishes to Kafka. Upstream of email-sourced cargos/fixtures. |
+| `chartering-gitops` | k8s manifests, Argo | GitOps deployment manifests for chartering services. |
+| `contacts-api` | Express, Node.js | Contacts API service. |
+
 ## Business Domain
 
 ### Industry Context
