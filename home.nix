@@ -426,6 +426,7 @@ EOF
   xdg.configFile."aerospace/aerospace.toml".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/aerospace.toml";
   xdg.configFile."ghostty/config".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/ghostty.config";
   xdg.configFile."lazygit/config.yml".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/lazygit.yml";
+  xdg.configFile."opencode/opencode.json".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/opencode.json";
 
   home.file.".claude/CLAUDE.md".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/CLAUDE.md";
   home.file.".claude/settings.json".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/settings.json";
