@@ -211,13 +211,26 @@ vim.keymap.set("n", "<leader>k", "<cmd>m .-2<CR>==", { desc = "Move line up" })
 vim.keymap.set("v", "<leader>j", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
 vim.keymap.set("v", "<leader>k", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 
--- Git merge conflict resolution shortcuts (in 3-way diff)
-vim.keymap.set("n", "g1", ":diffget //2<CR>", { desc = "Diff get ours (left)" })
-vim.keymap.set("n", "g2", ":diffget //3<CR>", { desc = "Diff get theirs (right)" })
-vim.keymap.set("n", "gb", function()
-	vim.cmd("diffget //2")
-	vim.cmd("diffget //3")
-end, { desc = "Diff get both" })
+-- Git merge conflict resolution shortcuts (works in fugitive Gvdiffsplit + diffview merge tool)
+local function diff_choose(side)
+	local ok, lib = pcall(require, "diffview.lib")
+	if ok and lib.get_current_view() then
+		require("diffview.actions").conflict_choose(side)()
+		return
+	end
+	if side == "ours" then
+		vim.cmd("diffget //2")
+	elseif side == "theirs" then
+		vim.cmd("diffget //3")
+	else
+		vim.cmd("diffget //2")
+		vim.cmd("diffget //3")
+	end
+end
+
+vim.keymap.set("n", "g1", function() diff_choose("ours") end, { desc = "Diff get ours (left)" })
+vim.keymap.set("n", "g2", function() diff_choose("theirs") end, { desc = "Diff get theirs (right)" })
+vim.keymap.set("n", "gb", function() diff_choose("all") end, { desc = "Diff get both" })
 
 -- Diagnostic Config & Keymaps
 -- See :help vim.diagnostic.Opts
