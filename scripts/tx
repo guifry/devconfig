@@ -36,6 +36,8 @@ Cycle layouts       prefix + Space
 Rotate panes fwd    prefix + Ctrl+o
 Swap with prev      prefix + {
 Swap with next      prefix + }
+Set pane label      prefix + T  (custom)
+Clear pane label    prefix + t  (custom)
 
 COPY MODE (vi)
 ───────────────────────────────────
@@ -43,6 +45,14 @@ Enter copy mode     prefix + [
 Start selection     v
 Copy & exit         y  or  Enter
 Scroll up/down      Ctrl+u / Ctrl+d
+
+CLAUDE CODE SCROLLBACK (custom)
+───────────────────────────────────
+Jump to my msg      prefix + /     (❯ user messages)
+Jump to Claude msg  prefix + ?     (⏺ assistant responses)
+Jump to shell ➜     prefix + .     (shell prompts)
+Repeat search       n / N          (forward / backward)
+Yank Claude reply   prefix + y     (last ⏺ block to clipboard)
 
 PLUGINS
 ───────────────────────────────────
