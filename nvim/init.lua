@@ -1092,6 +1092,8 @@ require("lazy").setup({
 			vim.keymap.set({ "n", "x", "o" }, "]m", function() move.goto_next_start("@function.outer", "textobjects") end, { desc = "Next method start" })
 			vim.keymap.set({ "n", "x", "o" }, "[M", function() move.goto_previous_end("@function.outer", "textobjects") end, { desc = "Previous method end" })
 			vim.keymap.set({ "n", "x", "o" }, "]M", function() move.goto_next_end("@function.outer", "textobjects") end, { desc = "Next method end" })
+			vim.keymap.set({ "n", "x", "o" }, "[f", function() move.goto_previous_start("@call.outer", "textobjects") end, { desc = "Previous function call" })
+			vim.keymap.set({ "n", "x", "o" }, "]f", function() move.goto_next_start("@call.outer", "textobjects") end, { desc = "Next function call" })
 			vim.keymap.set({ "n", "x", "o" }, "[c", function()
 				if vim.wo.diff then vim.cmd("normal! [c") else move.goto_previous_start("@class.outer", "textobjects") end
 			end, { desc = "Previous class/change" })
