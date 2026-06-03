@@ -33,7 +33,6 @@ in {
     postgresql
     rainfrog
     lazydocker
-    oxker
     mitmproxy
     glow
     imagemagick
