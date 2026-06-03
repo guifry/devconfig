@@ -1039,32 +1039,22 @@ require("lazy").setup({
 
 	{ -- Highlight, edit, and navigate code
 		"nvim-treesitter/nvim-treesitter",
+		lazy = false,
 		config = function()
-			local filetypes = {
-				"bash",
-				"c",
-				"css",
-				"diff",
-				"html",
-				"javascript",
-				"json",
-				"lua",
-				"luadoc",
-				"markdown",
-				"markdown_inline",
-				"python",
-				"query",
-				"tsx",
-				"typescript",
-				"vim",
-				"vimdoc",
-				"yaml",
+			local languages = {
+				"bash", "c", "cpp", "css", "diff", "go", "html", "java",
+				"javascript", "json", "lua", "luadoc", "markdown",
+				"markdown_inline", "python", "query", "rust", "tsx",
+				"typescript", "vim", "vimdoc", "yaml",
 			}
-			require("nvim-treesitter").install(filetypes)
+			require("nvim-treesitter").setup()
+			pcall(function()
+				require("nvim-treesitter").install(languages):wait(120000)
+			end)
 			vim.api.nvim_create_autocmd("FileType", {
-				pattern = filetypes,
+				pattern = languages,
 				callback = function()
-					vim.treesitter.start()
+					pcall(vim.treesitter.start)
 				end,
 			})
 		end,
@@ -1088,12 +1078,83 @@ require("lazy").setup({
 		config = function()
 			require("nvim-treesitter-textobjects").setup({ move = { set_jumps = true } })
 			local move = require("nvim-treesitter-textobjects.move")
-			vim.keymap.set({ "n", "x", "o" }, "[m", function() move.goto_previous_start("@function.outer", "textobjects") end, { desc = "Previous method start" })
-			vim.keymap.set({ "n", "x", "o" }, "]m", function() move.goto_next_start("@function.outer", "textobjects") end, { desc = "Next method start" })
-			vim.keymap.set({ "n", "x", "o" }, "[M", function() move.goto_previous_end("@function.outer", "textobjects") end, { desc = "Previous method end" })
-			vim.keymap.set({ "n", "x", "o" }, "]M", function() move.goto_next_end("@function.outer", "textobjects") end, { desc = "Next method end" })
-			vim.keymap.set({ "n", "x", "o" }, "[f", function() move.goto_previous_start("@call.outer", "textobjects") end, { desc = "Previous function call" })
-			vim.keymap.set({ "n", "x", "o" }, "]f", function() move.goto_next_start("@call.outer", "textobjects") end, { desc = "Next function call" })
+			local function safe_move(fn)
+				return function() pcall(fn) end
+			end
+			vim.keymap.set({ "n", "x", "o" }, "[m", safe_move(function() move.goto_previous_start("@function.outer", "textobjects") end), { desc = "Previous method start" })
+			vim.keymap.set({ "n", "x", "o" }, "]m", safe_move(function() move.goto_next_start("@function.outer", "textobjects") end), { desc = "Next method start" })
+			vim.keymap.set({ "n", "x", "o" }, "[M", safe_move(function() move.goto_previous_end("@function.outer", "textobjects") end), { desc = "Previous method end" })
+			vim.keymap.set({ "n", "x", "o" }, "]M", safe_move(function() move.goto_next_end("@function.outer", "textobjects") end), { desc = "Next method end" })
+			local function call_name_node(node)
+				local cursor = node:field("function")[1] or node:field("name")[1] or node
+				while cursor do
+					local child = cursor:field("attribute")[1] or cursor:field("property")[1]
+					if child then cursor = child else break end
+				end
+				return cursor
+			end
+			local call_patterns = {
+				python = "(call) @call",
+				javascript = "(call_expression) @call",
+				typescript = "(call_expression) @call",
+				tsx = "(call_expression) @call",
+				go = "(call_expression) @call",
+				rust = "(call_expression) @call",
+				c = "(call_expression) @call",
+				cpp = "(call_expression) @call",
+				java = "(method_invocation) @call",
+			}
+			local function jump_to_call_name(forward)
+				local ft = vim.bo.filetype
+				local pattern = call_patterns[ft]
+				if not pattern then return end
+				local ok, query = pcall(vim.treesitter.query.parse, ft, pattern)
+				if not ok then return end
+				local parser = vim.treesitter.get_parser(0, ft)
+				if not parser then return end
+				local tree = parser:parse()[1]
+				if not tree then return end
+				local calls = {}
+				for id, node, _ in query:iter_captures(tree:root(), vim.api.nvim_get_current_buf(), 0, -1) do
+					if query.captures[id] == "call" then
+						local target = call_name_node(node)
+						if target then
+							local r, c = target:range()
+							table.insert(calls, { row = r, col = c })
+						end
+					end
+				end
+				table.sort(calls, function(a, b)
+					if a.row ~= b.row then return a.row < b.row end
+					return a.col < b.col
+				end)
+				local cursor = vim.api.nvim_win_get_cursor(0)
+				local cursor_row, cursor_col = cursor[1] - 1, cursor[2]
+				local target
+				if forward then
+					for _, c in ipairs(calls) do
+						if c.row > cursor_row or (c.row == cursor_row and c.col > cursor_col) then
+							target = c
+							break
+						end
+					end
+					if not target and #calls > 0 then target = calls[1] end
+				else
+					for i = #calls, 1, -1 do
+						local c = calls[i]
+						if c.row < cursor_row or (c.row == cursor_row and c.col < cursor_col) then
+							target = c
+							break
+						end
+					end
+					if not target and #calls > 0 then target = calls[#calls] end
+				end
+				if target then
+					vim.api.nvim_win_set_cursor(0, { target.row + 1, target.col })
+				end
+			end
+			vim.keymap.set({ "n", "x", "o" }, "[f", function() jump_to_call_name(false) end, { desc = "Previous function call name" })
+			vim.keymap.set({ "n", "x", "o" }, "]f", function() jump_to_call_name(true) end, { desc = "Next function call name" })
 			vim.keymap.set({ "n", "x", "o" }, "[c", function()
 				if vim.wo.diff then vim.cmd("normal! [c") else move.goto_previous_start("@class.outer", "textobjects") end
 			end, { desc = "Previous class/change" })
