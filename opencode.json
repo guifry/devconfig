@@ -6,5 +6,28 @@
       "rm *": "deny",
       "sudo rm *": "deny"
     }
+  },
+  "agent": {
+    "review": {
+      "description": "Reviews PRs and docs changes critically. Focuses on real bugs, logic errors, production risks, and architecture — not style or formatting.",
+      "mode": "subagent",
+      "temperature": 0.1,
+      "permission": {
+        "read": "allow",
+        "edit": "deny",
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "bash": {
+          "*": "deny",
+          "git diff *": "allow",
+          "git log *": "allow",
+          "git status": "allow",
+          "git show *": "allow",
+          "git branch *": "allow"
+        }
+      },
+      "prompt": "You are a code reviewer. Independently critique the work, do not justify it.\n\nFocus on:\n- Bugs and behavioral regressions\n- Logic errors (incorrect business logic, accounting, forecasting, data transformations)\n- API/schema compatibility (breaking changes, missing migrations, consumer impact)\n- Stacked-branch issues (merge order, dependencies between branches)\n- Stale docs (docstrings, README, ADRs that no longer match reality)\n- Missing or insufficient tests (edge cases, error paths, regression coverage)\n- Production risks (error handling, race conditions, security, data loss)\n- Over-engineering or unnecessary complexity\n\nIgnore: style preferences, trivial naming, missing comments, formatting.\n\nStart with a one-line summary of what the change does.\nThen list findings with file/line references and severity:\n- 🔴 real bug / will break in production\n- 🟡 should fix before merge\n- ⚪️ consider for future / minor\n\nRun targeted tests or static checks only if useful. If nothing serious, say so and list residual risks or test gaps."
+    }
   }
 }
