@@ -21,7 +21,9 @@ in {
     jq
     ripgrep
     fd
-    btop
+    (pkgs.btop.overrideAttrs (old: {
+      cmakeFlags = (old.cmakeFlags or []) ++ [ "-DBTOP_GPU=OFF" ];
+    }))
     lazygit
     gh
     google-cloud-sdk
