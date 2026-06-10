@@ -54,6 +54,13 @@ Comment line        gcc
 Comment selection   gc (visual mode)
 Colorscheme picker  ;Colors
 
+ORG NOTES
+───────────────────────────────────
+Browse ~/org/       \so
+Find upstream       \of
+New in ~/org/       \on
+New here            \oh
+
 SESSIONS
 ───────────────────────────────────
 Save session        \ss
