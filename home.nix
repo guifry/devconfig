@@ -120,6 +120,7 @@ in {
 
       # opencode
       export PATH="$HOME/.opencode/bin:$PATH"
+      export OPENCODE_EXPERIMENTAL=1
 
       # electron-forge tabtab
       [[ -f ~/.npm/_npx/6913fdfd1ea7a741/node_modules/tabtab/.completions/electron-forge.zsh ]] && . ~/.npm/_npx/6913fdfd1ea7a741/node_modules/tabtab/.completions/electron-forge.zsh
