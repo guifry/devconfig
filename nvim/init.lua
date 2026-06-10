@@ -513,6 +513,31 @@ require("lazy").setup({
 			end, { desc = "[S]earch [O]rg notes" })
 			vim.keymap.set("n", "<leader><leader>", builtin.buffers, { desc = "[ ] Find existing buffers" })
 
+			vim.keymap.set("n", "<leader>of", function()
+				local dir = vim.fn.getcwd()
+				local home = vim.fn.expand("$HOME")
+				while true do
+					local files = vim.fn.glob(dir .. "/*.org", false, true)
+					if #files > 0 then
+						builtin.find_files({ cwd = dir, default_text = ".org" })
+						return
+					end
+					if dir == home then
+						vim.notify("No .org files found up to $HOME", vim.log.levels.WARN)
+						return
+					end
+					dir = vim.fn.fnamemodify(dir, ":h")
+				end
+			end, { desc = "[O]rg [F]ind — nearest .org upstream" })
+			vim.keymap.set("n", "<leader>on", function()
+				local path = vim.fn.expand("~/org/" .. os.date("%Y-%m-%d-%H%M%S") .. ".org")
+				vim.cmd("edit " .. path)
+			end, { desc = "[O]rg [N]ew — create note in ~/org/" })
+			vim.keymap.set("n", "<leader>oh", function()
+				local path = os.date("%Y-%m-%d-%H%M%S") .. ".org"
+				vim.cmd("edit " .. path)
+			end, { desc = "[O]rg [H]ere — create note in cwd" })
+
 			-- This runs on LSP attach per buffer (see main LSP attach function in 'neovim/nvim-lspconfig' config for more info,
 			-- it is better explained there). This allows easily switching between pickers if you prefer using something else!
 			vim.api.nvim_create_autocmd("LspAttach", {
