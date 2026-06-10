@@ -13,8 +13,7 @@ Previous window     prefix + p
 Switch to window N  prefix + 0-9
 Rename window       prefix + ,
 List windows        prefix + w
-Swap window         prefix + S  (custom)
-Insert window       prefix + I  (custom, shifts others)
+Insert window       prefix + I  (custom, shifts others right)
 
 SESSIONS
 ───────────────────────────────────
@@ -45,6 +44,13 @@ Enter copy mode     prefix + [
 Start selection     v
 Copy & exit         y  or  Enter
 Scroll up/down      Ctrl+u / Ctrl+d
+
+PERSISTENCE (tmux-resurrect + continuum)
+───────────────────────────────────
+Save state          prefix + S     (all sessions, windows, panes, workdirs)
+Restore state       prefix + Ctrl+r
+Auto-save           every 15 min
+Auto-restore        on tmux start
 
 CLAUDE CODE SCROLLBACK (custom)
 ───────────────────────────────────
