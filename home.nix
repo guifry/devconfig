@@ -261,8 +261,9 @@ EOF
       set -g window-status-format "#[fg=#565f89] #I:#W"
       set -g window-status-current-format "#[fg=#7aa2f7,bold] #I:#W"
       set -g window-status-separator ""
+      set -g pane-border-lines heavy
       set -g pane-border-style "fg=#1f2335"
-      set -g pane-active-border-style "fg=#3b4261"
+      set -g pane-active-border-style "fg=#f7768e"
       set -g pane-border-status top
       set -g pane-border-format " #{?@label,#{@label},#{pane_index}} "
       set -g message-style "bg=#1f2335,fg=#7aa2f7"
