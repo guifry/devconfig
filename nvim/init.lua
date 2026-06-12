@@ -1184,11 +1184,21 @@ require("lazy").setup({
 			vim.keymap.set({ "n", "x", "o" }, "[f", function() jump_to_call_name(false) end, { desc = "Previous function call name" })
 			vim.keymap.set({ "n", "x", "o" }, "]f", function() jump_to_call_name(true) end, { desc = "Next function call name" })
 			vim.keymap.set({ "n", "x", "o" }, "[c", function()
-				if vim.wo.diff then vim.cmd("normal! [c") else move.goto_previous_start("@class.outer", "textobjects") end
-			end, { desc = "Previous class/change" })
+				move.goto_previous_start("@class.outer", "textobjects")
+			end, { desc = "Previous class" })
 			vim.keymap.set({ "n", "x", "o" }, "]c", function()
-				if vim.wo.diff then vim.cmd("normal! ]c") else move.goto_next_start("@class.outer", "textobjects") end
-			end, { desc = "Next class/change" })
+				move.goto_next_start("@class.outer", "textobjects")
+			end, { desc = "Next class" })
+			vim.keymap.set({ "n", "x", "o" }, "[h", function()
+				if vim.wo.diff or vim.api.nvim_buf_get_name(0):match("^octo://") then
+					vim.cmd("normal! [c")
+				end
+			end, { desc = "Previous hunk" })
+			vim.keymap.set({ "n", "x", "o" }, "]h", function()
+				if vim.wo.diff or vim.api.nvim_buf_get_name(0):match("^octo://") then
+					vim.cmd("normal! ]c")
+				end
+			end, { desc = "Next hunk" })
 		end,
 	},
 
