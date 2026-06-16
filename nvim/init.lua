@@ -315,6 +315,25 @@ vim.api.nvim_create_autocmd({ "BufAdd", "BufReadPre", "BufNewFile", "BufNew", "B
 	end,
 })
 
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "markdown",
+	callback = function()
+		vim.keymap.set("n", "<CR>", function()
+			local line = vim.fn.getline(".")
+			local url = line:match("%(([^)]+)%)")
+			if not url or url:match("^#") then return end
+			if url:match("^https?://") then
+				vim.ui.open(url)
+			else
+				local path = vim.fn.expand("%:p:h") .. "/" .. url
+				if vim.fn.filereadable(path) == 1 then
+					vim.cmd("edit " .. vim.fn.fnamemodify(path, ":."))
+				end
+			end
+		end, { buffer = true, desc = "Open markdown link" })
+	end,
+})
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -1106,11 +1125,65 @@ require("lazy").setup({
 		config = function()
 			require("nvim-treesitter-textobjects").setup({ move = { set_jumps = true } })
 			local move = require("nvim-treesitter-textobjects.move")
+			local function jump_to_method_name(forward)
+				local ft = vim.bo.filetype
+				local patterns = {
+					python = "(function_definition) @defn",
+					javascript = "(function_declaration) @defn",
+					typescript = "(function_declaration) @defn",
+					tsx = "(function_declaration) @defn",
+					go = "(function_declaration) @defn",
+					rust = "(function_item) @defn",
+					c = "(function_definition) @defn",
+					cpp = "(function_definition) @defn",
+					java = "(method_declaration) @defn",
+				}
+				local pattern = patterns[ft]
+				if not pattern then return end
+				local ok, query = pcall(vim.treesitter.query.parse, ft, pattern)
+				if not ok then return end
+				local ok, parser = pcall(vim.treesitter.get_parser, 0, ft)
+				if not ok or not parser then return end
+				local root = parser:parse()[1]:root()
+				if not root then return end
+				local defns = {}
+				for id, node, _ in query:iter_captures(root, vim.api.nvim_get_current_buf(), 0, -1) do
+					if query.captures[id] == "defn" then
+						local name = node:field("name")[1] or node
+						local r, c = name:range()
+						table.insert(defns, { row = r, col = c })
+					end
+				end
+				table.sort(defns, function(a, b)
+					if a.row ~= b.row then return a.row < b.row end
+					return a.col < b.col
+				end)
+				local cursor = vim.api.nvim_win_get_cursor(0)
+				local cursor_row, cursor_col = cursor[1] - 1, cursor[2]
+				local target
+				if forward then
+					for _, d in ipairs(defns) do
+						if d.row > cursor_row or (d.row == cursor_row and d.col > cursor_col) then
+							target = d; break
+						end
+					end
+					if not target and #defns > 0 then target = defns[1] end
+				else
+					for i = #defns, 1, -1 do
+						local d = defns[i]
+						if d.row < cursor_row or (d.row == cursor_row and d.col < cursor_col) then
+							target = d; break
+						end
+					end
+					if not target and #defns > 0 then target = defns[#defns] end
+				end
+				if target then vim.api.nvim_win_set_cursor(0, { target.row + 1, target.col }) end
+			end
+			vim.keymap.set({ "n", "x", "o" }, "[m", function() jump_to_method_name(false) end, { desc = "Previous method start" })
+			vim.keymap.set({ "n", "x", "o" }, "]m", function() jump_to_method_name(true) end, { desc = "Next method start" })
 			local function safe_move(fn)
 				return function() pcall(fn) end
 			end
-			vim.keymap.set({ "n", "x", "o" }, "[m", safe_move(function() move.goto_previous_start("@function.outer", "textobjects") end), { desc = "Previous method start" })
-			vim.keymap.set({ "n", "x", "o" }, "]m", safe_move(function() move.goto_next_start("@function.outer", "textobjects") end), { desc = "Next method start" })
 			vim.keymap.set({ "n", "x", "o" }, "[M", safe_move(function() move.goto_previous_end("@function.outer", "textobjects") end), { desc = "Previous method end" })
 			vim.keymap.set({ "n", "x", "o" }, "]M", safe_move(function() move.goto_next_end("@function.outer", "textobjects") end), { desc = "Next method end" })
 			local function call_name_node(node)
