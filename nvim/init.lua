@@ -1287,8 +1287,15 @@ require("lazy").setup({
 				end,
 				deepseek = function()
 					local key = (vim.fn.readfile("/tmp/ds-key") or { "" })[1]:gsub("%s+", "")
-					vim.env.DEEPSEEK_API_KEY = key
-					return require("codecompanion.adapters").extend("deepseek", {})
+					return require("codecompanion.adapters").extend("deepseek", {
+						env = {
+							api_key = key,
+						},
+						headers = {
+							["Content-Type"] = "application/json",
+							Authorization = "Bearer " .. key,
+						},
+					})
 				end,
 			},
 		},
