@@ -1277,26 +1277,30 @@ require("lazy").setup({
 				cmd = { adapter = "deepseek" },
 			},
 			adapters = {
-				claude_code = function()
-					return require("codecompanion.adapters").extend("claude_code", {
-						env = {
-							CLAUDE_CODE_OAUTH_TOKEN = vim.env.CLAUDE_CODE_OAUTH_TOKEN,
-						},
-						cmd = { vim.fn.expand("~/.nvm/versions/node/v22.13.0/bin/claude-code-acp") },
-					})
-				end,
-				deepseek = function()
-					local key = (vim.fn.readfile("/tmp/ds-key") or { "" })[1]:gsub("%s+", "")
-					return require("codecompanion.adapters").extend("deepseek", {
-						env = {
-							api_key = key,
-						},
-						headers = {
-							["Content-Type"] = "application/json",
-							Authorization = "Bearer " .. key,
-						},
-					})
-				end,
+				acp = {
+					claude_code = function()
+						return require("codecompanion.adapters").extend("claude_code", {
+							env = {
+								CLAUDE_CODE_OAUTH_TOKEN = vim.env.CLAUDE_CODE_OAUTH_TOKEN,
+							},
+							cmd = { vim.fn.expand("~/.nvm/versions/node/v22.13.0/bin/claude-code-acp") },
+						})
+					end,
+				},
+				http = {
+					deepseek = function()
+						local key = (vim.fn.readfile("/tmp/ds-key") or { "" })[1]:gsub("%s+", "")
+						return require("codecompanion.adapters").extend("deepseek", {
+							env = {
+								api_key = key,
+							},
+							headers = {
+								["Content-Type"] = "application/json",
+								Authorization = "Bearer " .. key,
+							},
+						})
+					end,
+				},
 			},
 		},
 	},
