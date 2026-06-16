@@ -1272,9 +1272,9 @@ require("lazy").setup({
 		},
 		opts = {
 			strategies = {
-				chat = { adapter = "claude_code" },
-				inline = { adapter = "claude_code" },
-				cmd = { adapter = "claude_code" },
+				chat = { adapter = "deepseek" },
+				inline = { adapter = "deepseek" },
+				cmd = { adapter = "deepseek" },
 			},
 			adapters = {
 				claude_code = function()
