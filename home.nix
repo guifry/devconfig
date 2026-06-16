@@ -68,6 +68,11 @@ in {
       plugins = [ "git" "vi-mode" ];
     };
     initContent = ''
+      # Source nix profile PATH — /etc/zshenv only does this on SSH
+      if [ -z "''${__ETC_PROFILE_NIX_SOURCED:-}" ] && [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+        . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+      fi
+
       if command -v tmux &>/dev/null && [ -z "$TMUX" ] && [ -n "$GHOSTTY_RESOURCES_DIR" ]; then
         tmux new-session -A -s main
       fi
