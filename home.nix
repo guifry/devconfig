@@ -72,7 +72,6 @@ in {
         tmux new-session -A -s main
       fi
 
-      eval "$(direnv hook zsh)"
       export NIX_CONFIG="warn-dirty = false"
 
       [[ -f ~/.secrets ]] && source ~/.secrets
