@@ -1285,6 +1285,14 @@ require("lazy").setup({
 						cmd = { vim.fn.expand("~/.nvm/versions/node/v22.13.0/bin/claude-code-acp") },
 					})
 				end,
+				deepseek = function()
+					local key = vim.fn.readfile("/tmp/ds-key")[1] or ""
+					return require("codecompanion.adapters").extend("deepseek", {
+						env = {
+							DEEPSEEK_API_KEY = key,
+						},
+					})
+				end,
 			},
 		},
 	},
