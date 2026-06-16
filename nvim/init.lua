@@ -1287,11 +1287,8 @@ require("lazy").setup({
 				end,
 				deepseek = function()
 					local key = (vim.fn.readfile("/tmp/ds-key") or { "" })[1]:gsub("%s+", "")
-					return require("codecompanion.adapters").extend("deepseek", {
-						env = {
-							api_key = key,
-						},
-					})
+					vim.env.DEEPSEEK_API_KEY = key
+					return require("codecompanion.adapters").extend("deepseek", {})
 				end,
 			},
 		},
