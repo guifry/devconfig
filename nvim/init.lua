@@ -1318,6 +1318,27 @@ require("lazy").setup({
 			{ "<leader>gb", "<cmd>Git blame<CR>", desc = "Git blame" },
 			{ "<leader>gd", "<cmd>Gvdiffsplit<CR>", desc = "Git diff" },
 			{ "<leader>gx", "<cmd>Telescope git_status<CR>", desc = "Git changed files" },
+			{ "<leader>gp", function()
+				local sha = vim.fn.getline("."):match("^(%x+)")
+				if not sha then
+					vim.notify("No commit SHA on this line", vim.log.levels.WARN)
+					return
+				end
+				vim.fn.jobstart({
+					"gh", "api", "repos/{owner}/{repo}/commits/" .. sha .. "/pulls",
+					"--jq", ".[0].html_url",
+				}, {
+					stdout_buffered = true,
+					on_stdout = function(_, data)
+						local url = vim.trim(table.concat(data or {}, ""))
+						if url and url ~= "" then
+							vim.fn.jobstart({ "open", url }, { detach = true })
+						else
+							vim.notify("No PR found for " .. sha, vim.log.levels.WARN)
+						end
+					end,
+				})
+			end, desc = "[G]it open [P]R from blame commit" },
 		},
 	},
 
