@@ -1282,6 +1282,7 @@ require("lazy").setup({
 						env = {
 							CLAUDE_CODE_OAUTH_TOKEN = vim.env.CLAUDE_CODE_OAUTH_TOKEN,
 						},
+						cmd = { vim.fn.expand("~/.nvm/versions/node/v22.13.0/bin/claude-code-acp") },
 					})
 				end,
 			},
