@@ -39,5 +39,7 @@
     "playwright@claude-plugins-official": false,
     "claude-hud@claude-hud": true
   },
-  "skipDangerousModePermissionPrompt": true
+  "effortLevel": "xhigh",
+  "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true
 }
