@@ -262,9 +262,9 @@ EOF
       set -g status-left-length 20
       set -g status-right "#[fg=#565f89]%H:%M"
       set -g status-right-length 10
-      set -g window-status-format "#[fg=#565f89] #I:#W"
-      set -g window-status-current-format "#[fg=#7aa2f7,bold] #I:#W"
-      set -g window-status-separator ""
+      set -g window-status-format "#[bg=#2c2e3b,fg=#565f89] #I:#W "
+      set -g window-status-current-format "#[bg=#ff9e64,fg=#1f2335,bold] #I:#W "
+      set -g window-status-separator " "
       set -g pane-border-lines heavy
       set -g pane-border-style "fg=#1f2335"
       set -g pane-active-border-style "fg=#f7768e"
