@@ -40,6 +40,7 @@ in {
     imagemagick
     mermaid-cli
     posting
+    prettierd
   ] ++ lib.optionals (!isDarwin) [
     ghostty
     xclip
