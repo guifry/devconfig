@@ -31,6 +31,21 @@ check "direnv" "direnv" || missing+=("direnv")
 check "claude" "claude" || missing+=("claude")
 
 echo ""
+echo "Secrets (source ~/.secrets to load manually):"
+if [[ -f ~/.secrets ]]; then
+  source ~/.secrets
+  for var in DEEPSEEK_API_KEY GH_TOKEN; do
+    if [[ -n "${!var}" ]]; then
+      echo "[OK] $var"
+    else
+      echo "[--] $var (not set)"
+    fi
+  done
+else
+  echo "[--] ~/.secrets not found (copy .secrets.example)"
+fi
+
+echo ""
 echo "Full Setup:"
 if [[ -f ~/.ssh/id_ed25519_personal ]] || [[ -f ~/.ssh/id_ed25519 ]]; then
   echo "[OK] SSH keys"
