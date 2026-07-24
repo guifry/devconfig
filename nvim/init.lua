@@ -1364,7 +1364,7 @@ require("lazy").setup({
 				},
 				http = {
 					deepseek = function()
-						local key = (vim.fn.readfile("/tmp/ds-key") or { "" })[1]:gsub("%s+", "")
+						local key = vim.env.DEEPSEEK_API_KEY or ""
 						return require("codecompanion.adapters").extend("deepseek", {
 							env = {
 								api_key = key,
