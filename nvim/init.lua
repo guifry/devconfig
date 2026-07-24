@@ -1364,7 +1364,15 @@ require("lazy").setup({
 				},
 				http = {
 					deepseek = function()
-						local key = vim.env.DEEPSEEK_API_KEY or ""
+						local secrets = vim.fn.expand("~/.secrets")
+						local key = vim.env.DEEPSEEK_API_KEY
+						if key == nil and vim.fn.filereadable(secrets) == 1 then
+							for _, line in ipairs(vim.fn.readfile(secrets)) do
+								local k = line:match('^export DEEPSEEK_API_KEY="([^"]+)"')
+								if k then key = k; break end
+							end
+						end
+						key = key or ""
 						return require("codecompanion.adapters").extend("deepseek", {
 							env = {
 								api_key = key,
