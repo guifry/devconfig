@@ -792,10 +792,15 @@ require("lazy").setup({
 									"**/.git",
 									"**/build",
 									"**/dist",
-								},
-							},
-						},
-					},
+				},
+			},
+			extensions = {
+				spinner = {
+					style = "native",
+				},
+			},
+		},
+	},
 				},
 				ruff = {
 					init_options = {
@@ -1336,6 +1341,7 @@ require("lazy").setup({
 		dependencies = {
 			"nvim-lua/plenary.nvim",
 			"nvim-treesitter/nvim-treesitter",
+			"lalitmee/codecompanion-spinners.nvim",
 		},
 		cmd = { "CodeCompanion", "CodeCompanionChat", "CodeCompanionActions" },
 		keys = {
