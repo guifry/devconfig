@@ -284,6 +284,9 @@ EOF
       bind -r L resize-pane -R 5
       bind e select-layout tiled
 
+      # Rename window with empty prompt
+      bind , command-prompt -p "(rename-window)" "rename-window '%%'"
+
       bind T command-prompt -p "pane label:" "set -p @label '%%'"
       bind t set -p @label ""
 
