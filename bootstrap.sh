@@ -23,6 +23,51 @@ done
 export USER="${USER:-$(whoami)}"
 export HOME="${HOME:-$(eval echo ~$USER)}"
 
+# Detect platform config
+UNAME=$(uname)
+ARCH=$(uname -m)
+if [[ "$UNAME" == "Darwin" ]]; then
+  [[ "$ARCH" == "arm64" ]] && CONFIG="darwin-arm64" || CONFIG="darwin-x86"
+else
+  [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
+fi
+
+# Homebrew is a hard prerequisite on macOS. Check it FIRST — before prompting and
+# before installing nix — so a missing brew costs nothing.
+# The installer does not add itself to PATH on Apple Silicon, so look in the known
+# locations before concluding it is absent.
+if [[ "$UNAME" == "Darwin" ]]; then
+  if ! command -v brew &>/dev/null; then
+    for candidate in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+      if [[ -x "$candidate" ]]; then
+        eval "$("$candidate" shellenv)"
+        echo "Found Homebrew at $candidate (was not on PATH)"
+        break
+      fi
+    done
+  fi
+
+  if ! command -v brew &>/dev/null; then
+    echo ""
+    CMD='/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+    W=100
+    border=$(printf '═%.0s' $(seq 1 $W))
+    pad() { printf "%-${W}s" "  $1"; }
+    echo "  ╔${border}╗"
+    echo "  ║$(printf '%*s' $W '')║"
+    echo "  ║$(pad 'Homebrew is required on macOS.')║"
+    echo "  ║$(printf '%*s' $W '')║"
+    echo "  ║$(pad 'GUI apps (Raycast, AeroSpace, Ghostty, etc.) are managed via brew casks.')║"
+    echo "  ║$(pad 'Install Homebrew first, then re-run this script.')║"
+    echo "  ║$(printf '%*s' $W '')║"
+    echo "  ║$(pad "$CMD")║"
+    echo "  ║$(printf '%*s' $W '')║"
+    echo "  ╚${border}╝"
+    echo ""
+    exit 1
+  fi
+fi
+
 echo "Devconfig Setup"
 echo "==============="
 echo "1) Light - terminal experience (zsh, tmux, vim, rg, claude code)"
@@ -35,6 +80,13 @@ if ! command -v git &> /dev/null; then
   [[ -f /etc/debian_version ]] && echo "  sudo apt install git"
   [[ -f /etc/redhat-release ]] && echo "  sudo dnf install git"
   exit 1
+fi
+
+# Nix may already be installed but absent from this shell's PATH (a fresh install
+# only takes effect in new shells). Source it before deciding to reinstall.
+if ! command -v nix &>/dev/null && [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+  . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+  command -v nix &>/dev/null && echo "Found existing Nix install (was not on PATH)"
 fi
 
 if ! command -v nix &> /dev/null; then
@@ -109,36 +161,6 @@ echo "3) macos-apps  - windsurf, mac app shortcuts"
 echo "4) personal    - loadzsh, personal utils"
 read -p "Select [e.g. 1 3 4 or 1,3,4]: " alias_choice < /dev/tty
 export ALIAS_CATEGORIES="$alias_choice"
-
-# Detect platform config
-UNAME=$(uname)
-ARCH=$(uname -m)
-if [[ "$UNAME" == "Darwin" ]]; then
-  [[ "$ARCH" == "arm64" ]] && CONFIG="darwin-arm64" || CONFIG="darwin-x86"
-else
-  [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
-fi
-
-# Check Homebrew on macOS (needed for GUI apps in Brewfile)
-if [[ "$UNAME" == "Darwin" ]] && ! command -v brew &>/dev/null; then
-  echo ""
-  CMD='/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
-  W=100
-  border=$(printf '═%.0s' $(seq 1 $W))
-  pad() { printf "%-${W}s" "  $1"; }
-  echo "  ╔${border}╗"
-  echo "  ║$(printf '%*s' $W '')║"
-  echo "  ║$(pad 'Homebrew is required on macOS.')║"
-  echo "  ║$(printf '%*s' $W '')║"
-  echo "  ║$(pad 'GUI apps (Raycast, AeroSpace, Ghostty, etc.) are managed via brew casks.')║"
-  echo "  ║$(pad 'Install Homebrew first, then re-run this script.')║"
-  echo "  ║$(printf '%*s' $W '')║"
-  echo "  ║$(pad "$CMD")║"
-  echo "  ║$(printf '%*s' $W '')║"
-  echo "  ╚${border}╝"
-  echo ""
-  exit 1
-fi
 
 if [[ "$UNAME" == "Darwin" ]] && command -v brew &>/dev/null; then
   echo "Updating brew index..."
