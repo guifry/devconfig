@@ -363,6 +363,13 @@ Honest list, so nobody rediscovers these:
   would be the natural fit. Not moved — it is a change to the work setup, not cleanup.
 - **`prompt-reformat` is not wired up.** Its launchd plist is a `.template` with a
   `__HOME__` placeholder; nothing installs it.
+- **Git identity is NOT managed by devconfig.** `programs.git.includes` points at
+  `~/.gitconfig-{kpler,gds,guifry,bp}`, but this repo is public and those files hold
+  work email addresses, so they are created by hand — see `gitconfig-identity.example`.
+  There is deliberately no global `user.email` fallback, because a wrong-but-present
+  address is worse than an absent one. **Failure mode is silent**: with none of them
+  present git invents `user@hostname.local` and commits succeed, but do not link to
+  any GitHub account. `devconfig doctor` checks for this.
 - **macOS key repeat needs a logout.** `configureKeyboard` writes `KeyRepeat`,
   `InitialKeyRepeat` and `ApplePressAndHoldEnabled` to `NSGlobalDomain`, but macOS
   caches that domain per process at launch. Running apps keep the old behaviour until

@@ -66,6 +66,21 @@ else
 fi
 
 echo ""
+echo "Git Identity:"
+# An unset user.email is not an error to git — it invents one from the hostname and
+# commits happily. Those commits do not link to a GitHub account. Check explicitly.
+git_email=$(git config --get user.email 2>/dev/null)
+if [[ -n "$git_email" ]]; then
+  echo "[OK] user.email = $git_email (in $(pwd))"
+else
+  echo "[--] user.email unset here — commits would be authored as $(whoami)@$(hostname -s).local"
+  echo "     Create the per-directory identity files: see gitconfig-identity.example"
+fi
+for f in ~/.gitconfig-guifry ~/.gitconfig-kpler ~/.gitconfig-gds ~/.gitconfig-bp; do
+  [[ -f "$f" ]] && echo "[OK] $(basename "$f")"
+done
+
+echo ""
 echo "Agent Config:"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [[ -x "$SCRIPT_DIR/agent-sync" ]]; then

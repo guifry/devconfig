@@ -1,0 +1,22 @@
+# Per-directory git identity — NOT version controlled (contains email addresses).
+#
+# home.nix declares conditional includes in programs.git.includes:
+#
+#   gitdir:~/kpler/     -> ~/.gitconfig-kpler
+#   gitdir:~/GDS/       -> ~/.gitconfig-gds
+#   gitdir:~/projects/  -> ~/.gitconfig-guifry
+#   gitdir:~/bp/        -> ~/.gitconfig-bp
+#
+# devconfig deliberately does not create these — they hold work email addresses and
+# this repo is public. Create the ones you need by hand, using this as the shape.
+#
+# WITHOUT THEM user.email is unset and git silently derives an author from your
+# hostname (e.g. guilhem@Guilhems-MacBook-Pro.local). Commits made that way do not
+# link to your GitHub account, and the failure is silent. `devconfig doctor` checks
+# for this.
+#
+# Copy to ~/.gitconfig-<name> and edit:
+
+[user]
+	name = Your Name
+	email = you@example.com
