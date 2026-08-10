@@ -4,6 +4,11 @@
     "notion": {
       "type": "remote",
       "url": "https://mcp.notion.com/mcp"
+    },
+    "apple-mail": {
+      "type": "local",
+      "command": ["/Users/guilhemforey/.nvm/versions/node/v22.13.0/bin/npx", "-y", "macos-mail-mcp"],
+      "environment": { "PATH": "/Users/guilhemforey/.nvm/versions/node/v22.13.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" }
     }
   },
   "permission": {
