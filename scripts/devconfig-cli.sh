@@ -90,6 +90,10 @@ cmd_doctor() {
   ./scripts/doctor.sh
 }
 
+cmd_sync() {
+  ./scripts/agent-sync "$@"
+}
+
 cmd_clean() {
   echo "Cleaning old nix generations..."
   nix-collect-garbage -d
@@ -131,6 +135,7 @@ cmd_help() {
   echo "  switch    Apply config changes"
   echo "  update    Update flake inputs + brew + apply"
   echo "  doctor    Check installed components"
+  echo "  sync      Check agent skills/commands are in devconfig (--fix to pull them in)"
   echo "  status    Show nix store size + generations"
   echo "  clean     Garbage collect old generations"
   echo "  edit      Open home.nix in editor"
@@ -149,9 +154,10 @@ show_menu() {
   echo "1) switch  - Apply config changes"
   echo "2) update  - Update flake inputs + brew + apply"
   echo "3) doctor  - Check installed components"
-  echo "4) status  - Show nix store size + generations"
-  echo "5) clean   - Garbage collect old generations"
-  echo "6) edit    - Open home.nix in editor"
+  echo "4) sync    - Check agent skills/commands are in devconfig"
+  echo "5) status  - Show nix store size + generations"
+  echo "6) clean   - Garbage collect old generations"
+  echo "7) edit    - Open home.nix in editor"
   echo "q) quit"
   echo ""
   read -p "Select: " choice < /dev/tty
@@ -160,9 +166,10 @@ show_menu() {
     1|switch)  cmd_switch ;;
     2|update)  cmd_update ;;
     3|doctor)  cmd_doctor ;;
-    4|status)  cmd_status ;;
-    5|clean)   cmd_clean ;;
-    6|edit)    cmd_edit ;;
+    4|sync)    cmd_sync ;;
+    5|status)  cmd_status ;;
+    6|clean)   cmd_clean ;;
+    7|edit)    cmd_edit ;;
     q|quit)    exit 0 ;;
     *)         echo "Invalid option" ;;
   esac
@@ -172,6 +179,7 @@ case "${1:-}" in
   switch)  cmd_switch ;;
   update)  cmd_update ;;
   doctor)  cmd_doctor ;;
+  sync)    shift; cmd_sync "$@" ;;
   status)  cmd_status ;;
   clean)   cmd_clean ;;
   edit)    cmd_edit ;;

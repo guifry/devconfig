@@ -98,9 +98,37 @@ lands directly in this repo.
 - **NOT managed**: `~/.claude/sounds/`, `~/.claude/plugins/`, `~/.claude/projects/`,
   `~/.claude/cache/` — these stay local.
 
+### Global vs project-scoped skills
+
+**devconfig holds global skills only** — ones wanted in every project regardless of
+what is being worked on. A skill tied to one repo (hardcoded paths, one team's
+conventions) belongs in that repo's own `.claude/skills/`, never here. Global skills
+load into every session on the machine and consume space in the skill listing, so the
+bar is: *would this make any sense in an unrelated repo?*
+
 To add a command: create `agents/shared/commands/my-command.md`
 To add a skill: create `agents/shared/skills/my-skill/SKILL.md` (uppercase — the
 filesystem here is case-insensitive but Linux targets are not)
+
+### Keeping agent config in sync (`agent-sync`)
+
+Because `~/.claude/skills` is a symlink, a skill created by an agent lands in this
+repo automatically — but **untracked**. It then exists on one machine only, and
+`home-manager switch` builds from the git tree, so it never actually applies.
+
+`agent-sync` (also `devconfig sync`) checks four things:
+
+1. Managed paths still symlink into devconfig — an agent may have replaced one
+2. Skills sitting in user-scope agent dirs but outside devconfig
+3. Filename casing (`SKILL.md`)
+4. Uncommitted changes under `agents/`
+
+Report-only by default; `agent-sync --fix` moves stray skills in and corrects casing.
+It never deletes and never overwrites an existing destination. It deliberately does
+**not** scan project repos — project skills are meant to stay where they are.
+
+A `Stop` hook in `agents/claude/settings.json` prints a one-line reminder whenever
+`agents/` is dirty, so drift surfaces without having to remember the command.
 
 ### Ralph Workflow (Autonomous Coding Loop)
 

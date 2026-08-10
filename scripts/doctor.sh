@@ -66,6 +66,20 @@ else
 fi
 
 echo ""
+echo "Agent Config:"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [[ -x "$SCRIPT_DIR/agent-sync" ]]; then
+  dirty=$(git -C "$(dirname "$SCRIPT_DIR")" status --porcelain agents 2>/dev/null | wc -l | xargs)
+  if [[ "$dirty" == "0" ]]; then
+    echo "[OK] agents/ committed"
+  else
+    echo "[--] agents/ has $dirty uncommitted change(s) — run: agent-sync"
+  fi
+else
+  echo "[--] agent-sync not found"
+fi
+
+echo ""
 if [[ ${#missing[@]} -eq 0 ]]; then
   echo "All components installed!"
 else

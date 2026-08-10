@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# agent-sync — keep agent skills/commands in devconfig, not scattered on the machine.
+#
+# Checks, in order:
+#   1. Managed paths still symlink into devconfig (an agent may have replaced one)
+#   2. Skills/commands living in agent config dirs but NOT inside devconfig
+#   3. Filename case (SKILL.md — lowercase works on macOS, breaks on Linux)
+#   4. Uncommitted changes under agents/ (the common case: a new skill nobody committed)
+#
+# Report-only by default. --fix moves stray skills in and corrects casing; it never
+# deletes anything and never overwrites an existing destination.
+
+set -uo pipefail
+
+REPO="${DEVCONFIG_PATH:-$HOME/projects/devconfig}"
+SHARED="$REPO/agents/shared"
+FIX=false
+ISSUES=0
+
+[[ "${1:-}" == "--fix" ]] && FIX=true
+[[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && { sed -n '2,12p' "$0" | sed 's/^# \?//'; exit 0; }
+
+if [ ! -d "$REPO" ]; then
+  echo "error: devconfig not found at $REPO" >&2
+  exit 1
+fi
+
+say()  { echo "$@"; }
+warn() { echo "  [!] $*"; ISSUES=$((ISSUES + 1)); }
+ok()   { echo "  [ok] $*"; }
+
+# Managed path -> expected target inside the repo
+MANAGED="
+$HOME/.claude/skills|$SHARED/skills
+$HOME/.claude/commands|$SHARED/commands
+$HOME/.claude/CLAUDE.md|$SHARED/instructions.md
+$HOME/.config/opencode/command|$SHARED/commands
+$HOME/.config/opencode/skills|$SHARED/skills
+$HOME/.codex/prompts|$SHARED/commands
+$HOME/.codex/skills|$SHARED/skills
+"
+
+say ""
+say "1. Symlink integrity"
+while IFS='|' read -r path target; do
+  [[ -z "$path" ]] && continue
+  if [ ! -e "$path" ] && [ ! -L "$path" ]; then
+    say "  [--] $path (not created — agent not installed, or run 'devconfig switch')"
+  elif [ -L "$path" ]; then
+    actual=$(readlink "$path")
+    if [ "$actual" = "$target" ]; then
+      ok "$(basename "$(dirname "$path")")/$(basename "$path")"
+    else
+      warn "$path points at $actual, expected $target"
+    fi
+  else
+    warn "$path is a real file/dir, not a symlink — content here is NOT in devconfig"
+  fi
+done <<< "$MANAGED"
+
+say ""
+say "2. Stray skills outside devconfig"
+before=$ISSUES
+for root in "$HOME/.claude" "$HOME/.config/opencode" "$HOME/.codex"; do
+  [ -d "$root" ] || continue
+  while IFS= read -r skill; do
+    [[ -z "$skill" ]] && continue
+    dir=$(dirname "$skill")
+    # Resolve through symlinks — anything already inside the repo is fine
+    real=$(cd "$dir" 2>/dev/null && pwd -P) || continue
+    case "$real" in
+      "$REPO"/*) continue ;;
+    esac
+    name=$(basename "$dir")
+    warn "$skill"
+    if $FIX; then
+      dest="$SHARED/skills/$name"
+      if [ -e "$dest" ]; then
+        say "       skipped — $dest already exists, merge by hand"
+      else
+        mv "$dir" "$dest" && say "       moved -> agents/shared/skills/$name"
+      fi
+    fi
+    # Only user-scope dirs are scanned. Project skills (a repo's own .claude/skills)
+    # are deliberately left alone — devconfig is for global skills only.
+  done < <(find "$root" \
+    \( -name projects -o -name plugins -o -name cache -o -name backups \
+       -o -name sessions -o -name shell-snapshots -o -name node_modules \) -prune -o \
+    -maxdepth 4 -iname "SKILL.md" -print 2>/dev/null)
+done
+[ "$ISSUES" -eq "$before" ] && ok "none"
+
+say ""
+say "3. Filename case"
+before=$ISSUES
+while IFS= read -r f; do
+  [[ -z "$f" ]] && continue
+  base=$(basename "$f")
+  if [ "$base" != "SKILL.md" ]; then
+    warn "$f — must be SKILL.md (this filesystem is case-insensitive, Linux is not)"
+    if $FIX; then
+      d=$(dirname "$f")
+      (cd "$REPO" && git mv "${f#$REPO/}" "${d#$REPO/}/_tmp.md" -f >/dev/null 2>&1 \
+        && git mv "${d#$REPO/}/_tmp.md" "${d#$REPO/}/SKILL.md" >/dev/null 2>&1) \
+        && say "       renamed -> SKILL.md"
+    fi
+  fi
+done < <(find "$SHARED/skills" -iname "skill.md" 2>/dev/null)
+[ "$ISSUES" -eq "$before" ] && ok "all SKILL.md"
+
+say ""
+say "4. Uncommitted agent config"
+dirty=$(git -C "$REPO" status --porcelain agents 2>/dev/null)
+if [ -n "$dirty" ]; then
+  echo "$dirty" | sed 's/^/  /'
+  warn "above are not committed — they exist on this machine only"
+  say ""
+  say "  Commit and push so your other machines get them:"
+  say "    cd $REPO && git add agents && git commit -m 'agents: <what>' && git push"
+else
+  ok "clean"
+fi
+
+say ""
+if [ "$ISSUES" -eq 0 ]; then
+  say "All agent config is in devconfig."
+else
+  say "$ISSUES issue(s). Re-run with --fix to move stray skills in and correct casing."
+fi
+exit 0
