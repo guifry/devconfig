@@ -161,15 +161,43 @@ if command -v gh &>/dev/null || [ -x "$HOME/.nix-profile/bin/gh" ]; then
   esac
 fi
 
+if [ "$NO_NETWORK" = false ]; then
+  echo ""
+  echo "=== 10b. gh answers as the account the REMOTE implies ==="
+  # gh has one global active account; `gh auth login` silently changes it for every
+  # folder. The ~/bin/gh wrapper keys off the remote instead. Tested with a minimal
+  # PATH and no inherited token, i.e. exactly how a coding agent invokes it.
+  ghwrap="$HOME/bin/gh"
+  if [ -x "$ghwrap" ]; then
+    for spec in "$TMP/a|gforey-ext|work remote" "$TMP/d|guifry|personal remote"; do
+      IFS='|' read -r dir want label <<< "$spec"
+      got=$(cd "$dir" && env -u GH_TOKEN -u GITHUB_TOKEN PATH="/usr/bin:/bin" HOME="$HOME" \
+            "$ghwrap" api user --jq .login 2>&1 | tail -1)
+      [ "$got" = "$want" ] && ok "gh in a $label answers as $want" \
+        || bad "gh in a $label answers as $want" "$want" "$got"
+    done
+  else
+    bad "gh wrapper installed at ~/bin/gh" "present" "missing — run devconfig switch"
+  fi
+fi
+
 echo ""
 echo "=== 11. Secret hygiene (repo is public) ==="
-REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-leaks=$(git -C "$REPO_DIR" grep -InE 'gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{50,}|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY' -- . 2>/dev/null | head -3)
-[ -z "$leaks" ] && ok "no credentials in tracked files" || bad "no credentials in tracked files" "none" "$leaks"
+# NOT derived from $0 — when installed to ~/bin this script is a nix-store path, so
+# dirname/.. is the store, git errors, and an empty result reads as "no leaks".
+# That made these checks pass vacuously. Resolve the real repo instead.
+REPO_DIR="${DEVCONFIG_PATH:-$HOME/projects/devconfig}"
+if ! git -C "$REPO_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+  bad "devconfig repo reachable for secret scan" "a git repo at $REPO_DIR" "not a git repository"
+else
+  leaks=$(git -C "$REPO_DIR" grep -InE 'gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{50,}|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY' -- . 2>/dev/null | head -3)
+  [ -z "$leaks" ] && ok "no credentials in tracked files ($(git -C "$REPO_DIR" ls-files | wc -l | xargs) files scanned)" \
+    || bad "no credentials in tracked files" "none" "$leaks"
 
-tracked_secret=$(git -C "$REPO_DIR" ls-files | grep -E '(^|/)(\.secrets|\.env|\.envrc|macos-licenses\.md)$' | head -3)
-[ -z "$tracked_secret" ] && ok "no secret files tracked (only .example/.template)" \
-  || bad "no secret files tracked" "none" "$tracked_secret"
+  tracked_secret=$(git -C "$REPO_DIR" ls-files | grep -E '(^|/)(\.secrets|\.env|\.envrc|macos-licenses\.md)$' | head -3)
+  [ -z "$tracked_secret" ] && ok "no secret files tracked (only .example/.template)" \
+    || bad "no secret files tracked" "none" "$tracked_secret"
+fi
 
 if [ -f "$HOME/kpler/.envrc" ]; then
   if grep -qE 'gh[pousr]_[A-Za-z0-9]{30,}|github_pat_' "$HOME/kpler/.envrc" 2>/dev/null; then

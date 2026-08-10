@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# gh wrapper — picks the GitHub account from the repo's remote, like git does.
+#
+# WHY THIS EXISTS
+# gh has one *global* active account. Running `gh auth login` silently makes that
+# account active everywhere, so `gh pr list` in a personal repo can answer as the
+# work account and vice versa. That is the same cross-contamination the git config
+# prevents, but gh has no per-directory equivalent.
+#
+# Approaches that do NOT work:
+#   - direnv .envrc  : loads only the NEAREST .envrc. Kpler repos ship their own,
+#                      which shadows ~/kpler/.envrc — and a fresh clone's .envrc is
+#                      blocked until approved, so nothing loads at all.
+#   - zsh chpwd hook : never fires for scripts, editors, cron or coding agents.
+#
+# A PATH wrapper works in every shell, interactive or not, for humans and agents.
+#
+# Precedence: an explicitly set GH_TOKEN always wins — this only fills in the blank.
+
+set -uo pipefail
+
+# Find the real gh, skipping this wrapper (~/bin is early in PATH).
+REAL_GH=""
+for candidate in "$HOME/.nix-profile/bin/gh" /opt/homebrew/bin/gh /usr/local/bin/gh /usr/bin/gh; do
+  [ -x "$candidate" ] && { REAL_GH="$candidate"; break; }
+done
+if [ -z "$REAL_GH" ]; then
+  echo "gh: real binary not found (looked in nix profile, homebrew, /usr)" >&2
+  exit 127
+fi
+
+# Only intervene when the caller has not already chosen an account.
+if [ -z "${GH_TOKEN:-}" ] && [ -z "${GITHUB_TOKEN:-}" ]; then
+  url=$(git config --get remote.origin.url 2>/dev/null || true)
+  account=""
+  case "$url" in
+    *github.com-gforey-ext:*|*github.com:Kpler/*|*github.com/Kpler/*) account="gforey-ext" ;;
+    *github.com-guifry:*|*github.com:guifry/*|*github.com/guifry/*)   account="guifry" ;;
+  esac
+
+  if [ -n "$account" ]; then
+    # Never export an empty value: an empty-but-set GH_TOKEN overrides gh's keyring
+    # auth entirely and breaks every command.
+    token=$("$REAL_GH" auth token --user "$account" 2>/dev/null || true)
+    [ -n "$token" ] && export GH_TOKEN="$token"
+  fi
+fi
+
+exec "$REAL_GH" "$@"

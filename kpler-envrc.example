@@ -1,13 +1,9 @@
-# Work GitHub token for gh, pulled from gh's own keyring at shell time.
+# Work-only environment for ~/kpler.
 #
-# Deliberately NOT a pasted PAT: nothing secret is written to disk, so this file is
-# safe even if a repo below it is ever committed with it. Requires the work account
-# to be logged in:  gh auth login   (authenticate as gforey-ext)
+# GH_TOKEN is deliberately NOT set here. gh account selection is handled by the
+# `gh` wrapper (~/bin/gh), which keys off the repo's remote URL — the same rule
+# git uses. Pinning a token per folder breaks as soon as a personal repo lives
+# under ~/kpler, or a work repo under ~/projects.
 #
-# Guarded against exporting an empty value — an empty-but-set GH_TOKEN overrides
-# gh's keyring auth and breaks gh entirely.
-_gh_work_token="$(gh auth token --user gforey-ext 2>/dev/null)"
-if [ -n "$_gh_work_token" ]; then
-  export GH_TOKEN="$_gh_work_token"
-fi
-unset _gh_work_token
+# Put genuinely work-scoped, non-secret vars here. For secrets prefer the keyring
+# (e.g. `gh auth token`) over writing them to disk.
