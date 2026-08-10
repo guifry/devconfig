@@ -338,6 +338,10 @@ EOF
     settings = {
       credential."https://github.com".helper = "!/usr/bin/env gh auth git-credential";
       core.editor = "nvim";
+      # Never guess an author from $USER@$HOSTNAME. Without this, a repo that matches
+      # no include commits silently as guilhem@Guilhems-MacBook-Pro.local — succeeds,
+      # but links to no GitHub account. With it, git errors and you fix the mapping.
+      user.useConfigOnly = true;
       alias = {
         br = "branch";
         c = "commit";
@@ -357,11 +361,31 @@ EOF
         delsave = "!git branch -D \"save--$(git symbolic-ref --short HEAD)\"";
       };
     };
+    # Identity is selected automatically, never switched by hand. Two layers, and
+    # ORDER MATTERS — git applies includes in order, last match wins.
+    #
+    #   1. gitdir:   by location. Covers a fresh `git init` that has no remote yet.
+    #   2. hasconfig: by remote URL. Wins over location, so a work repo cloned into
+    #      the wrong folder still gets the work identity. This is the guarantee that
+    #      personal commits never land on Kpler and vice versa.
+    #
+    # Paired with user.useConfigOnly below: if nothing matches, git REFUSES to commit
+    # rather than inventing an address from the hostname.
     includes = [
       { condition = "gitdir:~/kpler/"; path = "~/.gitconfig-kpler"; }
       { condition = "gitdir:~/GDS/"; path = "~/.gitconfig-gds"; }
       { condition = "gitdir:~/projects/"; path = "~/.gitconfig-guifry"; }
       { condition = "gitdir:~/bp/"; path = "~/.gitconfig-bp"; }
+
+      # Work — by remote
+      { condition = "hasconfig:remote.*.url:git@github.com-gforey-ext:*/**"; path = "~/.gitconfig-kpler"; }
+      { condition = "hasconfig:remote.*.url:git@github.com:Kpler/**"; path = "~/.gitconfig-kpler"; }
+      { condition = "hasconfig:remote.*.url:https://github.com/Kpler/**"; path = "~/.gitconfig-kpler"; }
+
+      # Personal — by remote
+      { condition = "hasconfig:remote.*.url:git@github.com-guifry:*/**"; path = "~/.gitconfig-guifry"; }
+      { condition = "hasconfig:remote.*.url:git@github.com:guifry/**"; path = "~/.gitconfig-guifry"; }
+      { condition = "hasconfig:remote.*.url:https://github.com/guifry/**"; path = "~/.gitconfig-guifry"; }
     ];
   };
 

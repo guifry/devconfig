@@ -63,6 +63,14 @@ log() {
   echo "$msg" >> progress.txt
 }
 
+# Turn on the PreToolUse guard (agents/claude/hooks/block-git-writes.sh) for the
+# duration of the loop. Nobody is watching these sessions, so rm / git push /
+# gh pr create are blocked. Cleared on exit, however the loop ends.
+export DEVCONFIG_AUTONOMOUS=1
+mkdir -p "$HOME/.claude"
+touch "$HOME/.claude/.autonomous"
+trap 'rm -f "$HOME/.claude/.autonomous"' EXIT INT TERM
+
 CONSECUTIVE_FAILS=0
 
 for ((i=1; i<=MAX_ITERS; i++)); do

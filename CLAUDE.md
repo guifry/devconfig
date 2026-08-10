@@ -363,7 +363,26 @@ Honest list, so nobody rediscovers these:
   would be the natural fit. Not moved — it is a change to the work setup, not cleanup.
 - **`prompt-reformat` is not wired up.** Its launchd plist is a `.template` with a
   `__HOME__` placeholder; nothing installs it.
-- **Git identity is NOT managed by devconfig.** `programs.git.includes` points at
+### Git identity: how cross-contamination is prevented
+
+Never switch identity by hand. Three layers in `programs.git`, applied in order:
+
+1. `gitdir:` includes — by location (`~/kpler/`, `~/projects/`, …). Covers a fresh
+   `git init` with no remote yet.
+2. `hasconfig:remote.*.url:` includes — by remote URL. Declared **after** the gitdir
+   ones so they win, meaning a work repo cloned into the wrong folder still gets the
+   work identity.
+3. `user.useConfigOnly = true` — if nothing matches, git **refuses to commit** instead
+   of inventing `user@hostname.local`.
+
+Emails are GitHub **noreply** addresses (`<id>+<login>@users.noreply.github.com`), not
+real ones — see `gitconfig-identity.example` for why and how to find the id.
+
+**Glob gotcha:** in `hasconfig` patterns `**` is only special after a `/`. So
+`git@github.com-gforey-ext:**` silently fails to match `Kpler/web-app.git` (it degrades
+to `*`, which will not cross the `/`). Write `git@github.com-gforey-ext:*/**`.
+
+- **Git identity files are NOT managed by devconfig.** `programs.git.includes` points at
   `~/.gitconfig-{kpler,gds,guifry,bp}`, but this repo is public and those files hold
   work email addresses, so they are created by hand — see `gitconfig-identity.example`.
   There is deliberately no global `user.email` fallback, because a wrong-but-present

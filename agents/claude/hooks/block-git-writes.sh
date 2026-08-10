@@ -1,7 +1,19 @@
 #!/bin/bash
-# Block GitHub CLI write operations and git push
-# Exit code 2 = block the operation
-# Exit code 0 = allow the operation
+# Block destructive/publishing operations during AUTONOMOUS runs only.
+#
+# OPT-IN. This guard is for unattended ralph loops, where a bad command has nobody
+# watching. In a normal interactive session it is off — otherwise every session on
+# the machine loses `rm`, `git push` and `gh pr create`, which is unusable.
+#
+# Enabled by either:
+#   DEVCONFIG_AUTONOMOUS=1   (exported by scripts/rx)
+#   ~/.claude/.autonomous    (marker file, survives env not propagating to hooks)
+#
+# Exit code 2 = block, 0 = allow.
+
+if [ "${DEVCONFIG_AUTONOMOUS:-0}" != "1" ] && [ ! -f "$HOME/.claude/.autonomous" ]; then
+    exit 0
+fi
 
 # Read the tool input from stdin (JSON)
 INPUT=$(cat)
