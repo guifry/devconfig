@@ -430,3 +430,21 @@ Check Brewfile syntax. Each line should be `cask "name"` or `brew "name"`.
 ## Remember
 
 **This config is the user's portable dev environment supplement. It lives alongside their existing setup. It adds, it never removes. If in doubt, ask the user before making changes that could affect anything outside devconfig's scope.**
+
+### gh account selection (`~/bin/gh` wrapper)
+
+`gh` has ONE global active account. `gh auth login` silently makes the new account
+active everywhere, so `gh pr list` in a personal repo can answer as the work account.
+`scripts/gh` wraps it and picks the account from the repo's remote URL — the same
+rule `programs.git` uses for commit identity.
+
+Approaches that were tried and do **not** work, so nobody retries them:
+
+- **direnv `.envrc`** — direnv loads only the *nearest* `.envrc`. Kpler repos ship
+  their own, which shadows `~/kpler/.envrc`; and a fresh clone's `.envrc` is blocked
+  until approved, so nothing loads and gh silently falls back to the global account.
+- **zsh `chpwd` hook** — never fires for scripts, editors, cron or coding agents.
+- **Pinning a token per folder** — breaks the moment a work repo lives under
+  `~/projects` or a personal one under `~/kpler`.
+
+An explicitly set `GH_TOKEN` always wins; the wrapper only fills in the blank.
