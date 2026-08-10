@@ -2,8 +2,20 @@
 set -e
 
 # Parse flags
+LOCAL_MODE=false
 for arg in "$@"; do
   case "$arg" in
+    --local)
+      # Use the current checkout as-is: skip the fetch/pull and the
+      # clean-and-pushed guard. For testing a branch before merging.
+      LOCAL_MODE=true
+      ;;
+    -h|--help)
+      echo "Usage: ./bootstrap.sh [--local]"
+      echo "  --local   Bootstrap from the current checkout without pulling from origin."
+      echo "            Use when testing a branch that is not merged or pushed."
+      exit 0
+      ;;
   esac
 done
 
@@ -58,6 +70,10 @@ mkdir -p "$(dirname "$REPO")"
 if [ -d "$REPO" ]; then
   cd "$REPO"
 
+  if [ "$LOCAL_MODE" = true ]; then
+    echo "Local mode: using current checkout ($(git rev-parse --abbrev-ref HEAD)), not pulling from origin."
+  else
+
   # Check for uncommitted changes
   if ! git diff --quiet || ! git diff --cached --quiet; then
     echo "Error: devconfig has uncommitted changes."
@@ -79,6 +95,7 @@ if [ -d "$REPO" ]; then
 
   echo "Updating devconfig..."
   git pull --ff-only
+  fi
 else
   git clone https://github.com/guifry/devconfig.git "$REPO"
   cd "$REPO"

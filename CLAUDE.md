@@ -273,6 +273,24 @@ extraConfig = ''
 '';
 ```
 
+## How Config Reaches the Machine (read before editing home.nix)
+
+Two different mechanisms, and the distinction matters:
+
+| Mechanism | Used for | Effect of an edit |
+|-----------|----------|-------------------|
+| `mkOutOfStoreSymlink` (helpers `repoFile` / `agentFile`) | nvim, aerospace, ghostty, lazygit, all of `agents/` | `~/.config/...` points **back into this repo**. Edits are live immediately, no rebuild. |
+| `home.file."bin/x" = { source = ./scripts/x; }` | everything in `~/bin` | Copied into the nix store. Edits need `devconfig switch`. |
+
+Consequences a future agent must know:
+
+- Because `~/.claude/skills` is a *directory* symlink, a skill created by any agent
+  lands in this repo automatically — but **untracked**. See `agent-sync` above.
+- `~/bin` scripts are **only** installed by `home.nix`. Do not add `cp` lines to
+  bootstrap.sh — copying over a nix-store symlink fails silently.
+- Adding a new script means two steps: create `scripts/x`, then add a
+  `home.file."bin/x"` entry. It will not appear otherwise.
+
 ## Testing Changes
 
 1. Make changes to home.nix, Brewfile, or any nix-managed file
@@ -280,6 +298,56 @@ extraConfig = ''
 3. Run `devconfig switch`
 4. If shell changes: run `reload` or open new terminal
 5. If nvim changes: restart nvim
+
+### Testing a branch before merging
+
+`bootstrap.sh` normally refuses to run if the repo has uncommitted changes or
+unpushed commits, and it does `git pull --ff-only`. That blocks testing a branch.
+Use `--local` to bootstrap from the current checkout as-is:
+
+```bash
+./bootstrap.sh --local
+```
+
+For an already-bootstrapped machine, `devconfig switch` has no such guard — it
+builds whatever is checked out. Commit first (see above), then switch.
+
+## Platform Detection
+
+`uname` + `uname -m` select the flake target. All four are defined in `flake.nix`:
+
+| Machine | Config |
+|---------|--------|
+| Apple Silicon Mac | `darwin-arm64` |
+| Intel Mac | `darwin-x86` |
+| Linux x86 | `linux-x86` |
+| Linux ARM | `linux-arm64` |
+
+`--impure` is required on every home-manager invocation because `home.nix` reads
+`$USER` and `$HOME` via `builtins.getEnv`. This is deliberate — it keeps the config
+username-agnostic. **Never hardcode a home path** (`/Users/<name>/...`) anywhere in
+this repo; use the `repoDir` / `repoFile` helpers, `~`, or `$HOME`.
+
+## Known Gaps
+
+Honest list, so nobody rediscovers these:
+
+- **opencode and Codex paths are unverified.** The symlinks in `home.nix` for
+  `~/.config/opencode/{command,skills}` and `~/.codex/{prompts,skills}` were written
+  without either tool installed. Confirm against the installed versions before
+  trusting them. Also worth testing whether those tools read `~/.claude/` natively —
+  if they do, those symlinks are redundant.
+- **`~/.codex/config.toml` is not managed.** Codex has no config in this repo yet.
+- **`.vimrc` is unmanaged.** Neovim is the managed editor. `bootstrap.sh` only runs
+  vim-plug if a `~/.vimrc` already exists.
+- **`review-web-app-pr`, `review-chartering-api`, `lint-web-app-pr`** are global
+  skills that are only useful in Kpler repos. They span several repos, so no single
+  project is the right home; `conventions/chartering/review-skills/` + `fst` symlinks
+  would be the natural fit. Not moved — it is a change to the work setup, not cleanup.
+- **`prompt-reformat` is not wired up.** Its launchd plist is a `.template` with a
+  `__HOME__` placeholder; nothing installs it.
+- **Mouseless has no Homebrew cask** — install by hand, see `macos-manual-apps.md`.
+  Its config copy is skipped silently until the app has been launched once.
 
 ## Troubleshooting
 
