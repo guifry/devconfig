@@ -113,10 +113,70 @@ if [ "$NO_NETWORK" = false ]; then
   done
 
   echo ""
-  echo "=== 7. IdentitiesOnly set on every github host block ==="
+  echo "=== 7. HTTPS credentials work without gh on PATH ==="
+  # A coding agent, editor or cron job runs with a minimal PATH. The credential
+  # helper must still find gh, or every HTTPS fetch/push fails with
+  # "could not read Username for https://github.com".
+  if env -i HOME="$HOME" PATH="/usr/bin:/bin" git ls-remote --exit-code -h \
+       https://github.com/guifry/devconfig.git >/dev/null 2>&1; then
+    ok "HTTPS auth works with a minimal PATH (agent/cron safe)"
+  else
+    bad "HTTPS auth works with a minimal PATH (agent/cron safe)" \
+        "authenticated" "failed — check credential.helper resolves gh"
+  fi
+
+  echo ""
+  echo "=== 8. Kpler org access (SAML SSO) ==="
+  sso=$(git ls-remote git@github.com-gforey-ext:Kpler/web-app.git 2>&1)
+  case "$sso" in
+    *"SAML SSO"*)
+      bad "work key authorised for the Kpler org" \
+          "repo listing" \
+          "SSO not authorised — GitHub > Settings > SSH keys > work key > Configure SSO > Authorize for Kpler" ;;
+    *"Permission denied"*)
+      bad "work key authorised for the Kpler org" "repo listing" "publickey rejected — key not registered" ;;
+    *)
+      ok "work key can read Kpler repos" ;;
+  esac
+
+  echo ""
+  echo "=== 9. IdentitiesOnly set on every github host block ==="
   missing=$(awk '/^Host /{h=$2; io=0} /IdentitiesOnly/{io=1} /IdentityFile/{if(!io) print h}' ~/.ssh/config 2>/dev/null)
   [ -z "$missing" ] && ok "IdentitiesOnly present on all host blocks" \
     || bad "IdentitiesOnly present on all host blocks" "none missing" "missing on: $missing"
+fi
+
+echo ""
+echo "=== 10. gh CLI accounts ==="
+if command -v gh &>/dev/null || [ -x "$HOME/.nix-profile/bin/gh" ]; then
+  GH="$(command -v gh || echo "$HOME/.nix-profile/bin/gh")"
+  accounts=$("$GH" auth status 2>&1 | grep -oE 'account [a-zA-Z0-9-]+' | awk '{print $2}' | sort -u | tr '\n' ' ')
+  case "$accounts" in
+    *gforey-ext*) ok "gh has the work account (gforey-ext)" ;;
+    *)            bad "gh has the work account (gforey-ext)" "gforey-ext logged in" "only: ${accounts:-none} — run: gh auth login" ;;
+  esac
+  case "$accounts" in
+    *guifry*) ok "gh has the personal account (guifry)" ;;
+    *)        bad "gh has the personal account (guifry)" "guifry logged in" "only: ${accounts:-none}" ;;
+  esac
+fi
+
+echo ""
+echo "=== 11. Secret hygiene (repo is public) ==="
+REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+leaks=$(git -C "$REPO_DIR" grep -InE 'gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{50,}|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY' -- . 2>/dev/null | head -3)
+[ -z "$leaks" ] && ok "no credentials in tracked files" || bad "no credentials in tracked files" "none" "$leaks"
+
+tracked_secret=$(git -C "$REPO_DIR" ls-files | grep -E '(^|/)(\.secrets|\.env|\.envrc|macos-licenses\.md)$' | head -3)
+[ -z "$tracked_secret" ] && ok "no secret files tracked (only .example/.template)" \
+  || bad "no secret files tracked" "none" "$tracked_secret"
+
+if [ -f "$HOME/kpler/.envrc" ]; then
+  if grep -qE 'gh[pousr]_[A-Za-z0-9]{30,}|github_pat_' "$HOME/kpler/.envrc" 2>/dev/null; then
+    bad "~/kpler/.envrc holds no pasted token" "token fetched from gh at runtime" "a literal token is written on disk"
+  else
+    ok "~/kpler/.envrc holds no pasted token"
+  fi
 fi
 
 echo ""

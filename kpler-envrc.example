@@ -1,0 +1,13 @@
+# Work GitHub token for gh, pulled from gh's own keyring at shell time.
+#
+# Deliberately NOT a pasted PAT: nothing secret is written to disk, so this file is
+# safe even if a repo below it is ever committed with it. Requires the work account
+# to be logged in:  gh auth login   (authenticate as gforey-ext)
+#
+# Guarded against exporting an empty value — an empty-but-set GH_TOKEN overrides
+# gh's keyring auth and breaks gh entirely.
+_gh_work_token="$(gh auth token --user gforey-ext 2>/dev/null)"
+if [ -n "$_gh_work_token" ]; then
+  export GH_TOKEN="$_gh_work_token"
+fi
+unset _gh_work_token

@@ -363,6 +363,20 @@ Honest list, so nobody rediscovers these:
   would be the natural fit. Not moved — it is a change to the work setup, not cleanup.
 - **`prompt-reformat` is not wired up.** Its launchd plist is a `.template` with a
   `__HOME__` placeholder; nothing installs it.
+### Verifying the git setup
+
+`git-identity-test` asserts the whole multi-account setup end to end: identity by
+remote, cross-contamination guards, the commit-refusal safety net, SSH auth per
+account, HTTPS auth under a minimal PATH, Kpler SSO, gh accounts, and secret hygiene.
+
+It never pushes and never writes to a real remote — push auth is exercised with
+`--dry-run`. Run it after any change to `programs.git`, and on every new machine.
+
+```bash
+git-identity-test              # full run
+git-identity-test --no-network # identity resolution only
+```
+
 ### Git identity: how cross-contamination is prevented
 
 Never switch identity by hand. Three layers in `programs.git`, applied in order:

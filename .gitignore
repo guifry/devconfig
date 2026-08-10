@@ -1,11 +1,24 @@
-# License keys (sensitive)
+# ---------------------------------------------------------------------------
+# Secrets. This repo is PUBLIC — nothing here may ever contain a real credential.
+# Only *.example / *.template files are tracked.
+# ---------------------------------------------------------------------------
+.secrets
+.env
+.envrc
 macos-licenses.md
+*.pem
+*.key
+id_ed25519*
+id_rsa*
+*_token
+*.p12
 
-# Claude Code runtime dirs (should not appear but safety net)
-claude/cache/
-claude/debug/
-claude/plans/
-claude/plugins/
+# Agent runtime dirs (should not appear, safety net)
+agents/claude/cache/
+agents/claude/debug/
+agents/claude/plans/
+agents/claude/plugins/
+agents/**/.autonomous
 
 # Nix build output
 result
