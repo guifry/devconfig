@@ -64,7 +64,10 @@ if [[ -n "$personal_email" ]] || [[ -n "$work_email" ]]; then
 "
   fi
 
-  # Default host: work key, matching Readme.md
+  # Default host: work key, matching Readme.md.
+  # IdentitiesOnly yes on EVERY block is essential — without it ssh offers every key
+  # in the agent and GitHub authenticates you as whichever one it happens to accept
+  # first, silently giving you the wrong account.
   DEFAULT_KEY="id_ed25519_kpler"
   [[ -z "$work_email" ]] && DEFAULT_KEY="id_ed25519_guifry"
   SSH_CONFIG+="Host github.com
@@ -72,6 +75,7 @@ if [[ -n "$personal_email" ]] || [[ -n "$work_email" ]]; then
   [[ "$OSTYPE" == darwin* ]] && SSH_CONFIG+="
   UseKeychain yes"
   SSH_CONFIG+="
+  IdentitiesOnly yes
   IdentityFile ~/.ssh/$DEFAULT_KEY
 "
 

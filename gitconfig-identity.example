@@ -1,4 +1,4 @@
-# Per-directory git identity — NOT version controlled (contains email addresses).
+# Per-directory git identity — NOT version controlled (holds email addresses).
 #
 # home.nix declares conditional includes in programs.git.includes:
 #
@@ -7,16 +7,31 @@
 #   gitdir:~/projects/  -> ~/.gitconfig-guifry
 #   gitdir:~/bp/        -> ~/.gitconfig-bp
 #
-# devconfig deliberately does not create these — they hold work email addresses and
-# this repo is public. Create the ones you need by hand, using this as the shape.
+# devconfig deliberately does not create these — this repo is public. Create the ones
+# you need by hand, using the shape below.
 #
-# WITHOUT THEM user.email is unset and git silently derives an author from your
-# hostname (e.g. guilhem@Guilhems-MacBook-Pro.local). Commits made that way do not
-# link to your GitHub account, and the failure is silent. `devconfig doctor` checks
-# for this.
+# WITHOUT THEM user.email is unset and git silently derives an author from the
+# hostname (e.g. guilhem@Guilhems-MacBook-Pro.local). Commits succeed but do not link
+# to any GitHub account. `devconfig doctor` checks for this.
 #
+# ---------------------------------------------------------------------------
+# USE GITHUB NOREPLY ADDRESSES, NOT REAL ONES
+# ---------------------------------------------------------------------------
+# Format: <numeric-id>+<login>@users.noreply.github.com
+#
+# Why:
+#   - keeps a personal address out of a work org's commit history (and vice versa)
+#   - attributes the commit to the right GitHub account, which a real address only
+#     does if it is a *verified* address on that account
+#
+# Find the numeric id for an account:
+#   gh api user --jq '.id'                      # for the currently active gh account
+#   gh api users/<login> --jq '.id'             # for any account
+# Or: GitHub → Settings → Emails → "Keep my email addresses private" shows it.
+#
+# ---------------------------------------------------------------------------
 # Copy to ~/.gitconfig-<name> and edit:
 
 [user]
 	name = Your Name
-	email = you@example.com
+	email = 0000000+yourlogin@users.noreply.github.com
