@@ -79,11 +79,53 @@ cmd_switch() {
     osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/AeroSpace.app", hidden:false}' 2>/dev/null || true
   fi
 
+  # codecompanion's Claude adapter needs the ACP bridge on PATH. Installed to
+  # ~/.local (already on PATH) rather than npm's global prefix, which is inside the
+  # read-only nix store.
+  if command -v npm &>/dev/null; then
+    if ! command -v claude-code-acp &>/dev/null; then
+      echo "Installing claude-code-acp (codecompanion Claude adapter)..."
+      npm install -g --prefix "$HOME/.local" @zed-industries/claude-code-acp \
+        || echo "  WARNING: install failed — codecompanion falls back to npx"
+    fi
+  else
+    echo "WARNING: npm not found — skipping claude-code-acp"
+  fi
+
+  # Get nvim fully usable before it is opened by hand: plugins, then LSP servers,
+  # formatters and debug adapters. Treesitter parsers install during the Lazy step
+  # (nvim-treesitter is lazy=false and blocks on install in its config).
   echo "Syncing nvim plugins..."
   nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
 
+  # Only pay for this when something is actually missing — otherwise every switch
+  # would sit through the async-install fallback. Names match `ensure_installed`
+  # in nvim/init.lua; keep the two in sync.
+  MASON_PKGS="$HOME/.local/share/nvim/mason/packages"
+  mason_missing=false
+  for tool in basedpyright ruff typescript-language-server lua-language-server stylua tree-sitter-cli debugpy; do
+    [ -e "$MASON_PKGS/$tool" ] || mason_missing=true
+  done
+
+  if [ "$mason_missing" = true ]; then
+    echo "Installing LSPs, formatters and debug adapters (mason, first run only)..."
+    nvim --headless "+MasonToolsInstallSync" +qa 2>/dev/null \
+      || nvim --headless "+MasonToolsInstall" "+sleep 90" +qa 2>/dev/null \
+      || echo "  (incomplete — mason will finish on first nvim launch)"
+  else
+    echo "LSPs and formatters already installed (mason)."
+  fi
+
   echo ""
   echo "Done. Run 'reload' or open new terminal to apply shell changes."
+
+  if [[ "$IS_DARWIN" == "true" ]]; then
+    echo ""
+    echo "NOTE: key repeat settings (fast backspace) are written to NSGlobalDomain,"
+    echo "      but macOS caches them per process. Already-running apps keep the old"
+    echo "      behaviour until relaunched, and the login session until you log out."
+    echo "      Log out and back in to apply everywhere."
+  fi
 
   if [[ "$IS_DARWIN" == "true" && -f "$REPO/macos-manual-apps.md" ]]; then
     echo ""

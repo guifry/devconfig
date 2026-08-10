@@ -332,12 +332,19 @@ this repo; use the `repoDir` / `repoFile` helpers, `~`, or `$HOME`.
 
 Honest list, so nobody rediscovers these:
 
-- **opencode and Codex paths are unverified.** The symlinks in `home.nix` for
+- **opencode and Codex config paths are unverified.** Both tools are now installed
+  (`brew "opencode"`, `cask "codex"`), but the symlinks in `home.nix` for
   `~/.config/opencode/{command,skills}` and `~/.codex/{prompts,skills}` were written
-  without either tool installed. Confirm against the installed versions before
-  trusting them. Also worth testing whether those tools read `~/.claude/` natively —
-  if they do, those symlinks are redundant.
+  before either existed. Confirm the paths against the installed versions. Also worth
+  testing whether they read `~/.claude/` natively — if so, those symlinks are redundant.
 - **`~/.codex/config.toml` is not managed.** Codex has no config in this repo yet.
+- **Node comes from nixpkgs, not nvm.** `nodejs` is in `home.packages`. nvm is
+  deliberately not used — `mise` is already installed and handles per-project node
+  versions. `programs.zsh` still sources nvm if you install it by hand.
+- **`claude-code-acp` is installed by `devconfig switch`**, not by nix — npm's global
+  prefix is inside the read-only nix store, so it goes to `~/.local` via
+  `npm install -g --prefix ~/.local`. `nvim/init.lua` resolves it with
+  `vim.fn.exepath` and falls back to `npx` if absent. Never hardcode an nvm path.
 - **`.vimrc` is unmanaged.** Neovim is the managed editor. `bootstrap.sh` only runs
   vim-plug if a `~/.vimrc` already exists.
 - **`review-web-app-pr`, `review-chartering-api`, `lint-web-app-pr`** are global
@@ -346,6 +353,12 @@ Honest list, so nobody rediscovers these:
   would be the natural fit. Not moved — it is a change to the work setup, not cleanup.
 - **`prompt-reformat` is not wired up.** Its launchd plist is a `.template` with a
   `__HOME__` placeholder; nothing installs it.
+- **macOS key repeat needs a logout.** `configureKeyboard` writes `KeyRepeat`,
+  `InitialKeyRepeat` and `ApplePressAndHoldEnabled` to `NSGlobalDomain`, but macOS
+  caches that domain per process at launch. Running apps keep the old behaviour until
+  relaunched; the login session until you log out. The values being "not applied" is
+  almost always this, not a failed write — check with
+  `defaults read NSGlobalDomain KeyRepeat` before debugging further.
 - **Mouseless config applies on the second switch.** The cask installs it, but
   `home.activation.configureMouseless` skips silently until the app has been launched
   once and created its container directory. Launch it, then switch again.

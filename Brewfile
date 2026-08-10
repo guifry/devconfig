@@ -3,7 +3,11 @@
 
 tap "nikitabobko/tap"
 
+# Formulae (CLI tools not in nixpkgs, or that self-update)
+brew "opencode"
+
 # Casks (GUI apps)
+cask "codex"
 cask "aerospace"
 cask "bloom"
 cask "homerow"

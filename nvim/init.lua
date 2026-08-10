@@ -1360,11 +1360,17 @@ require("lazy").setup({
 			adapters = {
 				acp = {
 					claude_code = function()
+						-- Resolve from PATH. devconfig installs it to ~/.local/bin via
+						-- `devconfig switch`; fall back to npx so the adapter still works
+						-- on a machine where that step has not run.
+						local exe = vim.fn.exepath("claude-code-acp")
+						local cmd = exe ~= "" and { exe }
+							or { "npx", "-y", "@zed-industries/claude-code-acp" }
 						return require("codecompanion.adapters").extend("claude_code", {
 							env = {
 								CLAUDE_CODE_OAUTH_TOKEN = vim.env.CLAUDE_CODE_OAUTH_TOKEN,
 							},
-							cmd = { vim.fn.expand("~/.nvm/versions/node/v22.13.0/bin/claude-code-acp") },
+							cmd = cmd,
 						})
 					end,
 				},

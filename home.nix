@@ -44,6 +44,10 @@ in {
     mermaid-cli
     posting
     prettierd
+    # node + npm. Needed for claude-code-acp (codecompanion's Claude adapter) and
+    # any npx-based MCP server. nvm is deliberately NOT used — `mise` is already
+    # here and manages per-project node versions the same way.
+    nodejs
   ] ++ lib.optionals (!isDarwin) [
     ghostty
     xclip
@@ -431,9 +435,18 @@ EOF
     fi
   '');
 
+  # Key repeat. NOTE: these only take effect for an app when it next launches, and
+  # fully only after a logout — macOS caches NSGlobalDomain per process at startup.
+  # `devconfig switch` prints a reminder when it changes them.
+  #
+  # KeyRepeat 1        = fastest repeat (15ms). Below the System Settings minimum.
+  # InitialKeyRepeat 12 = 180ms before repeat starts.
+  # ApplePressAndHoldEnabled false = holding a key repeats it instead of showing the
+  #   accent picker. Without this, held keys do nothing in some apps.
   home.activation.configureKeyboard = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
     /usr/bin/defaults write NSGlobalDomain KeyRepeat -int 1
     /usr/bin/defaults write NSGlobalDomain InitialKeyRepeat -int 12
+    /usr/bin/defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
   '');
 
   xdg.configFile."nvim/init.lua".source = repoFile "nvim/init.lua";
