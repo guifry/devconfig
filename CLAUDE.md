@@ -346,8 +346,9 @@ Honest list, so nobody rediscovers these:
   would be the natural fit. Not moved — it is a change to the work setup, not cleanup.
 - **`prompt-reformat` is not wired up.** Its launchd plist is a `.template` with a
   `__HOME__` placeholder; nothing installs it.
-- **Mouseless has no Homebrew cask** — install by hand, see `macos-manual-apps.md`.
-  Its config copy is skipped silently until the app has been launched once.
+- **Mouseless config applies on the second switch.** The cask installs it, but
+  `home.activation.configureMouseless` skips silently until the app has been launched
+  once and created its container directory. Launch it, then switch again.
 
 ## Troubleshooting
 

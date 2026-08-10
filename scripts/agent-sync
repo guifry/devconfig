@@ -29,6 +29,16 @@ say()  { echo "$@"; }
 warn() { echo "  [!] $*"; ISSUES=$((ISSUES + 1)); }
 ok()   { echo "  [ok] $*"; }
 
+# home-manager does not link straight to the repo — it inserts store hops:
+#   ~/.claude/skills -> /nix/store/...-home-manager-files/.claude/skills
+#                    -> /nix/store/...-hm_skills
+#                    -> <repo>/agents/shared/skills
+# Only the fully-resolved path is meaningful, so always resolve before comparing.
+resolve() {
+  readlink -f "$1" 2>/dev/null \
+    || python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$1" 2>/dev/null
+}
+
 # Managed path -> expected target inside the repo
 MANAGED="
 $HOME/.claude/skills|$SHARED/skills
@@ -47,11 +57,11 @@ while IFS='|' read -r path target; do
   if [ ! -e "$path" ] && [ ! -L "$path" ]; then
     say "  [--] $path (not created — agent not installed, or run 'devconfig switch')"
   elif [ -L "$path" ]; then
-    actual=$(readlink "$path")
+    actual=$(resolve "$path")
     if [ "$actual" = "$target" ]; then
       ok "$(basename "$(dirname "$path")")/$(basename "$path")"
     else
-      warn "$path points at $actual, expected $target"
+      warn "$path resolves to $actual, expected $target"
     fi
   else
     warn "$path is a real file/dir, not a symlink — content here is NOT in devconfig"

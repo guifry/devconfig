@@ -3,19 +3,6 @@
 Apps that cannot be automatically installed (paid, App Store, or manual download).
 Install these manually after running `devconfig switch`.
 
-## Mouseless
-- **Website**: https://mouseless.click
-- **Docs**: https://mouseless.click/docs/keybindings.html
-- **Purchase**: Gumroad
-- **Purpose**: Keyboard-driven mouse control (grid + subgrid targeting)
-- **Setup**: Download and install from the website, then launch once so it creates
-  `~/Library/Containers/net.sonuscape.mouseless/Data/.mouseless/configs/`
-- **Config**: `macos/mouseless-config.yaml` is copied into that directory by
-  `devconfig switch` — the copy is skipped silently until the app has been run once
-- **Not in Brewfile**: no Homebrew cask available
-
----
-
 ## Click2Minimize
 - **Website**: https://click2minimize.com
 - **Purchase**: https://idemfactor.gumroad.com/l/click2minimize
@@ -34,6 +21,16 @@ Install these manually after running `devconfig switch`.
 
 Apps installed automatically via devconfig (brew) but require manual config import/export.
 The app is ready to use - only your personal settings (hotkeys, preferences) need manual import.
+
+## Mouseless
+- **Website**: https://mouseless.click
+- **Docs**: https://mouseless.click/docs/keybindings.html
+- **Installed via**: `brew install --cask mouseless` (in Brewfile)
+- **Licence**: paid, bought via Gumroad — enter the key in the app
+- **Config**: `macos/mouseless-config.yaml` is copied into the app's container by
+  `devconfig switch`. The copy is **skipped silently** until the app has been launched
+  once, because the container directory does not exist before then. Launch Mouseless,
+  then re-run `devconfig switch` to apply the config.
 
 ## Raycast
 - **Website**: https://www.raycast.com

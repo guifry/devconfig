@@ -23,6 +23,21 @@ else
   [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
 fi
 
+# Homebrew's installer does not add itself to PATH on Apple Silicon, and a shell
+# started before home-manager ran will not have it either. Look in the known
+# locations before concluding it is absent — otherwise brew bundle is skipped
+# silently and no GUI apps get installed.
+ensure_brew_on_path() {
+  command -v brew &>/dev/null && return 0
+  for candidate in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+    if [[ -x "$candidate" ]]; then
+      eval "$("$candidate" shellenv)"
+      return 0
+    fi
+  done
+  return 1
+}
+
 run_home_manager() {
   if command -v home-manager &>/dev/null; then
     home-manager "$@"
@@ -36,14 +51,26 @@ cmd_switch() {
   run_home_manager switch --impure --flake ".#$CONFIG" || return 1
 
   if [[ "$IS_DARWIN" == "true" && -f "$REPO/Brewfile" ]]; then
-    if command -v brew &>/dev/null; then
+    if ensure_brew_on_path; then
       echo "Applying brew packages..."
-      brew tap homebrew/cask 2>/dev/null || true
       brew tap nikitabobko/tap 2>/dev/null || true
       brew update
-      brew bundle --file="$REPO/Brewfile" --verbose
+      if ! brew bundle --file="$REPO/Brewfile" --verbose; then
+        echo ""
+        echo "########################################################"
+        echo "# brew bundle FAILED — GUI apps are NOT installed.     #"
+        echo "# Fix the error above, then re-run: devconfig switch   #"
+        echo "########################################################"
+        return 1
+      fi
     else
-      echo "WARNING: brew not installed — skipping GUI apps (Raycast, AeroSpace, etc.)"
+      echo ""
+      echo "########################################################"
+      echo "# Homebrew not found — GUI apps were NOT installed.    #"
+      echo "# (AeroSpace, Ghostty, Raycast, Bloom, Maccy, Kap...)   #"
+      echo "# Install Homebrew, then re-run: devconfig switch      #"
+      echo "########################################################"
+      echo ""
     fi
   fi
 
