@@ -8,7 +8,8 @@ The user has software, packages, and configurations installed independently of d
 
 ### What devconfig IS:
 - A portable dev environment supplement
-- Adds dotfiles (zsh, neovim, tmux, git, wezterm, aerospace)
+- Adds dotfiles (zsh, neovim, tmux, git, ghostty, aerospace)
+- Adds coding-agent config (Claude Code, opencode, Codex) from one shared source
 - Adds nix packages (cross-platform CLI tools)
 - Adds brew casks on macOS (GUI apps only, declared in Brewfile)
 - Version controlled, reproducible
@@ -34,44 +35,72 @@ The user has software, packages, and configurations installed independently of d
 
 ```
 devconfig/
-├── flake.nix                    # Nix flake - defines build targets per platform
+├── flake.nix                    # Nix flake - build targets per platform
 ├── home.nix                     # Home-manager config - dotfiles + nix packages (CROSS-PLATFORM)
 ├── Brewfile                     # macOS brew casks only - GUI apps (ADDITIVE ONLY)
-├── nvim/                        # Neovim config (kickstart.nvim)
-│   └── init.lua                 # Neovim init (lazy.nvim + LSP + treesitter + telescope)
-├── wezterm.lua                  # WezTerm terminal config (leader = Ctrl+])
-├── aerospace.toml               # AeroSpace tiling WM config (modifier = Ctrl+Alt)
-├── claude/                      # Claude Code user config (symlinked to ~/.claude/)
-│   ├── CLAUDE.md                # Global user instructions
-│   ├── settings.json            # Hooks, plugins, statusLine
-│   ├── commands/                # Slash commands (7 files)
-│   ├── skills/                  # Skills (10 files, incl. 4 ralph-* skills)
-│   └── hooks/                   # Pre/post hooks (block-git-writes.sh)
-├── macos/                       # macOS-specific app configs (restored on switch)
+├── nvim/init.lua                # Neovim (kickstart.nvim: lazy.nvim + LSP + treesitter + telescope)
+├── aerospace.toml               # AeroSpace tiling WM (modifier = Ctrl+Alt)
+├── ghostty.config               # Ghostty terminal (the local terminal)
+├── lazygit.yml                  # lazygit keybindings
+├── agents/                      # ALL coding-agent config (see below)
+│   ├── shared/                  # One source, fanned out to every agent
+│   │   ├── instructions.md      # Global user instructions
+│   │   ├── commands/            # Slash commands (8)
+│   │   └── skills/              # Skills (36)
+│   ├── claude/                  # Claude-only: settings.json, hooks/
+│   ├── opencode/                # opencode.json + README
+│   └── codex/                   # README (config.toml not yet managed)
+├── macos/                       # macOS app configs (restored on switch)
 │   ├── mouseless-config.yaml    # Mouseless keyboard mouse control
 │   ├── homerow.plist            # Homerow keyboard navigation
 │   ├── default-folder-x.plist   # Default Folder X enhanced dialogs
 │   └── click2minimize.plist     # Click2Minimize Finder behaviour
-├── macos-manual-apps.md         # List of manually installed macOS apps
-├── macos-licenses.md.template   # Template for license key storage
-├── .gitignore                   # Ignores macos-licenses.md (sensitive)
+├── macos-manual-apps.md         # Apps that must be installed by hand
+├── macos-licenses.md.template   # Template for license key storage (real file gitignored)
 ├── scripts/
-│   ├── devconfig-cli.sh         # Main CLI tool
-│   ├── doctor.sh                # Health check script
+│   ├── devconfig-cli.sh         # `devconfig` - the environment manager (switch/update/doctor)
+│   ├── dcli                     # `dcli` - the Python CLI (agent-guide TUI), via uv
+│   ├── doctor.sh                # Health check
 │   ├── rx                       # Ralph autonomous loop runner
-│   ├── tx                       # tmux cheat sheet
-│   └── vx                       # nvim cheat sheet
+│   └── ax/ox/tx/vx/xx           # Cheat sheets (aerospace/orgmode/tmux/vim/index)
+├── aliases/                     # Opt-in alias categories → ~/.aliases.d/
+├── conventions/chartering/      # Work coding standards, symlinked into worktrees by `fst`
+├── workspaces/kpler/            # `fst` - multi-repo worktree creator
+├── devconfig-cli/               # Python: agent-guide block DB + TUI
+├── clippy/                      # Python: macOS clipboard history daemon
+├── prompt-reformat/             # Python: Groq hotkey prompt rewriter
 └── CLAUDE.md                    # This file
 ```
 
-### claude/ (Claude Code Config)
-- **Scope**: Claude Code user-level config, symlinked to `~/.claude/`
-- **Symlinks**: `home.nix` creates directory-level symlinks for `commands/`, `skills/`, `hooks/` — new files created via Claude Code land directly in devconfig repo
-- **What's managed**: CLAUDE.md, settings.json, commands, skills, hooks
-- **What's NOT managed**: `~/.claude/sounds/`, `~/.claude/plugins/`, `~/.claude/projects/`, `~/.claude/cache/` — these stay local
+### agents/ (Coding agent config)
 
-To add a command: create `claude/commands/my-command.md`
-To add a skill: create `claude/skills/my-skill.md`
+Claude Code, opencode and Codex are used interchangeably, so instructions,
+commands and skills live once in `agents/shared/` and `home.nix` symlinks them
+into each agent's expected location:
+
+| Source | Claude Code | opencode | Codex |
+|--------|-------------|----------|-------|
+| `shared/instructions.md` | `~/.claude/CLAUDE.md` | `~/.config/opencode/AGENTS.md` | `~/.codex/AGENTS.md` |
+| `shared/commands/` | `~/.claude/commands` | `~/.config/opencode/command` | `~/.codex/prompts` |
+| `shared/skills/` | `~/.claude/skills` | `~/.config/opencode/skills` | `~/.codex/skills` |
+
+Because these are directory symlinks, a skill or command created by any agent
+lands directly in this repo.
+
+**Caveats:**
+- Auto-triggering on a skill's `description` is Claude Code behaviour. Elsewhere
+  skills are readable prompt files you invoke explicitly.
+- Four skills use Claude-only orchestration tools (`Agent`, `Task`, `TaskCreate`,
+  `TaskUpdate`, `Skill`) and will not run under the others: `batch-execute`,
+  `standup-prep`, `ralph-plan`, `ralph-review`.
+- The opencode and Codex paths above are **unverified** — neither was installed
+  when they were written. Confirm before trusting them.
+- **NOT managed**: `~/.claude/sounds/`, `~/.claude/plugins/`, `~/.claude/projects/`,
+  `~/.claude/cache/` — these stay local.
+
+To add a command: create `agents/shared/commands/my-command.md`
+To add a skill: create `agents/shared/skills/my-skill/SKILL.md` (uppercase — the
+filesystem here is case-insensitive but Linux targets are not)
 
 ### Ralph Workflow (Autonomous Coding Loop)
 
@@ -93,8 +122,12 @@ External bash loop spawning fresh claude sessions per iteration. Each session ge
 - **Contains**:
   - `home.packages`: CLI tools installed via nix (ripgrep, fd, jq, etc.)
   - `programs.zsh`: Shell config, aliases, functions
-  - `programs.tmux`: Tmux config, keybindings (SSH sessions only)
-  - `xdg.configFile`: Neovim config (kickstart.nvim), WezTerm config (local terminal), AeroSpace config (tiling WM)
+  - `programs.tmux`: Tmux config, keybindings. Auto-starts in local Ghostty
+    (keyed off `$GHOSTTY_RESOURCES_DIR`); over SSH, start it manually.
+  - `xdg.configFile`: Neovim (kickstart.nvim), Ghostty (local terminal),
+    AeroSpace (tiling WM), lazygit, opencode
+  - `home.file."bin/*"`: utility scripts installed to `~/bin` — this is the only
+    installer for them, bootstrap.sh does not copy them
   - `programs.git`: Git config, aliases, ignores
   - `programs.fzf`: Fuzzy finder config
   - `programs.direnv`: Directory environments

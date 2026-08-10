@@ -8,6 +8,9 @@ let
   homeDirectory = if envHome != "" then envHome
     else if isDarwin then "/Users/${username}"
     else "/home/${username}";
+  repoDir = "${homeDirectory}/projects/devconfig";
+  repoFile = path: config.lib.file.mkOutOfStoreSymlink "${repoDir}/${path}";
+  agentFile = path: repoFile "agents/${path}";
 in {
   home.username = username;
   home.homeDirectory = homeDirectory;
@@ -400,31 +403,31 @@ EOF
   home.activation.configureMouseless = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
     MOUSELESS_DIR="$HOME/Library/Containers/net.sonuscape.mouseless/Data/.mouseless/configs"
     if [ -d "$MOUSELESS_DIR" ]; then
-      cp "${config.home.homeDirectory}/projects/devconfig/macos/mouseless-config.yaml" "$MOUSELESS_DIR/config.yaml"
+      cp "${repoDir}/macos/mouseless-config.yaml" "$MOUSELESS_DIR/config.yaml"
     fi
   '');
 
   # Restore Homerow config (keyboard navigation)
   # https://www.homerow.app
   home.activation.configureHomerow = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
-    if [ -f "${config.home.homeDirectory}/projects/devconfig/macos/homerow.plist" ]; then
-      /usr/bin/defaults import com.superultra.Homerow "${config.home.homeDirectory}/projects/devconfig/macos/homerow.plist"
+    if [ -f "${repoDir}/macos/homerow.plist" ]; then
+      /usr/bin/defaults import com.superultra.Homerow "${repoDir}/macos/homerow.plist"
     fi
   '');
 
   # Restore Default Folder X config (enhanced file dialogs)
   # https://www.stclairsoft.com/DefaultFolderX/
   home.activation.configureDefaultFolderX = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
-    if [ -f "${config.home.homeDirectory}/projects/devconfig/macos/default-folder-x.plist" ]; then
-      /usr/bin/defaults import com.stclairsoft.DefaultFolderX5 "${config.home.homeDirectory}/projects/devconfig/macos/default-folder-x.plist"
+    if [ -f "${repoDir}/macos/default-folder-x.plist" ]; then
+      /usr/bin/defaults import com.stclairsoft.DefaultFolderX5 "${repoDir}/macos/default-folder-x.plist"
     fi
   '');
 
   # Restore Click2Minimize config (Finder icon behaviour)
   # https://click2minimize.com
   home.activation.configureClick2Minimize = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
-    if [ -f "${config.home.homeDirectory}/projects/devconfig/macos/click2minimize.plist" ]; then
-      /usr/bin/defaults import com.idemfactor.Click2Minimize "${config.home.homeDirectory}/projects/devconfig/macos/click2minimize.plist"
+    if [ -f "${repoDir}/macos/click2minimize.plist" ]; then
+      /usr/bin/defaults import com.idemfactor.Click2Minimize "${repoDir}/macos/click2minimize.plist"
     fi
   '');
 
@@ -433,17 +436,30 @@ EOF
     /usr/bin/defaults write NSGlobalDomain InitialKeyRepeat -int 12
   '');
 
-  xdg.configFile."nvim/init.lua".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/nvim/init.lua";
-  xdg.configFile."aerospace/aerospace.toml".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/aerospace.toml";
-  xdg.configFile."ghostty/config".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/ghostty.config";
-  xdg.configFile."lazygit/config.yml".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/lazygit.yml";
-  xdg.configFile."opencode/opencode.json".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/opencode.json";
+  xdg.configFile."nvim/init.lua".source = repoFile "nvim/init.lua";
+  xdg.configFile."aerospace/aerospace.toml".source = repoFile "aerospace.toml";
+  xdg.configFile."ghostty/config".source = repoFile "ghostty.config";
+  xdg.configFile."lazygit/config.yml".source = repoFile "lazygit.yml";
+  # Agent config. One shared source of instructions/commands/skills, fanned out to
+  # every agent's expected location. Agent-specific config stays in its own dir.
+  #
+  # Skills auto-trigger on their `description` in Claude Code only; elsewhere they
+  # are readable prompt files you invoke explicitly. opencode/codex paths are
+  # unverified — see agents/{opencode,codex}/README.md.
+  home.file.".claude/CLAUDE.md".source = agentFile "shared/instructions.md";
+  home.file.".claude/commands".source = agentFile "shared/commands";
+  home.file.".claude/skills".source = agentFile "shared/skills";
+  home.file.".claude/settings.json".source = agentFile "claude/settings.json";
+  home.file.".claude/hooks".source = agentFile "claude/hooks";
 
-  home.file.".claude/CLAUDE.md".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/CLAUDE.md";
-  home.file.".claude/settings.json".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/settings.json";
-  home.file.".claude/commands".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/commands";
-  home.file.".claude/skills".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/skills";
-  home.file.".claude/hooks".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/hooks";
+  xdg.configFile."opencode/opencode.json".source = agentFile "opencode/opencode.json";
+  xdg.configFile."opencode/AGENTS.md".source = agentFile "shared/instructions.md";
+  xdg.configFile."opencode/command".source = agentFile "shared/commands";
+  xdg.configFile."opencode/skills".source = agentFile "shared/skills";
+
+  home.file.".codex/AGENTS.md".source = agentFile "shared/instructions.md";
+  home.file.".codex/prompts".source = agentFile "shared/commands";
+  home.file.".codex/skills".source = agentFile "shared/skills";
 
   home.file."bin/ax" = { source = ./scripts/ax; executable = true; };
   home.file."bin/rx" = { source = ./scripts/rx; executable = true; };
@@ -459,5 +475,7 @@ EOF
   home.file."bin/chrome-kpler-calendar" = { source = ./scripts/chrome-kpler-calendar; executable = true; };
   home.file."bin/aerospace-swap-center" = { source = ./scripts/aerospace-swap-center; executable = true; };
   home.file."bin/tmux-yank-claude" = { source = ./scripts/tmux-yank-claude; executable = true; };
+  home.file."bin/devconfig" = { source = ./scripts/devconfig-cli.sh; executable = true; };
+  home.file."bin/dcli" = { source = ./scripts/dcli; executable = true; };
   home.file.".secrets.example" = { source = ./secrets.example; };
 }

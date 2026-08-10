@@ -9,7 +9,7 @@ allowed-tools: Bash, Read, Edit, Write
 You manage the Taisk Forecast documentation and roadmap system.
 
 ## Docs Location
-`/Users/guilhemforey/projects/taisk-forecast-backend/docs/`
+`~/projects/taisk-forecast-backend/docs/`
 
 ## Structure
 ```
