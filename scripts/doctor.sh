@@ -42,12 +42,12 @@ if [[ -f ~/.secrets ]]; then
     fi
   done
 else
-  echo "[--] ~/.secrets not found (copy .secrets.example)"
+  echo "[--] ~/.secrets not found (copy secrets.example)"
 fi
 
 echo ""
 echo "Full Setup:"
-if [[ -f ~/.ssh/id_ed25519_personal ]] || [[ -f ~/.ssh/id_ed25519 ]]; then
+if [[ -f ~/.ssh/id_ed25519_guifry ]] || [[ -f ~/.ssh/id_ed25519 ]]; then
   echo "[OK] SSH keys"
 else
   echo "[--] SSH keys"

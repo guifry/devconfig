@@ -3,6 +3,19 @@
 Apps that cannot be automatically installed (paid, App Store, or manual download).
 Install these manually after running `devconfig switch`.
 
+## Mouseless
+- **Website**: https://mouseless.click
+- **Docs**: https://mouseless.click/docs/keybindings.html
+- **Purchase**: Gumroad
+- **Purpose**: Keyboard-driven mouse control (grid + subgrid targeting)
+- **Setup**: Download and install from the website, then launch once so it creates
+  `~/Library/Containers/net.sonuscape.mouseless/Data/.mouseless/configs/`
+- **Config**: `macos/mouseless-config.yaml` is copied into that directory by
+  `devconfig switch` — the copy is skipped silently until the app has been run once
+- **Not in Brewfile**: no Homebrew cask available
+
+---
+
 ## Click2Minimize
 - **Website**: https://click2minimize.com
 - **Purchase**: https://idemfactor.gumroad.com/l/click2minimize

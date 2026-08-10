@@ -133,12 +133,12 @@ make setup-full   # Re-run full setup
 - direnv: nix-shell integration
 
 **Not managed by Nix:**
-- macOS GUI apps (iTerm2, VSCode) — install manually or via Homebrew
+- macOS GUI apps — declared as casks in `Brewfile`, or listed in `macos-manual-apps.md`
 - ~/.secrets — local tokens, not committed
 
 ## Secrets
 
-Local secrets stored in `~/.secrets`, sourced by `.zshrc`. See `.secrets.example`.
+Local secrets stored in `~/.secrets`, sourced by zsh on startup. See `secrets.example`.
 
 ## GitHub CLI (multi-account)
 

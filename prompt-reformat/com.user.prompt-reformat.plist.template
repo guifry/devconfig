@@ -6,11 +6,11 @@
     <string>com.user.prompt-reformat</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/guilhemforey/projects/devconfig/prompt-reformat/.venv/bin/python</string>
-        <string>/Users/guilhemforey/projects/devconfig/prompt-reformat/main.py</string>
+        <string>__HOME__/projects/devconfig/prompt-reformat/.venv/bin/python</string>
+        <string>__HOME__/projects/devconfig/prompt-reformat/main.py</string>
     </array>
     <key>WorkingDirectory</key>
-    <string>/Users/guilhemforey/projects/devconfig/prompt-reformat</string>
+    <string>__HOME__/projects/devconfig/prompt-reformat</string>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>

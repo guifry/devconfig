@@ -148,16 +148,12 @@ nix run home-manager -- switch --impure --flake ".#$CONFIG"
 
 # Setup secrets template
 if [[ ! -f ~/.secrets ]]; then
-  cp .secrets.example ~/.secrets
+  cp secrets.example ~/.secrets
   echo "Created ~/.secrets from template - edit with your tokens"
 fi
 
-# Setup ~/bin with utility scripts
-mkdir -p ~/bin
-cp scripts/tx scripts/create_script scripts/edscript ~/bin/ 2>/dev/null || true
-ln -sf "$REPO/scripts/devconfig-cli.sh" ~/bin/devconfig
-chmod +x ~/bin/* 2>/dev/null || true
-echo "Utility scripts installed to ~/bin"
+# ~/bin scripts (tx, vx, rx, devconfig, dcli, ...) are installed by home-manager
+# via home.file."bin/*" — nothing to do here.
 
 # Setup direnvrc for parent .envrc inheritance
 mkdir -p ~/.config/direnv
@@ -177,14 +173,17 @@ if ! command -v claude >/dev/null 2>&1; then
   fi
 fi
 
-# Install vim-plug and plugins
-if [[ ! -f ~/.vim/autoload/plug.vim ]]; then
-  echo "Installing vim-plug..."
-  curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
-    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+# Install vim-plug and plugins, but only if a ~/.vimrc actually exists.
+# Neovim is the managed editor (nvim/init.lua); plain vim is unmanaged.
+if [[ -f ~/.vimrc ]]; then
+  if [[ ! -f ~/.vim/autoload/plug.vim ]]; then
+    echo "Installing vim-plug..."
+    curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+      https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  fi
+  echo "Installing vim plugins..."
+  vim +PlugInstall +qall
 fi
-echo "Installing vim plugins..."
-vim +PlugInstall +qall
 
 # Full setup extras
 if [[ "$choice" == "2" ]]; then
@@ -200,13 +199,3 @@ echo "  1. Restart your terminal"
 echo "  2. exec zsh"
 echo "  3. source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh && zsh"
 echo "  4. ~/.nix-profile/bin/zsh"
-
-if [[ "$UNAME" == "Darwin" ]]; then
-  echo ""
-  echo "=== iTerm2 Setup (optional) ==="
-  echo "To sync iTerm2 config with devconfig:"
-  echo "  1. Open iTerm2 → Settings → General → Preferences"
-  echo "  2. Check 'Load preferences from a custom folder or URL'"
-  echo "  3. Set path to: ~/projects/devconfig/iterm"
-  echo "  4. Check 'Save changes to folder when iTerm2 quits'"
-fi
