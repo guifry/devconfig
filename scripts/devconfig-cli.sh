@@ -83,6 +83,15 @@ cmd_nvim_setup() {
   echo "nvim ready."
 }
 
+# Same problem as brew: a shell that did not source the nix profile (non-login shell,
+# script, cron, a terminal opened before install) has no `nix` on PATH.
+ensure_nix_on_path() {
+  command -v nix &>/dev/null && return 0
+  local profile=/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+  [ -f "$profile" ] && . "$profile"
+  command -v nix &>/dev/null
+}
+
 run_home_manager() {
   if command -v home-manager &>/dev/null; then
     home-manager "$@"
@@ -92,6 +101,11 @@ run_home_manager() {
 }
 
 cmd_switch() {
+  if ! ensure_nix_on_path; then
+    echo "ERROR: nix not found. Install it, or open a new shell." >&2
+    return 1
+  fi
+
   echo "Applying nix config..."
   run_home_manager switch --impure --flake ".#$CONFIG" || return 1
 
