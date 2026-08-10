@@ -291,6 +291,16 @@ Consequences a future agent must know:
 - Adding a new script means two steps: create `scripts/x`, then add a
   `home.file."bin/x"` entry. It will not appear otherwise.
 
+## Keep `switch` fast
+
+`devconfig switch` is run constantly. It must stay cheap. Anything slow —
+downloading LSP servers, npm installs, anything hitting the network beyond nix and
+brew — belongs in `cmd_nvim_setup` (run by `bootstrap.sh`, or on demand via
+`devconfig nvim-setup`), **not** in `cmd_switch`.
+
+Where a gap could go unnoticed, `switch` may *detect* it with a pure stat check and
+print a one-line pointer — never install. See `nvim_tools_present()`.
+
 ## Testing Changes
 
 1. Make changes to home.nix, Brewfile, or any nix-managed file

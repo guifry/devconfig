@@ -230,6 +230,13 @@ if [[ "$choice" == "2" ]]; then
   ./scripts/python-setup.sh
 fi
 
+# One-time heavy nvim setup: plugins, LSPs, formatters, debug adapters and the
+# codecompanion ACP bridge. Done here rather than in `devconfig switch` so that
+# switch stays fast. Re-run later with: devconfig nvim-setup
+echo ""
+echo "Preparing nvim (plugins + LSPs). This is the slow part, and only runs once."
+./scripts/devconfig-cli.sh nvim-setup || echo "Warning: nvim setup incomplete — run 'devconfig nvim-setup' later"
+
 echo ""
 echo "Setup complete!"
 echo ""

@@ -38,6 +38,51 @@ ensure_brew_on_path() {
   return 1
 }
 
+# Names match `ensure_installed` in nvim/init.lua — keep the two in sync.
+NVIM_TOOLS="basedpyright ruff typescript-language-server lua-language-server stylua tree-sitter-cli debugpy"
+
+# Pure stat check: no nvim launch, no network. Safe to call from switch.
+nvim_tools_present() {
+  local pkgs="$HOME/.local/share/nvim/mason/packages"
+  for tool in $NVIM_TOOLS; do
+    [ -e "$pkgs/$tool" ] || return 1
+  done
+  return 0
+}
+
+# Heavy, one-time. Called by bootstrap.sh and by `devconfig nvim-setup` — never
+# by `switch`.
+cmd_nvim_setup() {
+  # codecompanion's Claude adapter needs the ACP bridge on PATH. Installed to
+  # ~/.local (already on PATH) rather than npm's global prefix, which lives in the
+  # read-only nix store.
+  if command -v npm &>/dev/null; then
+    if ! command -v claude-code-acp &>/dev/null; then
+      echo "Installing claude-code-acp (codecompanion Claude adapter)..."
+      npm install -g --prefix "$HOME/.local" @zed-industries/claude-code-acp \
+        || echo "  WARNING: install failed — codecompanion falls back to npx"
+    else
+      echo "claude-code-acp already installed."
+    fi
+  else
+    echo "WARNING: npm not found — skipping claude-code-acp"
+  fi
+
+  echo "Syncing nvim plugins..."
+  nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
+
+  if nvim_tools_present; then
+    echo "LSPs, formatters and debug adapters already installed."
+  else
+    echo "Installing LSPs, formatters and debug adapters (mason)..."
+    nvim --headless "+MasonToolsInstallSync" +qa 2>/dev/null \
+      || nvim --headless "+MasonToolsInstall" "+sleep 90" +qa 2>/dev/null \
+      || echo "  (incomplete — mason will finish on first nvim launch)"
+  fi
+
+  echo "nvim ready."
+}
+
 run_home_manager() {
   if command -v home-manager &>/dev/null; then
     home-manager "$@"
@@ -79,41 +124,14 @@ cmd_switch() {
     osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/AeroSpace.app", hidden:false}' 2>/dev/null || true
   fi
 
-  # codecompanion's Claude adapter needs the ACP bridge on PATH. Installed to
-  # ~/.local (already on PATH) rather than npm's global prefix, which is inside the
-  # read-only nix store.
-  if command -v npm &>/dev/null; then
-    if ! command -v claude-code-acp &>/dev/null; then
-      echo "Installing claude-code-acp (codecompanion Claude adapter)..."
-      npm install -g --prefix "$HOME/.local" @zed-industries/claude-code-acp \
-        || echo "  WARNING: install failed — codecompanion falls back to npx"
-    fi
-  else
-    echo "WARNING: npm not found — skipping claude-code-acp"
-  fi
-
-  # Get nvim fully usable before it is opened by hand: plugins, then LSP servers,
-  # formatters and debug adapters. Treesitter parsers install during the Lazy step
-  # (nvim-treesitter is lazy=false and blocks on install in its config).
   echo "Syncing nvim plugins..."
   nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
 
-  # Only pay for this when something is actually missing — otherwise every switch
-  # would sit through the async-install fallback. Names match `ensure_installed`
-  # in nvim/init.lua; keep the two in sync.
-  MASON_PKGS="$HOME/.local/share/nvim/mason/packages"
-  mason_missing=false
-  for tool in basedpyright ruff typescript-language-server lua-language-server stylua tree-sitter-cli debugpy; do
-    [ -e "$MASON_PKGS/$tool" ] || mason_missing=true
-  done
-
-  if [ "$mason_missing" = true ]; then
-    echo "Installing LSPs, formatters and debug adapters (mason, first run only)..."
-    nvim --headless "+MasonToolsInstallSync" +qa 2>/dev/null \
-      || nvim --headless "+MasonToolsInstall" "+sleep 90" +qa 2>/dev/null \
-      || echo "  (incomplete — mason will finish on first nvim launch)"
-  else
-    echo "LSPs and formatters already installed (mason)."
+  # Deliberately NOT installing mason tools here — switch must stay fast. Just a
+  # stat check (no nvim launch, no network) so a gap never goes unnoticed.
+  if ! nvim_tools_present; then
+    echo ""
+    echo "NOTE: some nvim LSPs/formatters are missing. Run: devconfig nvim-setup"
   fi
 
   echo ""
@@ -205,6 +223,7 @@ cmd_help() {
   echo "  update    Update flake inputs + brew + apply"
   echo "  doctor    Check installed components"
   echo "  sync      Check agent skills/commands are in devconfig (--fix to pull them in)"
+  echo "  nvim-setup  Install nvim LSPs/formatters + claude-code-acp (slow, one-time)"
   echo "  status    Show nix store size + generations"
   echo "  clean     Garbage collect old generations"
   echo "  edit      Open home.nix in editor"
@@ -227,6 +246,7 @@ show_menu() {
   echo "5) status  - Show nix store size + generations"
   echo "6) clean   - Garbage collect old generations"
   echo "7) edit    - Open home.nix in editor"
+  echo "8) nvim-setup - Install nvim LSPs/formatters (slow, one-time)"
   echo "q) quit"
   echo ""
   read -p "Select: " choice < /dev/tty
@@ -239,6 +259,7 @@ show_menu() {
     5|status)  cmd_status ;;
     6|clean)   cmd_clean ;;
     7|edit)    cmd_edit ;;
+    8|nvim-setup) cmd_nvim_setup ;;
     q|quit)    exit 0 ;;
     *)         echo "Invalid option" ;;
   esac
@@ -249,6 +270,7 @@ case "${1:-}" in
   update)  cmd_update ;;
   doctor)  cmd_doctor ;;
   sync)    shift; cmd_sync "$@" ;;
+  nvim-setup) cmd_nvim_setup ;;
   status)  cmd_status ;;
   clean)   cmd_clean ;;
   edit)    cmd_edit ;;
