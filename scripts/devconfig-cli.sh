@@ -98,7 +98,22 @@ cmd_switch() {
   if [[ "$IS_DARWIN" == "true" && -f "$REPO/Brewfile" ]]; then
     if ensure_brew_on_path; then
       echo "Applying brew packages..."
-      brew tap nikitabobko/tap 2>/dev/null || true
+
+      # Homebrew 6 refuses to load casks from third-party taps until they are
+      # explicitly trusted. Every tap declared in the Brewfile is already an explicit
+      # choice to install from it, so trust exactly those — no more.
+      # Trust is recorded in ~/.homebrew/trust.json (or $XDG_CONFIG_HOME/homebrew/).
+      brewfile_taps=$(grep -E '^[[:space:]]*tap[[:space:]]+"' "$REPO/Brewfile" 2>/dev/null \
+        | sed -E 's/.*"([^"]+)".*/\1/')
+      for t in $brewfile_taps; do
+        brew tap "$t" 2>/dev/null || true
+        if brew trust --help &>/dev/null; then
+          echo "  Trusting tap: $t"
+          brew trust --tap "$t" 2>/dev/null \
+            || echo "    WARNING: could not trust $t — casks from it will be refused"
+        fi
+      done
+
       brew update
       if ! brew bundle --file="$REPO/Brewfile" --verbose; then
         echo ""
