@@ -336,7 +336,12 @@ EOF
       "**/.claude/settings.local.json"
     ];
     settings = {
-      credential."https://github.com".helper = "!/usr/bin/env gh auth git-credential";
+      # HTTPS credentials come from gh. `!/usr/bin/env gh ...` only works when gh is
+      # already on PATH — true in an interactive shell, false for scripts, editors,
+      # cron and coding agents, which then fail with "could not read Username".
+      # Put the nix profile on PATH inside the helper so it works everywhere.
+      credential."https://github.com".helper =
+        "!f() { PATH=\"$HOME/.nix-profile/bin:$HOME/.local/bin:/opt/homebrew/bin:$PATH\"; gh auth git-credential \"$@\"; }; f";
       core.editor = "nvim";
       # Never guess an author from $USER@$HOSTNAME. Without this, a repo that matches
       # no include commits silently as guilhem@Guilhems-MacBook-Pro.local — succeeds,
