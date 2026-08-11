@@ -73,8 +73,8 @@ git_email=$(git config --get user.email 2>/dev/null)
 if [[ -n "$git_email" ]]; then
   echo "[OK] user.email = $git_email (in $(pwd))"
 else
-  echo "[--] user.email unset here — commits would be authored as $(whoami)@$(hostname -s).local"
-  echo "     Create the per-directory identity files: see gitconfig-identity.example"
+  echo "[--] user.email unset here — git will REFUSE to commit (user.useConfigOnly)"
+  echo "     Fix with: git-identity-setup"
 fi
 for f in ~/.gitconfig-guifry ~/.gitconfig-kpler ~/.gitconfig-gds ~/.gitconfig-bp; do
   [[ -f "$f" ]] && echo "[OK] $(basename "$f")"

@@ -363,6 +363,21 @@ Honest list, so nobody rediscovers these:
   would be the natural fit. Not moved — it is a change to the work setup, not cleanup.
 - **`prompt-reformat` is not wired up.** Its launchd plist is a `.template` with a
   `__HOME__` placeholder; nothing installs it.
+### New machine: what is automatic vs manual
+
+`bootstrap.sh --local` (or the curl one-liner) + `devconfig switch` reproduce
+everything in this repo. These steps cannot be automated — they need a browser or a
+credential — and are the complete list:
+
+1. `gh auth login` once per account (device flow, in a browser signed into that account)
+2. Add each `~/.ssh/*.pub` to its own GitHub account
+3. Authorise the work key for the Kpler org (SAML SSO), or every Kpler clone fails
+4. Fill in `~/.secrets` if you use those tokens
+
+`git-identity-setup` runs in the full bootstrap and creates the identity files, so
+that is no longer manual. Finish by running `git-identity-test` — 24 checks, and it
+names the exact remaining step for anything that fails.
+
 ### Verifying the git setup
 
 `git-identity-test` asserts the whole multi-account setup end to end: identity by

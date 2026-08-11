@@ -228,6 +228,8 @@ fi
 if [[ "$choice" == "2" ]]; then
   ./scripts/ssh-setup.sh
   ./scripts/python-setup.sh
+  # Without these, user.useConfigOnly makes git refuse to commit anywhere.
+  ./scripts/git-identity-setup
 fi
 
 # One-time heavy nvim setup: plugins, LSPs, formatters, debug adapters and the

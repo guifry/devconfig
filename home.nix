@@ -521,6 +521,7 @@ EOF
   home.file."bin/dcli" = { source = ./scripts/dcli; executable = true; };
   home.file."bin/agent-sync" = { source = ./scripts/agent-sync; executable = true; };
   home.file."bin/git-identity-test" = { source = ./scripts/git-identity-test; executable = true; };
+  home.file."bin/git-identity-setup" = { source = ./scripts/git-identity-setup; executable = true; };
   # Shadows the nix `gh` — ~/bin is earlier in PATH. Selects the GitHub account from
   # the repo's remote, because gh only has one global active account. See scripts/gh.
   home.file."bin/gh" = { source = ./scripts/gh; executable = true; };
