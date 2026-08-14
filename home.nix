@@ -30,7 +30,6 @@ in {
     lazygit
     gh
     google-cloud-sdk
-    mise
     neovim
     yazi
     fastfetch
@@ -45,8 +44,8 @@ in {
     posting
     prettierd
     # node + npm. Needed for claude-code-acp (codecompanion's Claude adapter) and
-    # any npx-based MCP server. nvm is deliberately NOT used — `mise` is already
-    # here and manages per-project node versions the same way.
+    # any npx-based MCP server. nvm is deliberately NOT used — `mise` (standalone,
+    # see devconfig mise-setup) manages per-project node versions the same way.
     nodejs
   ] ++ lib.optionals (!isDarwin) [
     ghostty

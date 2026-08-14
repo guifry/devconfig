@@ -50,6 +50,23 @@ nvim_tools_present() {
   return 0
 }
 
+# Heavy, one-time. Called by bootstrap.sh and by `devconfig mise-setup` — never
+# by `switch`. The official installer puts mise in ~/.local/bin (already on
+# PATH), which is writable — the nix-store copy couldn't self-update, which is
+# why this is not a nix package. `mise self-update` runs on `devconfig update`.
+cmd_mise_setup() {
+  if command -v mise &>/dev/null && [[ "$(dirname "$(command -v mise)")" == "$HOME/.local/bin" ]]; then
+    echo "mise already installed at ~/.local/bin."
+    return 0
+  fi
+  echo "Installing mise to ~/.local/bin..."
+  curl https://mise.run | sh || {
+    echo "  WARNING: mise install failed — run 'devconfig mise-setup' later" >&2
+    return 1
+  }
+  echo "mise ready: $(~/.local/bin/mise --version)"
+}
+
 # Heavy, one-time. Called by bootstrap.sh and by `devconfig nvim-setup` — never
 # by `switch`.
 cmd_nvim_setup() {
@@ -199,6 +216,11 @@ cmd_update() {
     brew update
   fi
 
+  if command -v mise &>/dev/null; then
+    echo "Updating mise..."
+    mise self-update --yes 2>/dev/null || echo "  (mise self-update failed — check later)"
+  fi
+
   cmd_switch
 }
 
@@ -253,6 +275,7 @@ cmd_help() {
   echo "  doctor    Check installed components"
   echo "  sync      Check agent skills/commands are in devconfig (--fix to pull them in)"
   echo "  nvim-setup  Install nvim LSPs/formatters + claude-code-acp (slow, one-time)"
+  echo "  mise-setup  Install mise to ~/.local/bin (slow, one-time)"
   echo "  status    Show nix store size + generations"
   echo "  clean     Garbage collect old generations"
   echo "  edit      Open home.nix in editor"
@@ -276,6 +299,7 @@ show_menu() {
   echo "6) clean   - Garbage collect old generations"
   echo "7) edit    - Open home.nix in editor"
   echo "8) nvim-setup - Install nvim LSPs/formatters (slow, one-time)"
+  echo "9) mise-setup - Install mise to ~/.local/bin (slow, one-time)"
   echo "q) quit"
   echo ""
   read -p "Select: " choice < /dev/tty
@@ -289,6 +313,7 @@ show_menu() {
     6|clean)   cmd_clean ;;
     7|edit)    cmd_edit ;;
     8|nvim-setup) cmd_nvim_setup ;;
+    9|mise-setup) cmd_mise_setup ;;
     q|quit)    exit 0 ;;
     *)         echo "Invalid option" ;;
   esac
@@ -300,6 +325,7 @@ case "${1:-}" in
   doctor)  cmd_doctor ;;
   sync)    shift; cmd_sync "$@" ;;
   nvim-setup) cmd_nvim_setup ;;
+  mise-setup) cmd_mise_setup ;;
   status)  cmd_status ;;
   clean)   cmd_clean ;;
   edit)    cmd_edit ;;

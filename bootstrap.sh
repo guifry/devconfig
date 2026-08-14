@@ -232,6 +232,14 @@ if [[ "$choice" == "2" ]]; then
   ./scripts/git-identity-setup
 fi
 
+# One-time mise install: standalone build in ~/.local/bin (writable, so
+# `mise self-update` works — the nixpkgs copy was pinned to whatever nixpkgs
+# shipped and lagged repo min_version pins). Re-run later with:
+# devconfig mise-setup
+echo ""
+echo "Installing mise (per-project toolchain manager)..."
+./scripts/devconfig-cli.sh mise-setup
+
 # One-time heavy nvim setup: plugins, LSPs, formatters, debug adapters and the
 # codecompanion ACP bridge. Done here rather than in `devconfig switch` so that
 # switch stays fast. Re-run later with: devconfig nvim-setup

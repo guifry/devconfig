@@ -349,8 +349,15 @@ Honest list, so nobody rediscovers these:
   testing whether they read `~/.claude/` natively — if so, those symlinks are redundant.
 - **`~/.codex/config.toml` is not managed.** Codex has no config in this repo yet.
 - **Node comes from nixpkgs, not nvm.** `nodejs` is in `home.packages`. nvm is
-  deliberately not used — `mise` is already installed and handles per-project node
-  versions. `programs.zsh` still sources nvm if you install it by hand.
+  deliberately not used — `mise` handles per-project node versions.
+  `programs.zsh` still sources nvm if you install it by hand.
+- **`mise` is NOT a nix package.** The nixpkgs build pinned mise to whatever
+  nixpkgs shipped, which lagged repos' `min_version` pins. It is installed
+  standalone to `~/.local/bin` (writable, so `mise self-update` works) by
+  `devconfig mise-setup`, run from `bootstrap.sh`. `devconfig update` runs
+  `mise self-update` so it never lags again. The zsh hook (`mise activate`) is
+  guarded by `command -v mise`, so a machine that skipped mise-setup degrades
+  gracefully.
 - **`claude-code-acp` is installed by `devconfig switch`**, not by nix — npm's global
   prefix is inside the read-only nix store, so it goes to `~/.local` via
   `npm install -g --prefix ~/.local`. `nvim/init.lua` resolves it with
