@@ -259,9 +259,6 @@ EOF
       set -g allow-passthrough on
       set -g display-panes-time 3000
 
-      set -g window-style 'bg=#1a1b26'
-      set -g window-active-style 'bg=#24283b'
-
       # tokyonight storm palette
       set -g status-position top
       set -g status-style "bg=#1f2335,fg=#a9b1d6"
