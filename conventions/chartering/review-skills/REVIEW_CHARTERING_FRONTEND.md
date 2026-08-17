@@ -11,7 +11,6 @@ BASE=$(git merge-base HEAD main 2>/dev/null || git merge-base HEAD develop 2>/de
 git diff $BASE --name-only
 git diff $BASE
 ```
-
 ### 2. Read Conventions
 
 Read `CLAUDE.md` (FST root) for all coding standards, then this file for frontend-specific checks.
