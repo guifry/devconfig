@@ -22,6 +22,16 @@ Install these manually after running `devconfig switch`.
 Apps installed automatically via devconfig (brew) but require manual config import/export.
 The app is ready to use - only your personal settings (hotkeys, preferences) need manual import.
 
+## Mouseless
+- **Website**: https://mouseless.click
+- **Docs**: https://mouseless.click/docs/keybindings.html
+- **Installed via**: `brew install --cask mouseless` (in Brewfile)
+- **Licence**: paid, bought via Gumroad — enter the key in the app
+- **Config**: `macos/mouseless-config.yaml` is copied into the app's container by
+  `devconfig switch`. The copy is **skipped silently** until the app has been launched
+  once, because the container directory does not exist before then. Launch Mouseless,
+  then re-run `devconfig switch` to apply the config.
+
 ## Raycast
 - **Website**: https://www.raycast.com
 - **Docs**: https://manual.raycast.com/preferences

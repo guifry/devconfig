@@ -436,6 +436,7 @@ require("lazy").setup({
 				{ "<leader>d", group = "[D]ebug" },
 				{ "<leader>h", group = "Git [H]unk", mode = { "n", "v" } },
 				{ "<leader>o", group = "[O]cto (PR review)" },
+				{ "<leader>n", group = "[N]vim-tree" },
 			},
 		},
 	},
@@ -502,9 +503,80 @@ require("lazy").setup({
 
 			-- [[ Configure Telescope ]]
 			-- See `:help telescope` and `:help telescope.setup()`
+			-- Path display for file pickers: filename first, then the path with
+			-- the common prefix of all results stripped, keeping the first
+			-- shared parent directory as an anchor. Computed once per result
+			-- count and cached on the picker instance.
+			local file_path_display = function(opts, path)
+				if not path or path == "" then
+					return "", {}
+				end
+				local tail = path:match("([^/]+)$") or path
+				local dirname = path:match("^(.*)/[^/]*$")
+				local dir = dirname or ""
+				local status = require("telescope.state").get_status(vim.api.nvim_get_current_buf())
+				local picker = status and status.picker
+				if picker and picker.entry_manager then
+					local em = picker.entry_manager
+					local count = em:num_results()
+					local cache = picker.__file_path_cache
+					if not (cache and cache.count == count) then
+						local dirs_list = {}
+						for i = 1, math.min(count, 30) do
+							local e = em:get_entry(i)
+							local p = type(e) == "string" and e or e.filename or e.value
+							if type(p) == "string" then
+								local dirs = vim.split(p, "/", { trimempty = true })
+								table.remove(dirs)
+								if #dirs > 0 then
+									table.insert(dirs_list, dirs)
+								end
+							end
+						end
+						local prefix, anchor
+						if #dirs_list > 1 then
+							local common = {}
+							for i, d in ipairs(dirs_list[1]) do
+								local shared = true
+								for j = 2, #dirs_list do
+									if dirs_list[j][i] ~= d then
+										shared = false
+										break
+									end
+								end
+								if not shared then
+									break
+								end
+								table.insert(common, d)
+							end
+							if #common > 0 then
+								prefix = table.concat(common, "/") .. "/"
+								anchor = common[#common]
+							end
+						end
+						cache = { count = count, prefix = prefix, anchor = anchor }
+						picker.__file_path_cache = cache
+					end
+					if cache.prefix and cache.anchor and path:sub(1, #cache.prefix) == cache.prefix then
+						dir = cache.anchor .. "/" .. path:sub(#cache.prefix + 1)
+					end
+				end
+				local display = vim.trim(tail .. " " .. dir)
+				if dir ~= "" then
+					return display, { { { #tail, #display }, "TelescopeResultsComment" } }
+				end
+				return display, {}
+			end
+
 			require("telescope").setup({
 				defaults = {
 					path_display = { "filename_first" },
+					dynamic_preview_title = true,
+				},
+				pickers = {
+					find_files = { path_display = file_path_display },
+					live_grep = { path_display = file_path_display },
+					grep_string = { path_display = file_path_display },
 				},
 				extensions = {
 					["ui-select"] = { require("telescope.themes").get_dropdown() },
@@ -720,8 +792,11 @@ require("lazy").setup({
 					--    See `:help CursorHold` for information about when this is executed
 					--
 					-- When you move your cursor, the highlights will be cleared (the second autocommand).
-					local client = vim.lsp.get_client_by_id(event.data.client_id)
-					if client and client:supports_method("textDocument/documentHighlight", event.buf) then
+				local client = vim.lsp.get_client_by_id(event.data.client_id)
+				if client and client:supports_method("textDocument/documentSymbol", event.buf) then
+					pcall(require("nvim-navic").attach, client, event.buf)
+				end
+				if client and client:supports_method("textDocument/documentHighlight", event.buf) then
 						local highlight_augroup =
 							vim.api.nvim_create_augroup("kickstart-lsp-highlight", { clear = false })
 						vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
@@ -1071,24 +1146,38 @@ require("lazy").setup({
 			-- - sr)'  - [S]urround [R]eplace [)] [']
 			require("mini.surround").setup()
 
-			-- Simple and easy statusline.
-			--  You could remove this setup call if you don't like it,
-			--  and try some other statusline plugin
-			local statusline = require("mini.statusline")
-			-- set use_icons to true if you have a Nerd Font
-			statusline.setup({ use_icons = vim.g.have_nerd_font })
-
-			-- You can configure sections in the statusline by overriding their
-			-- default behavior. For example, here we set the section for
-			-- cursor location to LINE:COLUMN
-			---@diagnostic disable-next-line: duplicate-set-field
-			statusline.section_location = function()
-				return "%2l:%-2v"
-			end
-
 			-- ... and there is more!
 			--  Check out: https://github.com/nvim-mini/mini.nvim
 		end,
+	},
+
+	{ -- Statusline + per-window winbar ("what's open in this pane")
+		"nvim-lualine/lualine.nvim",
+		dependencies = {
+			"nvim-tree/nvim-web-devicons",
+			"SmiteshP/nvim-navic",
+		},
+		event = "VeryLazy",
+		opts = {
+			options = {
+				theme = "auto",
+				globalstatus = true,
+			},
+			sections = {
+				lualine_a = { "mode" },
+				lualine_b = { "branch", "diff", "diagnostics" },
+				lualine_c = { "filename" },
+				lualine_x = { "encoding", "fileformat", "filetype" },
+				lualine_y = { "progress" },
+				lualine_z = { "location" },
+			},
+			winbar = {
+				lualine_c = { "filename", { "navic", color_coded = true } },
+			},
+			inactive_winbar = {
+				lualine_c = { "filename" },
+			},
+		},
 	},
 
 	{ -- Highlight, edit, and navigate code
@@ -1282,28 +1371,6 @@ require("lazy").setup({
 		end,
 	},
 
-	{ -- VSCode-style buffer tabs at top (Shift+h/l to cycle)
-		"akinsho/bufferline.nvim",
-		version = "*",
-		dependencies = "nvim-tree/nvim-web-devicons",
-		event = "VeryLazy",
-		opts = {
-			options = {
-				mode = "buffers",
-				diagnostics = "nvim_lsp",
-				show_buffer_close_icons = false,
-				show_close_icon = false,
-				separator_style = "thin",
-			},
-		},
-		keys = {
-			{ "<S-h>", "<cmd>BufferLineCyclePrev<CR>", desc = "Prev buffer" },
-			{ "<S-l>", "<cmd>BufferLineCycleNext<CR>", desc = "Next buffer" },
-			{ "<leader>bp", "<cmd>BufferLineTogglePin<CR>", desc = "Pin buffer" },
-			{ "<leader>bo", "<cmd>BufferLineCloseOthers<CR>", desc = "Close other buffers" },
-		},
-	},
-
 	{ -- VSCode-style diagnostics panel (<leader>xx for all errors/warnings)
 		"folke/trouble.nvim",
 		dependencies = "nvim-tree/nvim-web-devicons",
@@ -1360,11 +1427,17 @@ require("lazy").setup({
 			adapters = {
 				acp = {
 					claude_code = function()
+						-- Resolve from PATH. devconfig installs it to ~/.local/bin via
+						-- `devconfig switch`; fall back to npx so the adapter still works
+						-- on a machine where that step has not run.
+						local exe = vim.fn.exepath("claude-code-acp")
+						local cmd = exe ~= "" and { exe }
+							or { "npx", "-y", "@zed-industries/claude-code-acp" }
 						return require("codecompanion.adapters").extend("claude_code", {
 							env = {
 								CLAUDE_CODE_OAUTH_TOKEN = vim.env.CLAUDE_CODE_OAUTH_TOKEN,
 							},
-							cmd = { vim.fn.expand("~/.nvm/versions/node/v22.13.0/bin/claude-code-acp") },
+							cmd = cmd,
 						})
 					end,
 				},
@@ -1732,6 +1805,35 @@ require("lazy").setup({
 			{ "<leader>qS", function() require("persistence").select() end, desc = "Select session" },
 			{ "<leader>ql", function() require("persistence").load({ last = true }) end, desc = "Restore last session" },
 			{ "<leader>qd", function() require("persistence").stop() end, desc = "Don't save session" },
+		},
+	},
+	{ -- File tree sidebar: keeps you oriented in the codebase.
+		-- Navigation stays on Telescope - this is a map, not a chooser.
+		"nvim-tree/nvim-tree.lua",
+		cmd = { "NvimTreeToggle", "NvimTreeFindFile" },
+		keys = {
+			{ "<leader>n", "<cmd>NvimTreeToggle<CR>", desc = "Toggle file tree" },
+			{ "<leader>nf", "<cmd>NvimTreeFindFile<CR>", desc = "Reveal current file in tree" },
+		},
+		opts = {
+			hijack_netrw = true,
+			view = {
+				width = 32,
+				side = "left",
+			},
+			renderer = {
+				group_empty = true,
+				root_folder_label = false,
+			},
+			update_focused_file = {
+				enable = true,
+				update_root = false,
+			},
+			actions = {
+				open_file = {
+					quit_on_open = false,
+				},
+			},
 		},
 	},
 	-- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps

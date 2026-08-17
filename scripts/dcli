@@ -1,0 +1,19 @@
+#!/bin/bash
+# dcli — the Python devconfig CLI (agent-guide TUI), run via uv.
+# Distinct from `devconfig`, which is the bash environment manager
+# (switch/update/doctor). Named separately because they used to collide.
+
+DEVCONFIG_CLI_DIR="${DEVCONFIG_PATH:-$HOME/projects/devconfig}/devconfig-cli"
+
+if [[ ! -d "$DEVCONFIG_CLI_DIR" ]]; then
+    echo "Error: devconfig-cli not found at $DEVCONFIG_CLI_DIR" >&2
+    exit 1
+fi
+
+if ! command -v uv &>/dev/null; then
+    echo "Error: uv not installed — run 'devconfig doctor' or ./scripts/python-setup.sh" >&2
+    exit 1
+fi
+
+# Pass original CWD so Python can resolve relative paths correctly
+DEVCONFIG_ORIG_CWD="$(pwd)" uv run --directory "$DEVCONFIG_CLI_DIR" devconfig "$@"

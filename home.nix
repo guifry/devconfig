@@ -8,6 +8,9 @@ let
   homeDirectory = if envHome != "" then envHome
     else if isDarwin then "/Users/${username}"
     else "/home/${username}";
+  repoDir = "${homeDirectory}/projects/devconfig";
+  repoFile = path: config.lib.file.mkOutOfStoreSymlink "${repoDir}/${path}";
+  agentFile = path: repoFile "agents/${path}";
 in {
   home.username = username;
   home.homeDirectory = homeDirectory;
@@ -27,7 +30,6 @@ in {
     lazygit
     gh
     google-cloud-sdk
-    mise
     neovim
     yazi
     fastfetch
@@ -41,6 +43,10 @@ in {
     mermaid-cli
     posting
     prettierd
+    # node + npm. Needed for claude-code-acp (codecompanion's Claude adapter) and
+    # any npx-based MCP server. nvm is deliberately NOT used — `mise` (standalone,
+    # see devconfig mise-setup) manages per-project node versions the same way.
+    nodejs
   ] ++ lib.optionals (!isDarwin) [
     ghostty
     xclip
@@ -329,8 +335,17 @@ EOF
       "**/.claude/settings.local.json"
     ];
     settings = {
-      credential."https://github.com".helper = "!/usr/bin/env gh auth git-credential";
+      # HTTPS credentials come from gh. `!/usr/bin/env gh ...` only works when gh is
+      # already on PATH — true in an interactive shell, false for scripts, editors,
+      # cron and coding agents, which then fail with "could not read Username".
+      # Put the nix profile on PATH inside the helper so it works everywhere.
+      credential."https://github.com".helper =
+        "!f() { PATH=\"$HOME/.nix-profile/bin:$HOME/.local/bin:/opt/homebrew/bin:$PATH\"; gh auth git-credential \"$@\"; }; f";
       core.editor = "nvim";
+      # Never guess an author from $USER@$HOSTNAME. Without this, a repo that matches
+      # no include commits silently as guilhem@Guilhems-MacBook-Pro.local — succeeds,
+      # but links to no GitHub account. With it, git errors and you fix the mapping.
+      user.useConfigOnly = true;
       alias = {
         br = "branch";
         c = "commit";
@@ -350,11 +365,31 @@ EOF
         delsave = "!git branch -D \"save--$(git symbolic-ref --short HEAD)\"";
       };
     };
+    # Identity is selected automatically, never switched by hand. Two layers, and
+    # ORDER MATTERS — git applies includes in order, last match wins.
+    #
+    #   1. gitdir:   by location. Covers a fresh `git init` that has no remote yet.
+    #   2. hasconfig: by remote URL. Wins over location, so a work repo cloned into
+    #      the wrong folder still gets the work identity. This is the guarantee that
+    #      personal commits never land on Kpler and vice versa.
+    #
+    # Paired with user.useConfigOnly below: if nothing matches, git REFUSES to commit
+    # rather than inventing an address from the hostname.
     includes = [
       { condition = "gitdir:~/kpler/"; path = "~/.gitconfig-kpler"; }
       { condition = "gitdir:~/GDS/"; path = "~/.gitconfig-gds"; }
       { condition = "gitdir:~/projects/"; path = "~/.gitconfig-guifry"; }
       { condition = "gitdir:~/bp/"; path = "~/.gitconfig-bp"; }
+
+      # Work — by remote
+      { condition = "hasconfig:remote.*.url:git@github.com-gforey-ext:*/**"; path = "~/.gitconfig-kpler"; }
+      { condition = "hasconfig:remote.*.url:git@github.com:Kpler/**"; path = "~/.gitconfig-kpler"; }
+      { condition = "hasconfig:remote.*.url:https://github.com/Kpler/**"; path = "~/.gitconfig-kpler"; }
+
+      # Personal — by remote
+      { condition = "hasconfig:remote.*.url:git@github.com-guifry:*/**"; path = "~/.gitconfig-guifry"; }
+      { condition = "hasconfig:remote.*.url:git@github.com:guifry/**"; path = "~/.gitconfig-guifry"; }
+      { condition = "hasconfig:remote.*.url:https://github.com/guifry/**"; path = "~/.gitconfig-guifry"; }
     ];
   };
 
@@ -400,50 +435,72 @@ EOF
   home.activation.configureMouseless = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
     MOUSELESS_DIR="$HOME/Library/Containers/net.sonuscape.mouseless/Data/.mouseless/configs"
     if [ -d "$MOUSELESS_DIR" ]; then
-      cp "${config.home.homeDirectory}/projects/devconfig/macos/mouseless-config.yaml" "$MOUSELESS_DIR/config.yaml"
+      cp "${repoDir}/macos/mouseless-config.yaml" "$MOUSELESS_DIR/config.yaml"
     fi
   '');
 
   # Restore Homerow config (keyboard navigation)
   # https://www.homerow.app
   home.activation.configureHomerow = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
-    if [ -f "${config.home.homeDirectory}/projects/devconfig/macos/homerow.plist" ]; then
-      /usr/bin/defaults import com.superultra.Homerow "${config.home.homeDirectory}/projects/devconfig/macos/homerow.plist"
+    if [ -f "${repoDir}/macos/homerow.plist" ]; then
+      /usr/bin/defaults import com.superultra.Homerow "${repoDir}/macos/homerow.plist"
     fi
   '');
 
   # Restore Default Folder X config (enhanced file dialogs)
   # https://www.stclairsoft.com/DefaultFolderX/
   home.activation.configureDefaultFolderX = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
-    if [ -f "${config.home.homeDirectory}/projects/devconfig/macos/default-folder-x.plist" ]; then
-      /usr/bin/defaults import com.stclairsoft.DefaultFolderX5 "${config.home.homeDirectory}/projects/devconfig/macos/default-folder-x.plist"
+    if [ -f "${repoDir}/macos/default-folder-x.plist" ]; then
+      /usr/bin/defaults import com.stclairsoft.DefaultFolderX5 "${repoDir}/macos/default-folder-x.plist"
     fi
   '');
 
   # Restore Click2Minimize config (Finder icon behaviour)
   # https://click2minimize.com
   home.activation.configureClick2Minimize = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
-    if [ -f "${config.home.homeDirectory}/projects/devconfig/macos/click2minimize.plist" ]; then
-      /usr/bin/defaults import com.idemfactor.Click2Minimize "${config.home.homeDirectory}/projects/devconfig/macos/click2minimize.plist"
+    if [ -f "${repoDir}/macos/click2minimize.plist" ]; then
+      /usr/bin/defaults import com.idemfactor.Click2Minimize "${repoDir}/macos/click2minimize.plist"
     fi
   '');
 
+  # Key repeat. NOTE: these only take effect for an app when it next launches, and
+  # fully only after a logout — macOS caches NSGlobalDomain per process at startup.
+  # `devconfig switch` prints a reminder when it changes them.
+  #
+  # KeyRepeat 1        = fastest repeat (15ms). Below the System Settings minimum.
+  # InitialKeyRepeat 12 = 180ms before repeat starts.
+  # ApplePressAndHoldEnabled false = holding a key repeats it instead of showing the
+  #   accent picker. Without this, held keys do nothing in some apps.
   home.activation.configureKeyboard = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
     /usr/bin/defaults write NSGlobalDomain KeyRepeat -int 1
     /usr/bin/defaults write NSGlobalDomain InitialKeyRepeat -int 12
+    /usr/bin/defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
   '');
 
-  xdg.configFile."nvim/init.lua".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/nvim/init.lua";
-  xdg.configFile."aerospace/aerospace.toml".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/aerospace.toml";
-  xdg.configFile."ghostty/config".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/ghostty.config";
-  xdg.configFile."lazygit/config.yml".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/lazygit.yml";
-  xdg.configFile."opencode/opencode.json".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/opencode.json";
+  xdg.configFile."nvim/init.lua".source = repoFile "nvim/init.lua";
+  xdg.configFile."aerospace/aerospace.toml".source = repoFile "aerospace.toml";
+  xdg.configFile."ghostty/config".source = repoFile "ghostty.config";
+  xdg.configFile."lazygit/config.yml".source = repoFile "lazygit.yml";
+  # Agent config. One shared source of instructions/commands/skills, fanned out to
+  # every agent's expected location. Agent-specific config stays in its own dir.
+  #
+  # Skills auto-trigger on their `description` in Claude Code only; elsewhere they
+  # are readable prompt files you invoke explicitly. opencode/codex paths are
+  # unverified — see agents/{opencode,codex}/README.md.
+  home.file.".claude/CLAUDE.md".source = agentFile "shared/instructions.md";
+  home.file.".claude/commands".source = agentFile "shared/commands";
+  home.file.".claude/skills".source = agentFile "shared/skills";
+  home.file.".claude/settings.json".source = agentFile "claude/settings.json";
+  home.file.".claude/hooks".source = agentFile "claude/hooks";
 
-  home.file.".claude/CLAUDE.md".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/CLAUDE.md";
-  home.file.".claude/settings.json".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/settings.json";
-  home.file.".claude/commands".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/commands";
-  home.file.".claude/skills".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/skills";
-  home.file.".claude/hooks".source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/projects/devconfig/claude/hooks";
+  xdg.configFile."opencode/opencode.json".source = agentFile "opencode/opencode.json";
+  xdg.configFile."opencode/AGENTS.md".source = agentFile "shared/instructions.md";
+  xdg.configFile."opencode/command".source = agentFile "shared/commands";
+  xdg.configFile."opencode/skills".source = agentFile "shared/skills";
+
+  home.file.".codex/AGENTS.md".source = agentFile "shared/instructions.md";
+  home.file.".codex/prompts".source = agentFile "shared/commands";
+  home.file.".codex/skills".source = agentFile "shared/skills";
 
   home.file."bin/ax" = { source = ./scripts/ax; executable = true; };
   home.file."bin/rx" = { source = ./scripts/rx; executable = true; };
@@ -459,5 +516,13 @@ EOF
   home.file."bin/chrome-kpler-calendar" = { source = ./scripts/chrome-kpler-calendar; executable = true; };
   home.file."bin/aerospace-swap-center" = { source = ./scripts/aerospace-swap-center; executable = true; };
   home.file."bin/tmux-yank-claude" = { source = ./scripts/tmux-yank-claude; executable = true; };
+  home.file."bin/devconfig" = { source = ./scripts/devconfig-cli.sh; executable = true; };
+  home.file."bin/dcli" = { source = ./scripts/dcli; executable = true; };
+  home.file."bin/agent-sync" = { source = ./scripts/agent-sync; executable = true; };
+  home.file."bin/git-identity-test" = { source = ./scripts/git-identity-test; executable = true; };
+  home.file."bin/git-identity-setup" = { source = ./scripts/git-identity-setup; executable = true; };
+  # Shadows the nix `gh` — ~/bin is earlier in PATH. Selects the GitHub account from
+  # the repo's remote, because gh only has one global active account. See scripts/gh.
+  home.file."bin/gh" = { source = ./scripts/gh; executable = true; };
   home.file.".secrets.example" = { source = ./secrets.example; };
 }

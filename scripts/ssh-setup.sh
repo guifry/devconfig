@@ -25,11 +25,13 @@ generate_key() {
   read -p "Press enter when done..." < /dev/tty
 }
 
+# Key names match the Host aliases in Readme.md and octo.nvim's ssh_aliases
+# (nvim/init.lua) — keep all three in sync if you rename them.
 read -p "Personal GitHub email (or skip): " personal_email < /dev/tty
-[[ -n "$personal_email" ]] && generate_key "personal" "$personal_email"
+[[ -n "$personal_email" ]] && generate_key "guifry" "$personal_email"
 
 read -p "Work GitHub email (or skip): " work_email < /dev/tty
-[[ -n "$work_email" ]] && generate_key "work" "$work_email"
+[[ -n "$work_email" ]] && generate_key "kpler" "$work_email"
 
 if [[ -n "$personal_email" ]] || [[ -n "$work_email" ]]; then
   echo ""
@@ -44,22 +46,38 @@ if [[ -n "$personal_email" ]] || [[ -n "$work_email" ]]; then
   # Build new config
   SSH_CONFIG=""
   if [[ -n "$personal_email" ]]; then
-    SSH_CONFIG+="Host github.com
-  AddKeysToAgent yes"
-    [[ "$OSTYPE" == darwin* ]] && SSH_CONFIG+="
-  UseKeychain yes"
-    SSH_CONFIG+="
-  IdentityFile ~/.ssh/id_ed25519_personal
+    SSH_CONFIG+="Host github.com-guifry
+  HostName github.com
+  User git
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/id_ed25519_guifry
 
 "
   fi
   if [[ -n "$work_email" ]]; then
-    SSH_CONFIG+="Host github.com-work
+    SSH_CONFIG+="Host github.com-gforey-ext
   HostName github.com
   User git
-  IdentityFile ~/.ssh/id_ed25519_work
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/id_ed25519_kpler
+
 "
   fi
+
+  # Default host: work key, matching Readme.md.
+  # IdentitiesOnly yes on EVERY block is essential — without it ssh offers every key
+  # in the agent and GitHub authenticates you as whichever one it happens to accept
+  # first, silently giving you the wrong account.
+  DEFAULT_KEY="id_ed25519_kpler"
+  [[ -z "$work_email" ]] && DEFAULT_KEY="id_ed25519_guifry"
+  SSH_CONFIG+="Host github.com
+  AddKeysToAgent yes"
+  [[ "$OSTYPE" == darwin* ]] && SSH_CONFIG+="
+  UseKeychain yes"
+  SSH_CONFIG+="
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/$DEFAULT_KEY
+"
 
   echo "$SSH_CONFIG" > ~/.ssh/config
   chmod 600 ~/.ssh/config

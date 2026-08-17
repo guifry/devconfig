@@ -42,12 +42,12 @@ if [[ -f ~/.secrets ]]; then
     fi
   done
 else
-  echo "[--] ~/.secrets not found (copy .secrets.example)"
+  echo "[--] ~/.secrets not found (copy secrets.example)"
 fi
 
 echo ""
 echo "Full Setup:"
-if [[ -f ~/.ssh/id_ed25519_personal ]] || [[ -f ~/.ssh/id_ed25519 ]]; then
+if [[ -f ~/.ssh/id_ed25519_guifry ]] || [[ -f ~/.ssh/id_ed25519 ]]; then
   echo "[OK] SSH keys"
 else
   echo "[--] SSH keys"
@@ -63,6 +63,35 @@ if [[ -d ~/.aliases.d ]] && [[ -n "$(ls -A ~/.aliases.d 2>/dev/null)" ]]; then
   done
 else
   echo "[--] No alias categories enabled"
+fi
+
+echo ""
+echo "Git Identity:"
+# An unset user.email is not an error to git — it invents one from the hostname and
+# commits happily. Those commits do not link to a GitHub account. Check explicitly.
+git_email=$(git config --get user.email 2>/dev/null)
+if [[ -n "$git_email" ]]; then
+  echo "[OK] user.email = $git_email (in $(pwd))"
+else
+  echo "[--] user.email unset here — git will REFUSE to commit (user.useConfigOnly)"
+  echo "     Fix with: git-identity-setup"
+fi
+for f in ~/.gitconfig-guifry ~/.gitconfig-kpler ~/.gitconfig-gds ~/.gitconfig-bp; do
+  [[ -f "$f" ]] && echo "[OK] $(basename "$f")"
+done
+
+echo ""
+echo "Agent Config:"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [[ -x "$SCRIPT_DIR/agent-sync" ]]; then
+  dirty=$(git -C "$(dirname "$SCRIPT_DIR")" status --porcelain agents 2>/dev/null | wc -l | xargs)
+  if [[ "$dirty" == "0" ]]; then
+    echo "[OK] agents/ committed"
+  else
+    echo "[--] agents/ has $dirty uncommitted change(s) — run: agent-sync"
+  fi
+else
+  echo "[--] agent-sync not found"
 fi
 
 echo ""

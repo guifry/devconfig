@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# tmux is for SSH sessions only. Local terminal uses Ghostty.
+# Auto-starts in local Ghostty windows (home.nix keys off $GHOSTTY_RESOURCES_DIR).
+# Over SSH that variable is absent, so start tmux manually there.
 
 cat << 'EOF'
-TMUX HOTKEYS (prefix = Ctrl+]) — SSH sessions only
+TMUX HOTKEYS (prefix = Ctrl+])
+Auto-starts in local Ghostty. Over SSH, run `tmux` manually.
 
 WINDOWS
 ───────────────────────────────────

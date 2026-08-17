@@ -2,14 +2,71 @@
 set -e
 
 # Parse flags
+LOCAL_MODE=false
 for arg in "$@"; do
   case "$arg" in
+    --local)
+      # Use the current checkout as-is: skip the fetch/pull and the
+      # clean-and-pushed guard. For testing a branch before merging.
+      LOCAL_MODE=true
+      ;;
+    -h|--help)
+      echo "Usage: ./bootstrap.sh [--local]"
+      echo "  --local   Bootstrap from the current checkout without pulling from origin."
+      echo "            Use when testing a branch that is not merged or pushed."
+      exit 0
+      ;;
   esac
 done
 
 # Ensure USER and HOME are set (sometimes missing in containers)
 export USER="${USER:-$(whoami)}"
 export HOME="${HOME:-$(eval echo ~$USER)}"
+
+# Detect platform config
+UNAME=$(uname)
+ARCH=$(uname -m)
+if [[ "$UNAME" == "Darwin" ]]; then
+  [[ "$ARCH" == "arm64" ]] && CONFIG="darwin-arm64" || CONFIG="darwin-x86"
+else
+  [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
+fi
+
+# Homebrew is a hard prerequisite on macOS. Check it FIRST — before prompting and
+# before installing nix — so a missing brew costs nothing.
+# The installer does not add itself to PATH on Apple Silicon, so look in the known
+# locations before concluding it is absent.
+if [[ "$UNAME" == "Darwin" ]]; then
+  if ! command -v brew &>/dev/null; then
+    for candidate in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+      if [[ -x "$candidate" ]]; then
+        eval "$("$candidate" shellenv)"
+        echo "Found Homebrew at $candidate (was not on PATH)"
+        break
+      fi
+    done
+  fi
+
+  if ! command -v brew &>/dev/null; then
+    echo ""
+    CMD='/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+    W=100
+    border=$(printf '═%.0s' $(seq 1 $W))
+    pad() { printf "%-${W}s" "  $1"; }
+    echo "  ╔${border}╗"
+    echo "  ║$(printf '%*s' $W '')║"
+    echo "  ║$(pad 'Homebrew is required on macOS.')║"
+    echo "  ║$(printf '%*s' $W '')║"
+    echo "  ║$(pad 'GUI apps (Raycast, AeroSpace, Ghostty, etc.) are managed via brew casks.')║"
+    echo "  ║$(pad 'Install Homebrew first, then re-run this script.')║"
+    echo "  ║$(printf '%*s' $W '')║"
+    echo "  ║$(pad "$CMD")║"
+    echo "  ║$(printf '%*s' $W '')║"
+    echo "  ╚${border}╝"
+    echo ""
+    exit 1
+  fi
+fi
 
 echo "Devconfig Setup"
 echo "==============="
@@ -23,6 +80,13 @@ if ! command -v git &> /dev/null; then
   [[ -f /etc/debian_version ]] && echo "  sudo apt install git"
   [[ -f /etc/redhat-release ]] && echo "  sudo dnf install git"
   exit 1
+fi
+
+# Nix may already be installed but absent from this shell's PATH (a fresh install
+# only takes effect in new shells). Source it before deciding to reinstall.
+if ! command -v nix &>/dev/null && [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+  . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+  command -v nix &>/dev/null && echo "Found existing Nix install (was not on PATH)"
 fi
 
 if ! command -v nix &> /dev/null; then
@@ -58,6 +122,10 @@ mkdir -p "$(dirname "$REPO")"
 if [ -d "$REPO" ]; then
   cd "$REPO"
 
+  if [ "$LOCAL_MODE" = true ]; then
+    echo "Local mode: using current checkout ($(git rev-parse --abbrev-ref HEAD)), not pulling from origin."
+  else
+
   # Check for uncommitted changes
   if ! git diff --quiet || ! git diff --cached --quiet; then
     echo "Error: devconfig has uncommitted changes."
@@ -79,6 +147,7 @@ if [ -d "$REPO" ]; then
 
   echo "Updating devconfig..."
   git pull --ff-only
+  fi
 else
   git clone https://github.com/guifry/devconfig.git "$REPO"
   cd "$REPO"
@@ -92,36 +161,6 @@ echo "3) macos-apps  - windsurf, mac app shortcuts"
 echo "4) personal    - loadzsh, personal utils"
 read -p "Select [e.g. 1 3 4 or 1,3,4]: " alias_choice < /dev/tty
 export ALIAS_CATEGORIES="$alias_choice"
-
-# Detect platform config
-UNAME=$(uname)
-ARCH=$(uname -m)
-if [[ "$UNAME" == "Darwin" ]]; then
-  [[ "$ARCH" == "arm64" ]] && CONFIG="darwin-arm64" || CONFIG="darwin-x86"
-else
-  [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
-fi
-
-# Check Homebrew on macOS (needed for GUI apps in Brewfile)
-if [[ "$UNAME" == "Darwin" ]] && ! command -v brew &>/dev/null; then
-  echo ""
-  CMD='/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
-  W=100
-  border=$(printf '═%.0s' $(seq 1 $W))
-  pad() { printf "%-${W}s" "  $1"; }
-  echo "  ╔${border}╗"
-  echo "  ║$(printf '%*s' $W '')║"
-  echo "  ║$(pad 'Homebrew is required on macOS.')║"
-  echo "  ║$(printf '%*s' $W '')║"
-  echo "  ║$(pad 'GUI apps (Raycast, AeroSpace, Ghostty, etc.) are managed via brew casks.')║"
-  echo "  ║$(pad 'Install Homebrew first, then re-run this script.')║"
-  echo "  ║$(printf '%*s' $W '')║"
-  echo "  ║$(pad "$CMD")║"
-  echo "  ║$(printf '%*s' $W '')║"
-  echo "  ╚${border}╝"
-  echo ""
-  exit 1
-fi
 
 if [[ "$UNAME" == "Darwin" ]] && command -v brew &>/dev/null; then
   echo "Updating brew index..."
@@ -148,16 +187,12 @@ nix run home-manager -- switch --impure --flake ".#$CONFIG"
 
 # Setup secrets template
 if [[ ! -f ~/.secrets ]]; then
-  cp .secrets.example ~/.secrets
+  cp secrets.example ~/.secrets
   echo "Created ~/.secrets from template - edit with your tokens"
 fi
 
-# Setup ~/bin with utility scripts
-mkdir -p ~/bin
-cp scripts/tx scripts/create_script scripts/edscript ~/bin/ 2>/dev/null || true
-ln -sf "$REPO/scripts/devconfig-cli.sh" ~/bin/devconfig
-chmod +x ~/bin/* 2>/dev/null || true
-echo "Utility scripts installed to ~/bin"
+# ~/bin scripts (tx, vx, rx, devconfig, dcli, ...) are installed by home-manager
+# via home.file."bin/*" — nothing to do here.
 
 # Setup direnvrc for parent .envrc inheritance
 mkdir -p ~/.config/direnv
@@ -177,20 +212,40 @@ if ! command -v claude >/dev/null 2>&1; then
   fi
 fi
 
-# Install vim-plug and plugins
-if [[ ! -f ~/.vim/autoload/plug.vim ]]; then
-  echo "Installing vim-plug..."
-  curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
-    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+# Install vim-plug and plugins, but only if a ~/.vimrc actually exists.
+# Neovim is the managed editor (nvim/init.lua); plain vim is unmanaged.
+if [[ -f ~/.vimrc ]]; then
+  if [[ ! -f ~/.vim/autoload/plug.vim ]]; then
+    echo "Installing vim-plug..."
+    curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+      https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  fi
+  echo "Installing vim plugins..."
+  vim +PlugInstall +qall
 fi
-echo "Installing vim plugins..."
-vim +PlugInstall +qall
 
 # Full setup extras
 if [[ "$choice" == "2" ]]; then
   ./scripts/ssh-setup.sh
   ./scripts/python-setup.sh
+  # Without these, user.useConfigOnly makes git refuse to commit anywhere.
+  ./scripts/git-identity-setup
 fi
+
+# One-time mise install: standalone build in ~/.local/bin (writable, so
+# `mise self-update` works — the nixpkgs copy was pinned to whatever nixpkgs
+# shipped and lagged repo min_version pins). Re-run later with:
+# devconfig mise-setup
+echo ""
+echo "Installing mise (per-project toolchain manager)..."
+./scripts/devconfig-cli.sh mise-setup
+
+# One-time heavy nvim setup: plugins, LSPs, formatters, debug adapters and the
+# codecompanion ACP bridge. Done here rather than in `devconfig switch` so that
+# switch stays fast. Re-run later with: devconfig nvim-setup
+echo ""
+echo "Preparing nvim (plugins + LSPs). This is the slow part, and only runs once."
+./scripts/devconfig-cli.sh nvim-setup || echo "Warning: nvim setup incomplete — run 'devconfig nvim-setup' later"
 
 echo ""
 echo "Setup complete!"
@@ -200,13 +255,3 @@ echo "  1. Restart your terminal"
 echo "  2. exec zsh"
 echo "  3. source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh && zsh"
 echo "  4. ~/.nix-profile/bin/zsh"
-
-if [[ "$UNAME" == "Darwin" ]]; then
-  echo ""
-  echo "=== iTerm2 Setup (optional) ==="
-  echo "To sync iTerm2 config with devconfig:"
-  echo "  1. Open iTerm2 → Settings → General → Preferences"
-  echo "  2. Check 'Load preferences from a custom folder or URL'"
-  echo "  3. Set path to: ~/projects/devconfig/iterm"
-  echo "  4. Check 'Save changes to folder when iTerm2 quits'"
-fi

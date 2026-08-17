@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+# git-identity-test — prove the multi-account git setup works.
+#
+# Two GitHub accounts on one machine (work: gforey-ext / Kpler, personal: guifry).
+# Identity must be selected automatically and must never cross over, no matter where
+# a repo is cloned. This harness asserts that end to end.
+#
+# Safe to run any time: it only creates throwaway repos, never pushes, never writes
+# to a real remote. Push auth is exercised with --dry-run.
+#
+# Usage: git-identity-test [--no-network]
+
+set -uo pipefail
+
+NO_NETWORK=false
+[[ "${1:-}" == "--no-network" ]] && NO_NETWORK=true
+
+WORK_MAIL="195729793+gforey-ext@users.noreply.github.com"
+PERS_MAIL="22219650+guifry@users.noreply.github.com"
+
+PASS=0; FAIL=0
+TMP=$(mktemp -d)
+SCRATCH=()   # dirs created outside $TMP, cleaned on exit
+
+cleanup() {
+  rm -rf "$TMP"
+  for d in ${SCRATCH+"${SCRATCH[@]}"}; do [ -n "$d" ] && rm -rf "$d"; done
+}
+trap cleanup EXIT
+
+ok()   { printf "  \033[32mPASS\033[0m  %s\n" "$1"; PASS=$((PASS+1)); }
+bad()  { printf "  \033[31mFAIL\033[0m  %s\n" "$1"; printf "        expected: %s\n        actual:   %s\n" "$2" "$3"; FAIL=$((FAIL+1)); }
+
+mkrepo() { # dir, remote
+  mkdir -p "$1"; git -C "$1" init -q
+  [ -n "${2:-}" ] && git -C "$1" remote add origin "$2"
+}
+
+expect_email() { # dir, expected, label
+  local actual
+  actual=$(git -C "$1" config --get user.email 2>/dev/null || echo "<unset>")
+  [ "$actual" = "$2" ] && ok "$3" || bad "$3" "$2" "$actual"
+}
+
+echo ""
+echo "=== 1. Identity by remote URL ==="
+for spec in \
+  "a|git@github.com-gforey-ext:Kpler/web-app.git|$WORK_MAIL|work via SSH alias" \
+  "b|git@github.com:Kpler/web-app.git|$WORK_MAIL|work via plain github.com host" \
+  "c|https://github.com/Kpler/web-app.git|$WORK_MAIL|work via HTTPS" \
+  "d|git@github.com-guifry:guifry/devconfig.git|$PERS_MAIL|personal via SSH alias" \
+  "e|https://github.com/guifry/devconfig.git|$PERS_MAIL|personal via HTTPS"
+do
+  IFS='|' read -r dir url want label <<< "$spec"
+  mkrepo "$TMP/$dir" "$url"
+  expect_email "$TMP/$dir" "$want" "$label"
+done
+
+echo ""
+echo "=== 2. Cross-contamination guards (remote must beat folder) ==="
+WRONG1="$HOME/projects/.identity-test-work"
+WRONG2="$HOME/kpler/.identity-test-personal"
+SCRATCH+=("$WRONG1" "$WRONG2")
+mkrepo "$WRONG1" "git@github.com-gforey-ext:Kpler/x.git"
+expect_email "$WRONG1" "$WORK_MAIL" "WORK remote inside ~/projects stays work"
+mkrepo "$WRONG2" "git@github.com-guifry:guifry/y.git"
+expect_email "$WRONG2" "$PERS_MAIL" "PERSONAL remote inside ~/kpler stays personal"
+
+echo ""
+echo "=== 3. Folder fallback (repo with no remote yet) ==="
+NEW1="$HOME/kpler/.identity-test-new"
+NEW2="$HOME/projects/.identity-test-new"
+SCRATCH+=("$NEW1" "$NEW2")
+mkrepo "$NEW1" ""
+expect_email "$NEW1" "$WORK_MAIL" "fresh git init in ~/kpler gets work identity"
+mkrepo "$NEW2" ""
+expect_email "$NEW2" "$PERS_MAIL" "fresh git init in ~/projects gets personal identity"
+
+echo ""
+echo "=== 4. Safety net: unknown repo must REFUSE to commit ==="
+mkrepo "$TMP/orphan" ""
+echo x > "$TMP/orphan/f"; git -C "$TMP/orphan" add f
+if git -C "$TMP/orphan" commit -qm t 2>/dev/null; then
+  bad "unknown repo refuses to commit" "commit rejected" "commit SUCCEEDED as $(git -C "$TMP/orphan" log -1 --format=%ae)"
+else
+  ok "unknown repo refuses to commit (user.useConfigOnly)"
+fi
+
+echo ""
+echo "=== 5. Real commit is attributed correctly ==="
+mkrepo "$TMP/commit_work" "git@github.com-gforey-ext:Kpler/x.git"
+echo x > "$TMP/commit_work/f"; git -C "$TMP/commit_work" add f
+git -C "$TMP/commit_work" commit -qm t 2>/dev/null
+got=$(git -C "$TMP/commit_work" log -1 --format=%ae 2>/dev/null || echo "<no commit>")
+[ "$got" = "$WORK_MAIL" ] && ok "work commit authored as gforey-ext" || bad "work commit authored as gforey-ext" "$WORK_MAIL" "$got"
+
+mkrepo "$TMP/commit_pers" "git@github.com-guifry:guifry/x.git"
+echo x > "$TMP/commit_pers/f"; git -C "$TMP/commit_pers" add f
+git -C "$TMP/commit_pers" commit -qm t 2>/dev/null
+got=$(git -C "$TMP/commit_pers" log -1 --format=%ae 2>/dev/null || echo "<no commit>")
+[ "$got" = "$PERS_MAIL" ] && ok "personal commit authored as guifry" || bad "personal commit authored as guifry" "$PERS_MAIL" "$got"
+
+if [ "$NO_NETWORK" = false ]; then
+  echo ""
+  echo "=== 6. SSH auth (each alias reaches the right account) ==="
+  for spec in "github.com-gforey-ext|gforey-ext" "github.com-guifry|guifry"; do
+    IFS='|' read -r host want <<< "$spec"
+    out=$(ssh -o ConnectTimeout=10 -o BatchMode=yes -T "git@$host" 2>&1 | grep -v '^Warning:' | head -1)
+    case "$out" in
+      *"Hi $want!"*) ok "$host authenticates as $want" ;;
+      *)             bad "$host authenticates as $want" "Hi $want!" "$out" ;;
+    esac
+  done
+
+  echo ""
+  echo "=== 7. HTTPS credentials work without gh on PATH ==="
+  # A coding agent, editor or cron job runs with a minimal PATH. The credential
+  # helper must still find gh, or every HTTPS fetch/push fails with
+  # "could not read Username for https://github.com".
+  if env -i HOME="$HOME" PATH="/usr/bin:/bin" git ls-remote --exit-code -h \
+       https://github.com/guifry/devconfig.git >/dev/null 2>&1; then
+    ok "HTTPS auth works with a minimal PATH (agent/cron safe)"
+  else
+    bad "HTTPS auth works with a minimal PATH (agent/cron safe)" \
+        "authenticated" "failed — check credential.helper resolves gh"
+  fi
+
+  echo ""
+  echo "=== 8. Kpler org access (SAML SSO) ==="
+  sso=$(git ls-remote git@github.com-gforey-ext:Kpler/web-app.git 2>&1)
+  case "$sso" in
+    *"SAML SSO"*)
+      bad "work key authorised for the Kpler org" \
+          "repo listing" \
+          "SSO not authorised — GitHub > Settings > SSH keys > work key > Configure SSO > Authorize for Kpler" ;;
+    *"Permission denied"*)
+      bad "work key authorised for the Kpler org" "repo listing" "publickey rejected — key not registered" ;;
+    *)
+      ok "work key can read Kpler repos" ;;
+  esac
+
+  echo ""
+  echo "=== 9. IdentitiesOnly set on every github host block ==="
+  missing=$(awk '/^Host /{h=$2; io=0} /IdentitiesOnly/{io=1} /IdentityFile/{if(!io) print h}' ~/.ssh/config 2>/dev/null)
+  [ -z "$missing" ] && ok "IdentitiesOnly present on all host blocks" \
+    || bad "IdentitiesOnly present on all host blocks" "none missing" "missing on: $missing"
+fi
+
+echo ""
+echo "=== 10. gh CLI accounts ==="
+if command -v gh &>/dev/null || [ -x "$HOME/.nix-profile/bin/gh" ]; then
+  GH="$(command -v gh || echo "$HOME/.nix-profile/bin/gh")"
+  accounts=$("$GH" auth status 2>&1 | grep -oE 'account [a-zA-Z0-9-]+' | awk '{print $2}' | sort -u | tr '\n' ' ')
+  case "$accounts" in
+    *gforey-ext*) ok "gh has the work account (gforey-ext)" ;;
+    *)            bad "gh has the work account (gforey-ext)" "gforey-ext logged in" "only: ${accounts:-none} — run: gh auth login" ;;
+  esac
+  case "$accounts" in
+    *guifry*) ok "gh has the personal account (guifry)" ;;
+    *)        bad "gh has the personal account (guifry)" "guifry logged in" "only: ${accounts:-none}" ;;
+  esac
+fi
+
+if [ "$NO_NETWORK" = false ]; then
+  echo ""
+  echo "=== 10b. gh answers as the account the REMOTE implies ==="
+  # gh has one global active account; `gh auth login` silently changes it for every
+  # folder. The ~/bin/gh wrapper keys off the remote instead. Tested with a minimal
+  # PATH and no inherited token, i.e. exactly how a coding agent invokes it.
+  ghwrap="$HOME/bin/gh"
+  if [ -x "$ghwrap" ]; then
+    for spec in "$TMP/a|gforey-ext|work remote" "$TMP/d|guifry|personal remote"; do
+      IFS='|' read -r dir want label <<< "$spec"
+      got=$(cd "$dir" && env -u GH_TOKEN -u GITHUB_TOKEN PATH="/usr/bin:/bin" HOME="$HOME" \
+            "$ghwrap" api user --jq .login 2>&1 | tail -1)
+      [ "$got" = "$want" ] && ok "gh in a $label answers as $want" \
+        || bad "gh in a $label answers as $want" "$want" "$got"
+    done
+  else
+    bad "gh wrapper installed at ~/bin/gh" "present" "missing — run devconfig switch"
+  fi
+fi
+
+echo ""
+echo "=== 11. Secret hygiene (repo is public) ==="
+# NOT derived from $0 — when installed to ~/bin this script is a nix-store path, so
+# dirname/.. is the store, git errors, and an empty result reads as "no leaks".
+# That made these checks pass vacuously. Resolve the real repo instead.
+REPO_DIR="${DEVCONFIG_PATH:-$HOME/projects/devconfig}"
+if ! git -C "$REPO_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+  bad "devconfig repo reachable for secret scan" "a git repo at $REPO_DIR" "not a git repository"
+else
+  leaks=$(git -C "$REPO_DIR" grep -InE 'gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{50,}|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY' -- . 2>/dev/null | head -3)
+  [ -z "$leaks" ] && ok "no credentials in tracked files ($(git -C "$REPO_DIR" ls-files | wc -l | xargs) files scanned)" \
+    || bad "no credentials in tracked files" "none" "$leaks"
+
+  tracked_secret=$(git -C "$REPO_DIR" ls-files | grep -E '(^|/)(\.secrets|\.env|\.envrc|macos-licenses\.md)$' | head -3)
+  [ -z "$tracked_secret" ] && ok "no secret files tracked (only .example/.template)" \
+    || bad "no secret files tracked" "none" "$tracked_secret"
+fi
+
+if [ -f "$HOME/kpler/.envrc" ]; then
+  if grep -qE 'gh[pousr]_[A-Za-z0-9]{30,}|github_pat_' "$HOME/kpler/.envrc" 2>/dev/null; then
+    bad "~/kpler/.envrc holds no pasted token" "token fetched from gh at runtime" "a literal token is written on disk"
+  else
+    ok "~/kpler/.envrc holds no pasted token"
+  fi
+fi
+
+echo ""
+echo "──────────────────────────────────────"
+echo "  $PASS passed, $FAIL failed"
+echo "──────────────────────────────────────"
+[ "$FAIL" -eq 0 ] || exit 1

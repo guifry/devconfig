@@ -1,0 +1,9 @@
+# Work-only environment for ~/kpler.
+#
+# GH_TOKEN is deliberately NOT set here. gh account selection is handled by the
+# `gh` wrapper (~/bin/gh), which keys off the repo's remote URL — the same rule
+# git uses. Pinning a token per folder breaks as soon as a personal repo lives
+# under ~/kpler, or a work repo under ~/projects.
+#
+# Put genuinely work-scoped, non-secret vars here. For secrets prefer the keyring
+# (e.g. `gh auth token`) over writing them to disk.
