@@ -258,6 +258,8 @@ EOF
       set -g set-clipboard on
       set -g allow-passthrough on
       set -g display-panes-time 3000
+      set -g window-style default
+      set -g window-active-style default
 
       # tokyonight storm palette
       set -g status-position top
