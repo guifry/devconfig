@@ -82,7 +82,7 @@ into each agent's expected location:
 |--------|-------------|----------|-------|
 | `shared/instructions.md` | `~/.claude/CLAUDE.md` | `~/.config/opencode/AGENTS.md` | `~/.codex/AGENTS.md` |
 | `shared/commands/` | `~/.claude/commands` | `~/.config/opencode/command` | `~/.codex/prompts` |
-| `shared/skills/` | `~/.claude/skills` | `~/.config/opencode/skills` | `~/.codex/skills` |
+| `shared/skills/` | `~/.claude/skills` | `~/.config/opencode/skills` | `~/.agents/skills` |
 
 Because these are directory symlinks, a skill or command created by any agent
 lands directly in this repo.
@@ -93,10 +93,13 @@ lands directly in this repo.
 - Four skills use Claude-only orchestration tools (`Agent`, `Task`, `TaskCreate`,
   `TaskUpdate`, `Skill`) and will not run under the others: `batch-execute`,
   `standup-prep`, `ralph-plan`, `ralph-review`.
-- The opencode and Codex paths above are **unverified** — neither was installed
-  when they were written. Confirm before trusting them.
+- Codex paths are **verified** against Codex CLI 0.142: Codex reads user skills
+  from `~/.agents/skills` (canonical) and legacy `~/.codex/skills`. `~/.codex/skills`
+  is deliberately NOT managed — it holds the app's `.system` skills and codex-only
+  skills (`keep-codex-fast`, `opencode-delegation-orchestrator`); agent-sync prunes
+  it. The opencode `command`/`skills` paths are **still unverified**.
 - **NOT managed**: `~/.claude/sounds/`, `~/.claude/plugins/`, `~/.claude/projects/`,
-  `~/.claude/cache/` — these stay local.
+  `~/.claude/cache/`, `~/.codex/skills/` — these stay local.
 
 ### Global vs project-scoped skills
 
@@ -342,11 +345,11 @@ this repo; use the `repoDir` / `repoFile` helpers, `~`, or `$HOME`.
 
 Honest list, so nobody rediscovers these:
 
-- **opencode and Codex config paths are unverified.** Both tools are now installed
-  (`brew "opencode"`, `cask "codex"`), but the symlinks in `home.nix` for
-  `~/.config/opencode/{command,skills}` and `~/.codex/{prompts,skills}` were written
-  before either existed. Confirm the paths against the installed versions. Also worth
-  testing whether they read `~/.claude/` natively — if so, those symlinks are redundant.
+- **opencode `command`/`skills` paths are unverified; Codex's are verified.**
+  Codex CLI 0.142 reads user skills from `~/.agents/skills` (canonical) — the
+  original `~/.codex/skills` symlink was wrong on two counts (legacy path AND it
+  would have clobbered the live codex skill store). opencode is installed but
+  whether it reads `~/.config/opencode/{command,skills}` natively is untested.
 - **`~/.codex/config.toml` is not managed.** Codex has no config in this repo yet.
 - **Node comes from nixpkgs, not nvm.** `nodejs` is in `home.packages`. nvm is
   deliberately not used — `mise` handles per-project node versions.

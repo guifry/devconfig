@@ -484,8 +484,11 @@ EOF
   # every agent's expected location. Agent-specific config stays in its own dir.
   #
   # Skills auto-trigger on their `description` in Claude Code only; elsewhere they
-  # are readable prompt files you invoke explicitly. opencode/codex paths are
-  # unverified — see agents/{opencode,codex}/README.md.
+  # are readable prompt files you invoke explicitly. Codex skills are VERIFIED:
+  # Codex reads user skills from ~/.agents/skills (canonical) and legacy
+  # ~/.codex/skills; ~/.codex/skills is deliberately NOT managed — it holds the
+  # app's .system skills and codex-only skills. opencode paths remain unverified
+  # — see agents/{opencode,codex}/README.md.
   home.file.".claude/CLAUDE.md".source = agentFile "shared/instructions.md";
   home.file.".claude/commands".source = agentFile "shared/commands";
   home.file.".claude/skills".source = agentFile "shared/skills";
@@ -499,7 +502,7 @@ EOF
 
   home.file.".codex/AGENTS.md".source = agentFile "shared/instructions.md";
   home.file.".codex/prompts".source = agentFile "shared/commands";
-  home.file.".codex/skills".source = agentFile "shared/skills";
+  home.file.".agents/skills".source = agentFile "shared/skills";
 
   home.file."bin/ax" = { source = ./scripts/ax; executable = true; };
   home.file."bin/rx" = { source = ./scripts/rx; executable = true; };
