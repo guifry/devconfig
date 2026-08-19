@@ -102,7 +102,7 @@ for root in "$HOME/.claude" "$HOME/.config/opencode" "$HOME/.codex"; do
   done < <(find "$root" \
     \( -name projects -o -name plugins -o -name cache -o -name backups \
        -o -name sessions -o -name shell-snapshots -o -name node_modules \
-       -o -name skills \) -prune -o \
+       -o -name skills -o -name .tmp \) -prune -o \
     -maxdepth 4 -iname "SKILL.md" -print 2>/dev/null)
 done
 [ "$ISSUES" -eq "$before" ] && ok "none"
