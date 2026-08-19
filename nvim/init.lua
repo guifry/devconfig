@@ -129,7 +129,7 @@ vim.o.smartcase = true
 vim.o.signcolumn = "yes"
 
 -- Decrease update time
-vim.o.updatetime = 250
+vim.o.updatetime = 100
 
 -- Decrease mapped sequence wait time
 vim.o.timeoutlen = 300
@@ -404,6 +404,16 @@ require("lazy").setup({
 			},
 			current_line_blame = true,
 			current_line_blame_opts = { delay = 300 },
+		},
+		keys = {
+			{ "<leader>hs", function() require("gitsigns").stage_hunk() end, desc = "Git [H]unk [S]tage" },
+			{ "<leader>hr", function() require("gitsigns").reset_hunk() end, desc = "Git [H]unk [R]eset" },
+			{ "<leader>hS", function() require("gitsigns").stage_buffer() end, desc = "Git [H]unk [S]tage buffer" },
+			{ "<leader>hu", function() require("gitsigns").undo_stage_hunk() end, desc = "Git [H]unk [U]ndo stage" },
+			{ "<leader>hp", function() require("gitsigns").preview_hunk() end, desc = "Git [H]unk [P]review" },
+			{ "<leader>hb", function() require("gitsigns").blame_line() end, desc = "Git [H]unk [B]lame line" },
+			{ "<leader>hd", function() require("gitsigns").diffthis() end, desc = "Git [H]unk [D]iff against HEAD" },
+			{ "<leader>hD", function() require("gitsigns").diffthis("~") end, desc = "Git [H]unk [D]iff against ~" },
 		},
 	},
 
@@ -1022,7 +1032,6 @@ require("lazy").setup({
 					--   end,
 					-- },
 				},
-				opts = {},
 			},
 		},
 		--- @module 'blink.cmp'
@@ -1552,6 +1561,62 @@ require("lazy").setup({
 				["github.com-bp"] = "github.com",
 			},
 		},
+		config = function(_, opts)
+			require("octo").setup(opts)
+
+			local function thread_nav(direction)
+				local fp = require("octo.reviews.file-panel")
+				local layout = require("octo.reviews").get_current_layout()
+				if not layout then return end
+				local files = layout.files
+				if #files == 0 then return end
+				local _, current_path = require("octo.utils").get_split_and_path(vim.api.nvim_get_current_buf())
+				local line = vim.fn.line(".")
+				local candidate
+				local threads = current_path and fp.threads_for_path(current_path) or {}
+				for _, t in ipairs(threads) do
+					if direction == "next" then
+						if t.startLine > line and (not candidate or t.startLine < candidate) then candidate = t.startLine end
+					else
+						if t.originalLine < line and (not candidate or t.originalLine > candidate) then candidate = t.originalLine end
+					end
+				end
+				if candidate then
+					vim.cmd(":" .. candidate)
+					return
+				end
+				local idx = layout.selected_file_idx
+				for offset = 1, #files - 1 do
+					local target_idx = direction == "next" and ((idx - 1 + offset) % #files) + 1 or ((idx - 1 - offset) % #files) + 1
+					local file = files[target_idx]
+					local file_threads = file.path and fp.threads_for_path(file.path) or {}
+					if #file_threads > 0 then
+						layout:set_current_file(file)
+						local target
+						for _, t in ipairs(file_threads) do
+							if direction == "next" then
+								if not target or t.startLine < target then target = t.startLine end
+							else
+								if not target or t.originalLine > target then target = t.originalLine end
+							end
+						end
+						if target then vim.cmd(":" .. target) end
+						return
+					end
+				end
+			end
+
+			vim.api.nvim_create_autocmd("BufWinEnter", {
+				pattern = "octo://*",
+				callback = function()
+					local utils = require("octo.utils")
+					local split, path = utils.get_split_and_path(vim.api.nvim_get_current_buf())
+					if not split or not path then return end
+					vim.keymap.set("n", "]t", function() thread_nav("next") end, { buffer = true, silent = true, desc = "Next thread (across files)" })
+					vim.keymap.set("n", "[t", function() thread_nav("prev") end, { buffer = true, silent = true, desc = "Prev thread (across files)" })
+				end,
+			})
+		end,
 	},
 
 	{ -- Modern UI for diffs and merge conflicts (:DiffviewOpen)
@@ -1564,7 +1629,16 @@ require("lazy").setup({
 			{ "<leader>gc", "<cmd>DiffviewClose<CR>", desc = "Close diffview" },
 			{ "<leader>gh", "<cmd>DiffviewFileHistory<CR>", desc = "File history" },
 		},
-		opts = {},
+		opts = {
+			file_panel = {
+				listing_style = "tree",
+				win_config = {
+					type = "split",
+					position = "left",
+					width = 40,
+				},
+			},
+		},
 		config = function(_, opts)
 			require("diffview").setup(opts)
 			local updating = false
@@ -1773,6 +1847,20 @@ require("lazy").setup({
 		keys = {
 			{ "\\", "<cmd>Yazi<CR>", desc = "Open yazi at current file" },
 			{ "<leader>\\", "<cmd>Yazi toggle<CR>", desc = "Resume last yazi session" },
+		},
+		opts = {},
+	},
+
+	{ -- Global search & replace with live preview
+		"chrisgrieser/nvim-rip-substitute",
+		cmd = "RipSubstitute",
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+			"MunifTanjim/nui.nvim",
+			"nvim-treesitter/nvim-treesitter",
+		},
+		keys = {
+			{ "<leader>gr", "<cmd>RipSubstitute<CR>", desc = "Global [R]eplace" },
 		},
 		opts = {},
 	},
