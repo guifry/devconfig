@@ -1,0 +1,43 @@
+# Destructive command patterns, shared by Claude Code, opencode and Codex.
+#
+# Format: <extended-regex><TAB><reason shown when blocked>
+# Blank lines and # comments are ignored. Matching is case-insensitive, against
+# both the whole command and each shell segment after normalisation
+# (see check-command.sh — it strips sudo/env/absolute-dir prefixes and splits on
+# ; && || | so `foo && sudo /bin/mkfs ...` still matches a bare `mkfs` pattern).
+#
+# Recursive `rm` is NOT here: flag order (-rf, -fr, -r -f, --recursive) cannot be
+# expressed reliably in one ERE, so it has purpose-built logic in check-command.sh.
+
+# --- disk and filesystem destruction ---------------------------------------
+^diskutil[[:space:]]+.*erase	diskutil erase wipes a volume
+^diskutil[[:space:]]+apfs[[:space:]]+delete	diskutil apfs delete destroys a volume
+^diskutil[[:space:]]+(partitiondisk|reformat)	diskutil repartition destroys a disk
+^(mkfs|newfs|newfs_apfs|newfs_hfs)	making a filesystem destroys everything on the target
+^dd[[:space:]]+.*[[:space:]]of=/dev/	dd writing to a raw device destroys the disk
+^(fdisk|gpt|parted)[[:space:]]	partition table editing
+^shred[[:space:]]	shred is unrecoverable by design
+^srm[[:space:]]	srm is unrecoverable by design
+
+# --- power and session ------------------------------------------------------
+^shutdown([[:space:]]|$)	shutdown kills this session and anything running in it
+^reboot([[:space:]]|$)	reboot kills this session and anything running in it
+^halt([[:space:]]|$)	halt kills this session and anything running in it
+^poweroff([[:space:]]|$)	poweroff kills this session and anything running in it
+^systemctl[[:space:]]+(poweroff|reboot|halt)	systemctl power operation
+
+# --- git history destruction ------------------------------------------------
+git[[:space:]]+push[[:space:]]+.*(--force|-f)([[:space:]]|$).*[[:space:]](main|master|develop)([[:space:]]|$)	force-push to a protected branch rewrites shared history
+git[[:space:]]+push[[:space:]]+.*(--force|-f)([[:space:]]|$).*[[:space:]]HEAD:(main|master|develop)	force-push to a protected branch rewrites shared history
+git[[:space:]]+push[[:space:]]+.*--mirror	--mirror force-updates every ref on the remote
+git[[:space:]]+branch[[:space:]]+-[dD][[:space:]]+(main|master|develop)([[:space:]]|$)	deleting a protected branch
+git[[:space:]]+reflog[[:space:]]+(expire|delete)	expiring the reflog removes the undo history for everything else
+^git[[:space:]]+clean[[:space:]]+.*x.*[[:space:]]*$	git clean -x deletes ignored files, including .env and local config
+git[[:space:]]+filter-branch	filter-branch rewrites all history
+git[[:space:]]+update-ref[[:space:]]+-d	deleting a ref directly
+
+# --- guard integrity --------------------------------------------------------
+# Handled in check-command.sh (INTEGRITY_REGEX), because these must be matched
+# BEFORE the escape hatch is honoured — the hatch has to be flipped by a human,
+# not by an agent talking itself into it. Reading or running the guard is fine;
+# only writes to it, and `guard off`, are blocked.

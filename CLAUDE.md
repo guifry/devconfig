@@ -46,10 +46,11 @@ devconfig/
 │   ├── shared/                  # One source, fanned out to every agent
 │   │   ├── instructions.md      # Global user instructions
 │   │   ├── commands/            # Slash commands (8)
-│   │   └── skills/              # Skills (36)
+│   │   ├── skills/              # Skills (36)
+│   │   └── guard/               # Destructive-command guard (all three agents)
 │   ├── claude/                  # Claude-only: settings.json, hooks/
-│   ├── opencode/                # opencode.json + README
-│   └── codex/                   # README (config.toml not yet managed)
+│   ├── opencode/                # opencode.json, plugin/ + README
+│   └── codex/                   # hooks.json + README (config.toml unmanaged)
 ├── macos/                       # macOS app configs (restored on switch)
 │   ├── mouseless-config.yaml    # Mouseless keyboard mouse control
 │   ├── homerow.plist            # Homerow keyboard navigation
@@ -132,6 +133,60 @@ It never deletes and never overwrites an existing destination. It deliberately d
 
 A `Stop` hook in `agents/claude/settings.json` prints a one-line reminder whenever
 `agents/` is dirty, so drift surfaces without having to remember the command.
+
+### Destructive-command guard
+
+One pattern list, three pre-execution hooks. Every agent's shell tool is checked
+against `agents/shared/guard/dangerous-patterns.txt` before the command runs.
+
+| Agent | Adapter | Wired by |
+|-------|---------|----------|
+| Claude Code | `agents/claude/hooks/block-dangerous.sh` (PreToolUse, exit 2) | `settings.json` |
+| opencode | `agents/opencode/plugin/guard.js` (`tool.execute.before`, throws) | `~/.config/opencode/plugin` |
+| Codex | `scripts/codex-guard` → `~/bin/codex-guard` | `agents/codex/hooks.json` |
+
+All three survive the respective yolo flags. Verified: Claude's exit 2 blocks in
+bypassPermissions; opencode's `--dangerously-skip-permissions` is only an alias
+for `--auto` and cannot reach a plugin throw; Codex's `PreToolUse` blocks even
+under `--dangerously-bypass-approvals-and-sandbox`.
+
+Covered: recursive `rm` on `/`, `~`, `$HOME` or system paths (any flag order);
+`diskutil erase`/`apfs delete`, `mkfs`, `dd of=/dev/*`, `fdisk`, `shred`;
+shutdown/reboot/halt; force-push to main/master/develop, `git branch -D main`,
+`filter-branch`, reflog expiry. Wrapper forms are unwrapped first, so
+`sudo rm -rf ~`, `/bin/rm -rf ~` and `bash -c "rm -rf ~"` all match.
+
+**It is a guard against accidents, not a security boundary.** An agent that
+wants to evade it can `cd` first, write a script, or base64 a payload. The value
+is catching the plausible-looking one-liner.
+
+```bash
+guard              # status, including whether each agent is wired
+guard off [mins]   # disarm for N minutes (default 15), then it re-arms itself
+guard check "rm -rf ~/x"   # ask what would happen, without running it
+guard test         # 45-case assertion table
+```
+
+Editing `dangerous-patterns.txt` takes effect immediately — the files are
+out-of-store symlinks and every adapter reads the list per invocation. Adding a
+new *adapter* still needs `devconfig switch`.
+
+Writes to any guard file, and `guard off` itself, are refused before the escape
+hatch is consulted, so an agent cannot disarm the guard by asking itself nicely.
+Reading or running the guard is fine.
+
+**Codex needs a one-off trust step.** Codex pins hook trust to a hash and
+**silently skips** an untrusted hook — no warning, the command just runs. After
+the first `devconfig switch`, run `/hooks` in the Codex TUI and trust it once.
+The hash covers the *definition* in `hooks.json`, not the script it points at,
+which is why all logic lives behind the stable `~/bin/codex-guard` path:
+patterns can change freely without invalidating trust. `guard status` warns when
+the trust entry is missing. Non-interactive runs can pass
+`--dangerously-bypass-hook-trust`.
+
+Codex also fails **open** — a hook that crashes or emits malformed JSON is
+logged as `PreToolUse Failed` and the command proceeds. Hence `codex-guard`
+blocks explicitly on its own errors; only a fully absent guard means "allow".
 
 ### Ralph Workflow (Autonomous Coding Loop)
 

@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Codex PreToolUse adapter for the shared destructive-command guard.
+#
+# Codex fails OPEN: a hook that crashes, times out, emits malformed JSON, or
+# returns anything other than a "deny" decision is logged as `PreToolUse Failed`
+# and the command runs anyway. So every error path here has to end in an
+# explicit block, or the guard silently disarms itself.
+#
+# Only two outputs do anything: a "deny" decision (or exit 2) blocks; silence
+# with exit 0 permits. Do NOT emit permissionDecision:"allow" — Codex treats it
+# as a hook failure, same as garbage.
+#
+# All evolving logic lives in the shared checker. Codex pins hook trust to a
+# hash of the DEFINITION in hooks.json, not of this file, so this script can be
+# edited freely without needing to re-trust the hook.
+
+set -uo pipefail
+
+GUARD="$HOME/projects/devconfig/agents/shared/guard/check-command.sh"
+
+# Block via exit 2 — the mechanism that does not depend on jq being present.
+hard_block() {
+    printf 'BLOCKED by devconfig guard: %s\n' "$1" >&2
+    exit 2
+}
+
+# A guard that is absent was uninstalled on purpose; a guard that is present but
+# broken is a fault, and for a safety check a fault must not mean "carry on".
+[ -e "$GUARD" ] || exit 0
+[ -x "$GUARD" ] || hard_block "guard is not executable at $GUARD"
+command -v jq >/dev/null 2>&1 || hard_block "jq is missing, cannot inspect the command"
+
+INPUT=$(cat)
+COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
+[ -n "$COMMAND" ] || exit 0
+
+REASON=$("$GUARD" "$COMMAND" 2>&1)
+STATUS=$?
+
+case "$STATUS" in
+    0) exit 0 ;;
+    1) ;;
+    *) REASON="guard malfunctioned (exit $STATUS), refusing to run this command" ;;
+esac
+
+jq -n --arg reason "$REASON" '{
+  hookSpecificOutput: {
+    hookEventName: "PreToolUse",
+    permissionDecision: "deny",
+    permissionDecisionReason: ("BLOCKED by devconfig guard: " + $reason +
+      ". Run it yourself, or `guard off` to disarm for 15 min.")
+  }
+}' || hard_block "$REASON"
+exit 0

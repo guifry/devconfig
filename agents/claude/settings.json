@@ -25,6 +25,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "~/.claude/hooks/block-dangerous.sh"
+          },
+          {
+            "type": "command",
             "command": "~/.claude/hooks/block-git-writes.sh"
           }
         ]
@@ -44,8 +48,9 @@
     "claude-hud@claude-hud": true
   },
   "effortLevel": "xhigh",
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
   "theme": "dark",
-  "tui": "fullscreen"
+  "editorMode": "vim"
 }

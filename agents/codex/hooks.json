@@ -1,0 +1,18 @@
+{
+  "description": "devconfig destructive-command guard",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/bin/codex-guard",
+            "timeout": 10,
+            "statusMessage": "Checking command against devconfig guard"
+          }
+        ]
+      }
+    ]
+  }
+}

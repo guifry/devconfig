@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Control the shared destructive-command guard that fronts Claude Code,
+# opencode and Codex.
+#
+#   guard             status
+#   guard off [mins]  disarm for N minutes (default 15), then it re-arms itself
+#   guard on          re-arm now
+#   guard test        run the assertion table
+#   guard check CMD   ask what would happen to CMD, without running it
+
+set -uo pipefail
+
+GUARD="$HOME/projects/devconfig/agents/shared/guard/check-command.sh"
+HATCH="${XDG_CONFIG_HOME:-$HOME/.config}/devconfig/guard-off"
+
+hatch_remaining() {
+    [[ -f $HATCH ]] || return 1
+    local expiry now
+    expiry="$(cat "$HATCH" 2>/dev/null)"
+    [[ $expiry =~ ^[0-9]+$ ]] || return 1
+    now="$(date +%s)"
+    [[ $now -lt $expiry ]] || return 1
+    printf '%s' $(( (expiry - now + 59) / 60 ))
+}
+
+case "${1:-status}" in
+    off)
+        mins="${2:-15}"
+        if ! [[ $mins =~ ^[0-9]+$ ]] || [[ $mins -lt 1 ]]; then
+            echo "guard: minutes must be a positive integer" >&2
+            exit 1
+        fi
+        mkdir -p "$(dirname "$HATCH")"
+        printf '%s\n' "$(( $(date +%s) + mins * 60 ))" >"$HATCH"
+        printf 'guard disarmed for %s min. Re-arms automatically; `guard on` to do it now.\n' "$mins"
+        ;;
+    on)
+        rm -f "$HATCH"
+        echo "guard armed"
+        ;;
+    test)
+        exec "$GUARD" --selftest
+        ;;
+    check)
+        shift
+        [[ $# -gt 0 ]] || { echo "usage: guard check <command>" >&2; exit 1; }
+        if reason=$("$GUARD" "$*"); then
+            printf 'allowed: %s\n' "$*"
+        else
+            printf 'BLOCKED: %s\n  %s\n' "$*" "$reason"
+        fi
+        ;;
+    status)
+        if remaining="$(hatch_remaining)"; then
+            printf 'guard DISARMED, re-arms in %s min\n' "$remaining"
+        else
+            echo "guard armed"
+        fi
+        for agent in \
+            "claude:$HOME/.claude/hooks/block-dangerous.sh" \
+            "codex:$HOME/.codex/hooks.json" \
+            "opencode:$HOME/.config/opencode/plugin/guard.js"
+        do
+            name="${agent%%:*}"
+            path="${agent#*:}"
+            if [[ -e $path ]]; then
+                printf '  %-9s wired\n' "$name"
+            else
+                printf '  %-9s NOT wired (%s missing)\n' "$name" "$path"
+            fi
+        done
+        # Codex silently SKIPS a hook it has not trusted, so a wired hooks.json
+        # proves nothing on its own. Trust is recorded in config.toml.
+        if [[ -e $HOME/.codex/hooks.json ]] \
+           && ! grep -q 'hooks\.state\..*hooks\.json' "$HOME/.codex/config.toml" 2>/dev/null; then
+            echo "  codex     hook is UNTRUSTED and will be skipped — run /hooks in the Codex TUI to trust it"
+        fi
+        ;;
+    *)
+        sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+        exit 1
+        ;;
+esac

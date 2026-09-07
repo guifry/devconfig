@@ -499,10 +499,16 @@ EOF
   xdg.configFile."opencode/AGENTS.md".source = agentFile "shared/instructions.md";
   xdg.configFile."opencode/command".source = agentFile "shared/commands";
   xdg.configFile."opencode/skills".source = agentFile "shared/skills";
+  xdg.configFile."opencode/plugin".source = agentFile "opencode/plugin";
 
   home.file.".codex/AGENTS.md".source = agentFile "shared/instructions.md";
   home.file.".codex/prompts".source = agentFile "shared/commands";
   home.file.".agents/skills".source = agentFile "shared/skills";
+
+  # Codex hooks live in their own file, NOT config.toml: Codex rewrites
+  # config.toml itself (appending [projects.*] trust_level), so it can never be
+  # symlinked into this repo. hooks.json merges with project-level hooks.
+  home.file.".codex/hooks.json".source = agentFile "codex/hooks.json";
 
   home.file."bin/ax" = { source = ./scripts/ax; executable = true; };
   home.file."bin/rx" = { source = ./scripts/rx; executable = true; };
@@ -521,6 +527,8 @@ EOF
   home.file."bin/devconfig" = { source = ./scripts/devconfig-cli.sh; executable = true; };
   home.file."bin/dcli" = { source = ./scripts/dcli; executable = true; };
   home.file."bin/agent-sync" = { source = ./scripts/agent-sync; executable = true; };
+  home.file."bin/guard" = { source = ./scripts/guard; executable = true; };
+  home.file."bin/codex-guard" = { source = ./scripts/codex-guard; executable = true; };
   home.file."bin/git-identity-test" = { source = ./scripts/git-identity-test; executable = true; };
   home.file."bin/git-identity-setup" = { source = ./scripts/git-identity-setup; executable = true; };
   # Shadows the nix `gh` — ~/bin is earlier in PATH. Selects the GitHub account from

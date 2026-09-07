@@ -14,7 +14,14 @@
     "bash": {
       "*": "allow",
       "rm *": "deny",
-      "sudo rm *": "deny"
+      "sudo rm *": "deny",
+      "sudo *": "deny",
+      "diskutil *": "deny",
+      "mkfs*": "deny",
+      "dd *": "deny",
+      "shutdown *": "deny",
+      "reboot": "deny",
+      "halt": "deny"
     }
   },
   "agent": {
