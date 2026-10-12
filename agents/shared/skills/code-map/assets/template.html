@@ -237,10 +237,30 @@
   #minimap canvas{display:block;cursor:crosshair}
 
   /* ---------- hover card ---------- */
-  #hover{position:fixed;z-index:60;pointer-events:none;max-width:380px;display:none;
-    background:var(--panel-solid);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);
-    overflow:hidden}
-  #hover.show{display:block}
+  #hover{position:fixed;z-index:60;pointer-events:none;width:380px;display:none;
+    background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.55);
+    overflow:hidden;flex-direction:column}
+  #hover.show{display:flex}
+  #hover.panel .hh{padding:16px 20px 8px}
+  #hover.panel .htitle{font-size:19px;padding:0 20px 12px}
+  #hover.panel .hplain{margin:0 20px 14px;padding:12px 15px;font-size:14px;line-height:1.5}
+  #hover.panel .hbody{padding:2px 20px 16px;max-height:none;flex:1 1 auto;min-height:0;overflow:hidden;
+    -webkit-mask-image:linear-gradient(#000 calc(100% - 28px),transparent);mask-image:linear-gradient(#000 calc(100% - 28px),transparent)}
+  #hover.panel .hbody.fits{-webkit-mask-image:none;mask-image:none}
+  #hover.panel .hcode{padding:11px 20px;flex:none}
+  #hover.panel .hcode code{font-size:11.5px}
+  #hover.panel .dv-group:not(.nested){gap:9px}
+  #hover.panel .dv-group:not(.nested)>.dv-row{display:grid;grid-template-columns:170px 1fr;column-gap:16px;align-items:baseline}
+  #hover.panel .dv-key{font-size:10px;line-height:1.5}
+  #hover.panel .dv-val,#hover.panel .dv-list li{font-size:12.5px;line-height:1.5;overflow-wrap:break-word;word-break:normal}
+  #hover.panel .htype{font-size:10px}
+  #hover.panel .hchap{font-size:11px}
+  #hover.panel .hicon{width:30px;height:30px}
+  #hover.panel .hicon svg{width:18px;height:18px}
+  #hfocus{position:fixed;z-index:59;pointer-events:none;display:none;border-radius:6px;
+    box-shadow:0 0 0 2px var(--accent),0 0 0 200vmax rgba(4,8,16,.62)}
+  body[data-theme="light"] #hfocus{box-shadow:0 0 0 2px var(--accent),0 0 0 200vmax rgba(15,23,42,.38)}
+  #hfocus.show{display:block}
   #hover .hh{display:flex;align-items:center;gap:8px;padding:11px 13px 8px}
   #hover .hicon{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;flex:none;
     color:var(--nc);background:linear-gradient(var(--nc-fill),var(--nc-fill)),var(--panel2);border:1px solid var(--obj-edge)}
@@ -330,7 +350,7 @@
     <canvas id="mmcv" width="220" height="150"></canvas>
   </div>
 
-  <div id="hover"></div>
+  <div id="hfocus"></div><div id="hover"></div>
   <div id="edgelabel"></div>
   <div id="toast"></div>
   <!--MODELS-->
@@ -1169,9 +1189,9 @@
       el.innerHTML='<div class="face top"></div><div class="face right"></div>'+
         '<div class="face front">'+frontInner(n)+'</div>';
       el.addEventListener("pointerenter",function(){ onNodeHover(stage,n,el); });
-      el.addEventListener("pointermove",function(ev){ moveHover(ev); });
+      
       el.addEventListener("pointerleave",function(){ hideEdgeHover(stage); });
-      el.addEventListener("click",function(ev){ ev.stopPropagation(); selectNode(stage,n); });
+      el.addEventListener("click",function(ev){ ev.stopPropagation(); hideHover(); selectNode(stage,n); });
       el.addEventListener("pointerdown",function(ev){ ev.stopPropagation(); });
       host.appendChild(el);
       n._el=el; stage.els.nodes[n.id]=el;
@@ -1213,6 +1233,8 @@
   var hoverEl=document.getElementById("hover");
   var edgeLabelEl=document.getElementById("edgelabel");
   var hoverActive=false;
+  var focusEl=document.getElementById("hfocus");
+  var hoverNode=null;
 
   function renderDetailValue(v,out){
     if(Array.isArray(v)){
@@ -1265,7 +1287,7 @@
       '<div class="htitle" style="font-size:12.5px">'+esc(edge.a.title)+' → '+esc(edge.b.title)+'</div>'+
       '<div class="hbody"><div class="dv-group"><div class="dv-row"><div class="dv-key">Label</div><div class="dv-valwrap"><span class="dv-val">'+esc(edge.label||"—")+'</span></div></div></div></div>'+
       '<div class="hcode"><span>from</span><code>'+esc(edge.from)+'</code></div>';
-    hoverEl.innerHTML=html; hoverEl.classList.add("show");
+    hoverEl.classList.remove("panel"); hoverEl.style.cssText=""; hoverEl.innerHTML=html; hoverEl.classList.add("show");
   }
   function placeHover(ev){
     if(!ev) return;
@@ -1278,12 +1300,44 @@
   }
   var lastEv=null;
   function moveHover(ev){ lastEv=ev; placeHover(ev); }
-  function hideHover(){ hoverActive=false; hoverEl.classList.remove("show"); }
+  function hideHover(){ hoverActive=false; hoverNode=null; hoverEl.classList.remove("show","panel"); hoverEl.style.cssText=""; focusEl.classList.remove("show"); }
+
+  function nodeScreenRect(el){
+    var r=el.getBoundingClientRect(), l=r.left, t=r.top, rt=r.right, b=r.bottom;
+    el.querySelectorAll("*").forEach(function(c){
+      var q=c.getBoundingClientRect(); if(!q.width||!q.height) return;
+      if(q.left<l) l=q.left; if(q.top<t) t=q.top; if(q.right>rt) rt=q.right; if(q.bottom>b) b=q.bottom;
+    });
+    return {left:l,top:t,right:rt,bottom:b};
+  }
+  function placePanel(){
+    if(!hoverNode||!hoverNode._el) return;
+    var r=nodeScreenRect(hoverNode._el), pad=6;
+    focusEl.style.left=(r.left-pad)+"px"; focusEl.style.top=(r.top-pad)+"px";
+    focusEl.style.width=(r.right-r.left+pad*2)+"px"; focusEl.style.height=(r.bottom-r.top+pad*2)+"px";
+    focusEl.classList.add("show");
+    var W=window.innerWidth, H=window.innerHeight, gap=28, edge=20, maxW=820, minW=420;
+    var tb=document.getElementById("topbar"), top=(tb?tb.getBoundingClientRect().bottom:0)+16;
+    var goRight=(r.left+r.right)/2<W/2;
+    var zoneL=goRight?Math.max(r.right+gap,edge):edge;
+    var zoneR=goRight?W-edge:Math.min(r.left-gap,W-edge);
+    var zw=zoneR-zoneL;
+    if(zw<minW){ zw=Math.min(maxW,W-2*edge); zoneL=goRight?W-edge-zw:edge; }
+    var w=Math.min(maxW,zw);
+    hoverEl.style.width=w+"px"; hoverEl.style.left=(zoneL+(zw-w)/2)+"px";
+    hoverEl.style.maxHeight=(H-top-edge)+"px";
+    var h=hoverEl.getBoundingClientRect().height;
+    hoverEl.style.top=Math.max(top,Math.min((r.top+r.bottom)/2-h/2,H-edge-h))+"px";
+    var body=hoverEl.querySelector(".hbody");
+    if(body) body.classList.toggle("fits",body.scrollHeight<=body.clientHeight+1);
+  }
 
   function onNodeHover(stage,n,el){
     hoverActive=true;
+    hoverNode=n;
     showNodeCard(stage,n);
-    if(lastEv) placeHover(lastEv);
+    hoverEl.classList.add("panel");
+    placePanel();
     highlightIncident(stage,n,true);
   }
   function onEdgeHover(stage,edge,ev){
@@ -1456,6 +1510,7 @@
   var viewport=document.getElementById("viewport");
   function apply(stage){
     stage.world.style.transform="translate3d("+stage.cam.px+"px,"+stage.cam.py+"px,0) scale("+stage.cam.scale+")";
+    if(hoverNode) placePanel();
     drawMinimap(stage);
     updateZoneTitles(stage);
   }

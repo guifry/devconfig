@@ -64,7 +64,7 @@ The stages can be parallelised across different views. To change only the presen
 - **Connectors are orthogonal only:** right angles, arrowheads, no crossings within a zone.
 - **Layout runs left to right.** Sequential steps **snake between two lanes** (upper/lower, offset about half a cube), which keeps the width to roughly 0.65–0.7× a straight lane. Real parallel siblings stay vertical stacks. Each cube carries a step number (`chapter.step`).
 - **Chapters are zones** with generous margins between them and padding inside. Each zone shows a **big title**, scaled inversely with zoom so it stays readable, and its `plain` summary underneath.
-- **Hover card:** title and type, then a highlighted plain-language box, then every detail, then the code reference.
+- **Hover panel:** a wide panel (up to 820 px) on the side of the screen away from the cube, not following the cursor. The rest of the screen dims, except the cube and the panel. It shows title and type, then a highlighted plain-language box, then details as a key | value grid, then the code reference. It re-places itself on zoom and pan, and clicking a cube closes it so the path highlight shows.
 - **Click:** copies `path:line` (navigator.clipboard with a textarea fallback for `file://`), shows a toast, and highlights the upstream and downstream path.
 - **Header:** title, `code_ref`, tabs, a horizontally scrolling chapter chip row (never clipped at 1280 px), search with fly-to, zoom controls, theme toggle.
 - **No text selection** when dragging the canvas (`user-select: none`, except inputs).
