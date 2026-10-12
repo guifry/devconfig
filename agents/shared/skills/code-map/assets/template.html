@@ -26,6 +26,7 @@
     --obj-edge:#33405a;
     --obj-shadow:0 2px 4px rgba(0,0,0,.45);
     --edge-cross:rgba(122,142,178,.32);
+    --edge-dash:rgba(150,172,210,.60);
     --zone-bg:rgba(255,255,255,.016);
     --zone-line:rgba(255,255,255,.055);
     --zone-ink:#7f8ea6;
@@ -55,6 +56,7 @@
     --obj-edge:#aab7cc;
     --obj-shadow:0 2px 4px rgba(30,50,90,.16);
     --edge-cross:rgba(70,100,140,.38);
+    --edge-dash:rgba(58,88,132,.66);
     --zone-bg:rgba(24,48,92,.022);
     --zone-line:rgba(24,48,92,.09);
     --zone-ink:#5f6f88;
@@ -89,8 +91,9 @@
   .zones{position:absolute;inset:0;z-index:1}
   .edges{position:absolute;top:0;left:0;z-index:2;overflow:visible;pointer-events:none}
   .edges path{pointer-events:none}
-  .edges path.edge-hit{pointer-events:stroke;stroke:transparent;stroke-width:11;fill:none}
-  .nodes{position:absolute;inset:0;z-index:3}
+  .edges path.edge-hit{pointer-events:stroke;stroke:transparent;stroke-width:12;fill:none}
+  .edges path.edge{transition:stroke-width .1s,opacity .1s}
+  .nodes{position:absolute;inset:0;z-index:3;pointer-events:none}
 
   /* ---------- zones ---------- */
   .zone{
@@ -110,7 +113,7 @@
   .zone-sum{font-size:10.5px;color:var(--ink-faint);margin-top:3px;max-width:100%;line-height:1.35}
 
   /* ---------- object node (orthographic extrusion) ---------- */
-  .obj{position:absolute;z-index:3}
+  .obj{position:absolute;z-index:3;pointer-events:auto}
   .obj .face{position:absolute}
   .obj .top{
     left:0;top:calc(-1*var(--depth));width:100%;height:var(--depth);
@@ -120,7 +123,7 @@
     z-index:1;
   }
   .obj .right{
-    left:100%;top:calc(-1*var(--depth));width:var(--depth);height:calc(100% + var(--depth));
+    left:100%;top:0;width:var(--depth);height:100%;
     transform-origin:top left;transform:skewY(-45deg);
     background:linear-gradient(var(--nc-side),var(--nc-side)),var(--obj-side);
     border:1px solid var(--obj-edge);border-left:0;
@@ -141,6 +144,13 @@
   .obj.pathhl .front{box-shadow:0 0 0 2px var(--nc),0 0 16px -2px var(--nc)}
   .obj.dim{opacity:.3}
   .obj.edgeon .front{box-shadow:0 0 0 2px var(--nc)}
+  /* connector hover: light highlight on the two end cubes */
+  .obj.ehov .front{box-shadow:0 0 0 2px var(--nc),0 0 14px -1px var(--nc)}
+  /* connector selected: accent outline on the two end cubes */
+  .obj.esel{z-index:7}
+  .obj.esel .front{box-shadow:0 0 0 2px var(--accent),0 0 0 4px var(--accent),0 0 20px -2px var(--accent)}
+  /* dimmed while a connector is selected */
+  .obj.edim{opacity:.22}
 
   .card-head{display:flex;align-items:flex-start;gap:6px;padding:6px 9px 4px}
   .card-icon{flex:none;width:20px;height:20px;border-radius:4px;display:grid;place-items:center;
@@ -149,7 +159,7 @@
   .card-icon svg{width:13px;height:13px;display:block}
   .card-title{flex:1;min-width:0;font-size:10.5px;font-weight:600;line-height:1.2;color:var(--ink);
     height:3.6em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
-    overflow-wrap:break-word;word-break:break-word}
+    overflow-wrap:normal;word-break:normal}
   .card-badge{flex:none;font-size:7px;letter-spacing:.7px;text-transform:uppercase;color:var(--nc);
     border:1px solid var(--nc);border-radius:3px;padding:1px 4px;opacity:.85;font-family:var(--font-mono)}
   .card-step{flex:none;font-family:var(--font-mono);font-size:8px;font-weight:700;line-height:1.15;
@@ -238,13 +248,26 @@
   #hover .hmeta{display:flex;flex-direction:column;gap:1px;min-width:0}
   #hover .htype{font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--nc);font-weight:700}
   #hover .hchap{font-size:9.5px;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #hover .htitle{font-size:14px;font-weight:700;padding:0 13px 9px;line-height:1.25;word-break:break-word}
+  #hover .htitle{font-size:14px;font-weight:700;padding:0 13px 9px;line-height:1.25;overflow-wrap:normal;word-break:normal}
   #hover .hbody{padding:0 13px 11px;max-height:44vh;overflow-y:auto}
   #hover .hbody::-webkit-scrollbar{width:6px}
   #hover .hbody::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
   #hover .hcode{display:flex;align-items:center;gap:8px;padding:9px 13px;border-top:1px solid var(--line-soft);background:var(--panel2)}
   #hover .hcode span{font-size:8.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint)}
   #hover .hcode code{font-family:var(--font-mono);font-size:10px;color:var(--accent);word-break:break-all}
+
+  /* ---------- connector hover label ---------- */
+  #edgelabel{position:fixed;z-index:66;pointer-events:none;display:none;max-width:460px;
+    background:var(--panel-solid);border:1px solid var(--accent);border-radius:8px;box-shadow:var(--shadow);
+    padding:7px 10px;font-size:11.5px;line-height:1.35;color:var(--ink)}
+  #edgelabel.show{display:block}
+  #edgelabel .el-row{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #edgelabel b{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.2px;
+    color:var(--nc,#4ea1ff);background:linear-gradient(var(--nc-fill,rgba(78,161,255,.16)),var(--nc-fill,rgba(78,161,255,.16)));
+    border:1px solid var(--nc,#4ea1ff);border-radius:3px;padding:1px 4px;margin-right:5px}
+  #edgelabel .el-arrow{color:var(--accent);font-weight:700;padding:0 5px}
+  #edgelabel .el-lab{display:block;margin-top:4px;font-size:10px;color:var(--ink-faint);
+    font-family:var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   .dv-group{display:flex;flex-direction:column;gap:6px}
   .dv-group.nested{gap:3px;border-left:2px solid var(--line);padding-left:8px;margin-top:3px}
@@ -308,6 +331,7 @@
   </div>
 
   <div id="hover"></div>
+  <div id="edgelabel"></div>
   <div id="toast"></div>
   <!--MODELS-->
 
@@ -350,6 +374,19 @@
     return "rgba("+r+","+g+","+b+","+a+")";
   }
   function trunc(s,n){s=String(s==null?"":s);return s.length>n?s.slice(0,n-1)+"…":s;}
+  /* dashed connectors stay legible: heavier and higher-contrast */
+  function baseW(e){ return e.cross?(e.dashed?1.7:1.1):(e.dashed?2:1.5); }
+  function baseO(e){ return e.cross?(e.dashed?0.95:0.34):(e.dashed?1:1); }
+  /* Escape a title and insert <wbr> only at natural breakpoints (after . _ / -,
+     at camelCase joins and between letters and digits) so identifiers never
+     split mid-segment. */
+  function breakable(s){
+    return esc(s)
+      .replace(/([._\/\-])/g,"$1<wbr>")
+      .replace(/([a-z])([A-Z])/g,"$1<wbr>$2")
+      .replace(/([A-Za-z])([0-9])/g,"$1<wbr>$2")
+      .replace(/([0-9])([A-Za-z])/g,"$1<wbr>$2");
+  }
 
   /* ============================================================
      DATA NORMALISATION
@@ -407,9 +444,14 @@
      each step advancing ~half a cube; multi-node ranks stay as vertical stacks. */
   function layout(stage){
     var model=stage.model;
-    var M={top:104,left:70,right:70,bottom:96};
-    var COLGAP=DEPTH+GAP, ROWGAP=DEPTH+GAP, ZONEGAP=112, ZONEPADX=54, HEAD=70;
+    var M={top:118+(stage.mTopX||0),left:70,right:70,bottom:96+(stage.mBotX||0)};
+    var ROWGAP=DEPTH+GAP, ZONEGAP=112, ZONEPADX=54, HEAD=104;
+    /* Front-to-front gap between adjacent columns. The usable gutter (from the
+       right cube's extruded outer edge to the next column's front face) must fit
+       a routing channel plus clear runs, so keep it comfortably wide. */
+    var COLGAP=76;
     var PITCH=126, VGAP=76;
+    stage.COLGAP=COLGAP;
     stage.PITCH=PITCH; stage.VGAP=VGAP;
     stage.cols=[]; stage.colList=[];
     var chapIndex=0;
@@ -486,7 +528,7 @@
         }
         g.top=centreY-g.height/2; g.bottom=g.top+g.height;
         stage.cols.push(g); stage.colList.push(g);
-        x+=g.width+COLGAP;
+        x+=g.width+COLGAP+((stage.gapExtra&&stage.gapExtra[g._colIdx])||0);
       });
       ch._x1=x-COLGAP+ZONEPADX;
       x+=ZONEGAP;
@@ -506,60 +548,510 @@
     stage.chapters.forEach(function(ch){
       if(ch._empty){ ch._contentTop=ch._top; return; }
       var mn=1e9;
-      model.nodes.forEach(function(n){ if(n.chapter===ch.id) mn=Math.min(mn,n._y); });
+      model.nodes.forEach(function(n){ if(n.chapter===ch.id) mn=Math.min(mn,n._y-DEPTH); });
       ch._contentTop=(mn<1e9?mn:ch._top+HEAD);
     });
+
+    /* inter-column routing gaps (for per-gap connector tracks) */
+    stage.gaps=[];
+    for(var gi=0; gi<stage.colList.length-1; gi++){
+      var c0=stage.colList[gi], c1=stage.colList[gi+1];
+      stage.gaps.push({i:gi, left:c0.x+c0.width, right:c1.x});
+    }
+    var minFootTop=1e9, maxFootBot=-1e9;
+    model.nodes.forEach(function(n){ minFootTop=Math.min(minFootTop,n._y-DEPTH); maxFootBot=Math.max(maxFootBot,n._y+n._h); });
+    stage._minFootTop=minFootTop; stage._maxFootBot=maxFootBot;
   }
 
+  /* Orthogonal connector routing. Everything leaves a cube at the outer edge of
+     its extrusion (right face) or at a clean top/bottom port, and every bend is
+     90°. `CH` is the distance a routing channel keeps from a cube footprint. */
+  var CH=31;
   function route(stage,a,b){
-    var aR=a._x+a._w, aL=a._x, aT=a._y, aB=a._y+a._h;
-    var bR=b._x+b._w, bL=b._x, bT=b._y, bB=b._y+b._h;
+    var D=DEPTH;
+    var aR=a._x+a._w, aL=a._x, aT=a._y, aB=a._y+a._h, aRo=aR+D;
+    var bR=b._x+b._w, bL=b._x, bT=b._y, bB=b._y+b._h, bRo=bR+D;
     var acy=a._cy, bcy=b._cy, acx=a._cx, bcx=b._cx;
 
-    // directly stacked in the same column: straight vertical
+    // directly stacked in the same column: straight vertical between near edges
     if(Math.abs(a._x-b._x)<1.5 && Math.abs(a._w-b._w)<1.5){
       if(bcy>=acy) return "M "+acx+" "+aB+" L "+bcx+" "+bT;
       return "M "+acx+" "+aT+" L "+bcx+" "+bB;
     }
-    // skip edge within one snake run (different lanes): arc over/under the run
-    if(b._col===a._col && b._x>a._x+0.5 && a._lane && a._lane!==b._lane){
-      var chY=(a._lane==="U")?stage._upperTop-24:stage._lowerTop+CUBE_H+24;
-      var sx2=aR+2;
-      return "M "+aR+" "+acy+" L "+sx2+" "+acy+" L "+sx2+" "+chY+" L "+bcx+" "+chY+" L "+bcx+" "+((a._lane==="U")?bT:bB);
+
+    // snake lane change (same run, opposite lane, target to the right):
+    // source bottom -> target top when going down, source top -> target bottom up
+    if(a._col===b._col && a._lane && b._lane && a._lane!==b._lane && b._x>a._x+0.5){
+      var my=(bcy>=acy)?(aB+bT)/2:(aT+bB)/2;
+      var sPort=(bcy>=acy)?aB:aT;
+      var tPort=(bcy>=acy)?bT:bB;
+      return "M "+acx+" "+sPort+" L "+acx+" "+my+" L "+bcx+" "+my+" L "+bcx+" "+tPort;
     }
-    // b to the right with a clear gap
-    if(bL>=aR-0.5){
-      var gx;
-      var nxt=(b._col>a._col)?stage.colList[a._col+1]:null;
-      if(nxt&&nxt.x>aR+2) gx=(aR+nxt.x)/2;
-      else gx=aR+clamp((bL-aR)*0.5,10,60);
-      if(Math.abs(acy-bcy)<0.6) return "M "+aR+" "+acy+" L "+bL+" "+bcy;
-      return "M "+aR+" "+acy+" L "+gx+" "+acy+" L "+gx+" "+bcy+" L "+bL+" "+bcy;
+
+    // b to the right: leave the outer edge of a's right face, enter b's front-left
+    if(bL>=aRo-0.5){
+      var ex=aRo;
+      if(Math.abs(acy-bcy)<0.6) return "M "+ex+" "+acy+" L "+bL+" "+bcy;
+      var gw=Math.max(0,bL-aRo);
+      var gx=aRo+clamp(gw*0.5,22,CH);
+      gx=Math.min(gx,bL-CH);
+      if(gx<=aRo+2) gx=ex;
+      return "M "+ex+" "+acy+" L "+gx+" "+acy+" L "+gx+" "+bcy+" L "+bL+" "+bcy;
     }
-    // b to the left with a clear gap
-    if(bR<=aL+0.5){
-      var gx2=aL-clamp((aL-bR)*0.5,10,60);
-      if(Math.abs(acy-bcy)<0.6) return "M "+aL+" "+acy+" L "+bR+" "+bcy;
-      return "M "+aL+" "+acy+" L "+gx2+" "+acy+" L "+gx2+" "+bcy+" L "+bR+" "+bcy;
+
+    // b to the left: leave a's front-left, enter the outer edge of b's right face
+    if(bRo<=aL+0.5){
+      var ex2=bRo;
+      if(Math.abs(acy-bcy)<0.6) return "M "+aL+" "+acy+" L "+ex2+" "+bcy;
+      var gw2=Math.max(0,aL-bRo);
+      var gx2=aL-clamp(gw2*0.5,22,CH);
+      gx2=Math.max(gx2,bRo+CH);
+      if(gx2>=aL-2) gx2=ex2;
+      return "M "+aL+" "+acy+" L "+gx2+" "+acy+" L "+gx2+" "+bcy+" L "+ex2+" "+bcy;
     }
-    // overlapping in x: snake neighbour -> out of the right side, then into the near edge
+
+    // overlapping in x (should be rare): elbow out of the right side into the near edge
     if(bcx>=acx){
-      var ex=aR, hx=Math.max(ex+6,bcx);
-      if(bcy>=acy) return "M "+ex+" "+acy+" L "+hx+" "+acy+" L "+hx+" "+bT;
-      return "M "+ex+" "+acy+" L "+hx+" "+acy+" L "+hx+" "+bB;
+      var hx=Math.max(aRo+6,bcx);
+      if(bcy>=acy) return "M "+aRo+" "+acy+" L "+hx+" "+acy+" L "+hx+" "+bT;
+      return "M "+aRo+" "+acy+" L "+hx+" "+acy+" L "+hx+" "+bB;
     }
-    var ex2=aL, hx2=Math.min(ex2-6,bcx);
-    if(bcy>=acy) return "M "+ex2+" "+acy+" L "+hx2+" "+acy+" L "+hx2+" "+bT;
-    return "M "+ex2+" "+acy+" L "+hx2+" "+acy+" L "+hx2+" "+bB;
+    var hx2=Math.min(aL-6,bcx);
+    if(bcy>=acy) return "M "+aL+" "+acy+" L "+hx2+" "+acy+" L "+hx2+" "+bT;
+    return "M "+aL+" "+acy+" L "+hx2+" "+acy+" L "+hx2+" "+bB;
+  }
+
+  /* ---- obstacle-aware fallback router -------------------------------------
+     Long connectors that would otherwise slice through an intervening column
+     are re-routed on a coarse grid (A*, 4-way) that keeps every cube footprint
+     (extrusion included) inflated by a clearance margin. */
+  var CLEAR=14, GRID=10, INFL=16;
+  function rectsOf(stage){
+    return stage.model.nodes.map(function(n){
+      return {id:n.id, x0:n._x, y0:n._y-DEPTH, x1:n._x+n._w+DEPTH, y1:n._y+n._h};
+    });
+  }
+  function segDist(s,r){
+    if(Math.abs(s[0][1]-s[1][1])<0.4){
+      var y=s[0][1], x0=Math.min(s[0][0],s[1][0]), x1=Math.max(s[0][0],s[1][0]);
+      var dy=Math.max(r.y0-y,y-r.y1,0), dx=Math.max(r.x0-x1,x0-r.x1,0);
+      return Math.sqrt(dx*dx+dy*dy);
+    }
+    var x=s[0][0], y0=Math.min(s[0][1],s[1][1]), y1=Math.max(s[0][1],s[1][1]);
+    var dx2=Math.max(r.x0-x,x-r.x1,0), dy2=Math.max(r.y0-y1,y0-r.y1,0);
+    return Math.sqrt(dx2*dx2+dy2*dy2);
+  }
+  function parsePath(d){
+    var n=d.match(/-?\d+(\.\d+)?/g)||[], p=[];
+    for(var k=0;k+1<n.length;k+=2) p.push([+n[k],+n[k+1]]);
+    return p;
+  }
+  function pathClear(pts,rects,fromId,toId){
+    for(var i=1;i<pts.length;i++){
+      var s=[pts[i-1],pts[i]];
+      for(var j=0;j<rects.length;j++){
+        var r=rects[j];
+        if(r.id===fromId||r.id===toId) continue;
+        if(segDist(s,r)<CLEAR) return false;
+      }
+    }
+    return true;
+  }
+  function ortho(pts){
+    var out=[pts[0].slice()];
+    for(var i=1;i<pts.length;i++){
+      var p=pts[i], q=out[out.length-1];
+      if(Math.abs(p[0]-q[0])>0.5 && Math.abs(p[1]-q[1])>0.5) out.push([p[0],q[1]]);
+      out.push([p[0],p[1]]);
+    }
+    for(var k=out.length-2;k>=1;k--){
+      var a=out[k-1], b=out[k], c=out[k+1];
+      var col=(Math.abs(a[0]-b[0])<0.5&&Math.abs(b[0]-c[0])<0.5)||(Math.abs(a[1]-b[1])<0.5&&Math.abs(b[1]-c[1])<0.5);
+      if(col) out.splice(k,1);
+    }
+    var res=[out[0]];
+    for(var m=1;m<out.length;m++){
+      var pr=res[res.length-1];
+      if(Math.abs(out[m][0]-pr[0])<0.5 && Math.abs(out[m][1]-pr[1])<0.5) continue;
+      res.push(out[m]);
+    }
+    return res;
+  }
+  function toPathD(pts){
+    var d="";
+    for(var i=0;i<pts.length;i++) d+=(i?" L ":"M ")+pts[i][0]+" "+pts[i][1];
+    return d;
+  }
+  function elbowClear(a,b,rects,fromId,toId){
+    var e1=[b[0],a[1]], e2=[a[0],b[1]];
+    if(pathClear([a,e1,b],rects,fromId,toId)) return [a,e1,b];
+    if(pathClear([a,e2,b],rects,fromId,toId)) return [a,e2,b];
+    return null;
+  }
+  /* straighten an A* staircase into as few 90° bends as possible */
+  function smooth(pts,rects,fromId,toId){
+    var res=[pts[0]], i=0;
+    while(i<pts.length-1){
+      var best=i+1, ee=null;
+      for(var j=pts.length-1;j>i+1;j--){
+        ee=elbowClear(pts[i],pts[j],rects,fromId,toId);
+        if(ee){ best=j; break; }
+      }
+      if(best>i+1){ for(var k=1;k<ee.length;k++) res.push(ee[k]); }
+      else res.push(pts[i+1]);
+      i=best;
+    }
+    return res;
+  }
+  /* Canonical channel route for long connectors: a shared trunk in the gutter
+     next to the source, a shared approach channel next to the target, and a
+     single cross-lane when a straight run would hit an intervening column. */
+  function channelRoute(stage,a,b,rects){
+    var D=DEPTH;
+    var aR=a._x+a._w, aL=a._x, aRo=aR+D, aCy=a._cy;
+    var bR=b._x+b._w, bL=b._x, bRo=bR+D, bCy=b._cy;
+    var from=a.id, to=b.id, forward;
+    var gx, gx2, sPos, tPos;
+    if(bL>=aRo-0.5){ forward=true; gx=aRo+CH; gx2=bL-CH; sPos=[aRo,aCy]; tPos=[bL,bCy]; }
+    else if(bRo<=aL+0.5){ forward=false; gx=aL-CH; gx2=bRo+CH; sPos=[aL,aCy]; tPos=[bRo,bCy]; }
+    else return null;
+    if(gx2<=gx+2 && forward) return null;
+    if(!forward && gx2>=gx-2) return null;
+    var cands=[bCy];
+    for(var i=0;i<rects.length;i++){
+      var r=rects[i]; if(r.id===from||r.id===to) continue;
+      var lo=Math.min(gx,gx2), hi=Math.max(gx,gx2);
+      if(r.x1>lo-1 && r.x0<hi+1){ cands.push(r.y0-CH-1); cands.push(r.y1+CH+1); }
+    }
+    // align the cross-lane with a sibling row so the run merges into a bus line
+    for(var s=0;s<stage.model.nodes.length;s++){ if(stage.model.nodes[s]._col===b._col) cands.push(stage.model.nodes[s]._cy); }
+    cands.sort(function(p,q){
+      function key(y){
+        var pen=(Math.abs(y-bCy)>0.5 && y>stage._upperTop+CUBE_H+2 && y<stage._lowerTop-2)?100000:0;
+        return Math.abs(y-bCy)+pen;
+      }
+      return key(p)-key(q);
+    });
+    for(var c=0;c<cands.length;c++){
+      var cy=cands[c];
+      var path=ortho([sPos,[gx,sPos[1]],[gx,cy],[gx2,cy],[gx2,tPos[1]],tPos]);
+      if(pathClear(path,rects,from,to)) return path;
+    }
+    return null;
+  }
+  function astarRoute(stage,fromId,toId,s,t,rects){
+    var M=40, ox=-M, oy=-M, W=stage.W, H=stage.H;
+    var cols=Math.ceil((W+2*M)/GRID), rows=Math.ceil((H+2*M)/GRID);
+    var blocked=new Uint8Array(cols*rows);
+    var nodes=stage.model.nodes;
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i]; if(n.id===fromId||n.id===toId) continue;
+      var x0=n._x-INFL, y0=n._y-DEPTH-INFL, x1=n._x+n._w+DEPTH+INFL, y1=n._y+n._h+INFL;
+      var ix0=Math.max(0,Math.floor((x0-ox)/GRID)), ix1=Math.min(cols-1,Math.ceil((x1-ox)/GRID));
+      var iy0=Math.max(0,Math.floor((y0-oy)/GRID)), iy1=Math.min(rows-1,Math.ceil((y1-oy)/GRID));
+      for(var iy=iy0;iy<=iy1;iy++) for(var ix=ix0;ix<=ix1;ix++){
+        var cx=ox+ix*GRID, cy=oy+iy*GRID;
+        if(cx>x0&&cx<x1&&cy>y0&&cy<y1) blocked[iy*cols+ix]=1;
+      }
+    }
+    function snap(p){ return [clamp(Math.round((p[0]-ox)/GRID),0,cols-1), clamp(Math.round((p[1]-oy)/GRID),0,rows-1)]; }
+    var sc=snap(s), tc=snap(t);
+    function unblock(c){
+      for(var dy=-1;dy<=1;dy++) for(var dx=-1;dx<=1;dx++){
+        var x=c[0]+dx, y=c[1]+dy;
+        if(x>=0&&y>=0&&x<cols&&y<rows) blocked[y*cols+x]=0;
+      }
+    }
+    unblock(sc); unblock(tc);
+    var start=sc[1]*cols+sc[0], goal=tc[1]*cols+tc[0];
+    var g=new Float64Array(cols*rows); g.fill(Infinity);
+    var came=new Int32Array(cols*rows); came.fill(-1);
+    var closed=new Uint8Array(cols*rows);
+    var hn=[], hf=[];
+    function push(node,f){
+      hn.push(node); hf.push(f);
+      var i=hn.length-1;
+      while(i>0){ var p=(i-1)>>1; if(hf[p]<=hf[i]) break;
+        var tn=hn[p];hn[p]=hn[i];hn[i]=tn; var tf=hf[p];hf[p]=hf[i];hf[i]=tf; i=p; }
+    }
+    function pop(){
+      var top=hn[0], ln=hn.pop(), lf=hf.pop();
+      if(hn.length){ hn[0]=ln; hf[0]=lf;
+        var i=0,n=hn.length;
+        for(;;){ var l=2*i+1,r=2*i+2,mn=i;
+          if(l<n&&hf[l]<hf[mn])mn=l; if(r<n&&hf[r]<hf[mn])mn=r; if(mn===i)break;
+          var a=hn[mn];hn[mn]=hn[i];hn[i]=a; var b=hf[mn];hf[mn]=hf[i];hf[i]=b; i=mn; }
+      }
+      return top;
+    }
+    g[start]=0; push(start,0);
+    var found=false, exp=0;
+    while(hn.length && exp<250000){
+      var cur=pop(); if(closed[cur]) continue; closed[cur]=1; exp++;
+      if(cur===goal){ found=true; break; }
+      var cxx=cur%cols, cyy=(cur-cxx)/cols;
+      if(cxx>0 && !blocked[cur-1] && !closed[cur-1]){ var ni=cur-1; if(g[cur]+1<g[ni]){ g[ni]=g[cur]+1; came[ni]=cur; push(ni,g[ni]+Math.abs(cxx-1-tc[0])+Math.abs(cyy-tc[1])); } }
+      if(cxx<cols-1 && !blocked[cur+1] && !closed[cur+1]){ var ni2=cur+1; if(g[cur]+1<g[ni2]){ g[ni2]=g[cur]+1; came[ni2]=cur; push(ni2,g[ni2]+Math.abs(cxx+1-tc[0])+Math.abs(cyy-tc[1])); } }
+      if(cyy>0 && !blocked[cur-cols] && !closed[cur-cols]){ var ni3=cur-cols; if(g[cur]+1<g[ni3]){ g[ni3]=g[cur]+1; came[ni3]=cur; push(ni3,g[ni3]+Math.abs(cxx-tc[0])+Math.abs(cyy-1-tc[1])); } }
+      if(cyy<rows-1 && !blocked[cur+cols] && !closed[cur+cols]){ var ni4=cur+cols; if(g[cur]+1<g[ni4]){ g[ni4]=g[cur]+1; came[ni4]=cur; push(ni4,g[ni4]+Math.abs(cxx-tc[0])+Math.abs(cyy+1-tc[1])); } }
+    }
+    if(!found) return null;
+    var path=[], c=goal;
+    while(c!==-1){ var x=c%cols, y=(c-x)/cols; path.push([ox+x*GRID, oy+y*GRID]); c=came[c]; }
+    path.reverse();
+    path[0]=s.slice(); path[path.length-1]=t.slice();
+    var o1=ortho(path);
+    var o2=smooth(o1,rects,fromId,toId);
+    return ortho(o2);
   }
 
   /* ============================================================
      RENDER
      ============================================================ */
+  /* ---- connector de-overlap: per-channel tracks --------------------------
+     Every connector leaves a cube at its own light port stub, then runs through
+     a routing channel. Within a channel each connector gets its own parallel
+     track (about TRACK px apart), assigned deterministically by interval
+     scheduling, so disjoint runs may share a track but two connectors never
+     overlap along a segment. Verticals take a track in the inter-column gap;
+     horizontals take a lane in a band clear of every cube footprint. */
+  var TRACK=7, PORT_GAP=12, PORT_MAX=42;
+  function orthoOrient(a,b){ return Math.abs(a[1]-b[1])<0.5?"H":"V"; }
+  function schedArr(tracks,a,b){
+    for(var t=0;t<tracks.length;t++){
+      var free=true;
+      for(var k=0;k<tracks[t].length;k++){
+        var iv=tracks[t][k];
+        if(Math.min(iv[1],b)-Math.max(iv[0],a)>0.5){ free=false; break; }
+      }
+      if(free){ tracks[t].push([a,b]); return t; }
+    }
+    tracks.push([[a,b]]); return tracks.length-1;
+  }
+  function gapOf(stage,x){
+    var g=stage.gaps||[], best=-1, bd=1e9;
+    for(var i=0;i<g.length;i++){
+      var cx=(g[i].left+g[i].right)/2, d=Math.abs(x-cx);
+      if(x>=g[i].left-70 && x<=g[i].right+70 && d<bd){ bd=d; best=i; }
+    }
+    return best;
+  }
+  function attachSide(node,end,adj,orient){
+    if(orient==="H") return (end[0]>=node._x+node._w-0.5)?"R":"L";
+    return (end[1]>=node._y+node._h-0.5)?"B":"T";
+  }
+  function rebuildPts(edge){
+    var p=edge.pts, n=edge._n;
+    if(!n) return p;
+    var out=[];
+    var p0=[p[0][0],p[0][1]];
+    if(edge._co[0]==="H") p0[1]=edge._cc[0]; else p0[0]=edge._cc[0];
+    out.push(p0);
+    for(var i=1;i<n;i++){
+      var oa=edge._co[i-1], ob=edge._co[i];
+      var px=(oa==="V")?edge._cc[i-1]:edge._cc[i];
+      var py=(oa==="H")?edge._cc[i-1]:edge._cc[i];
+      out.push([px,py]);
+    }
+    var pn=[p[n][0],p[n][1]];
+    if(edge._co[n-1]==="H") pn[1]=edge._cc[n-1]; else pn[0]=edge._cc[n-1];
+    out.push(pn);
+    return out;
+  }
+  function applyTracks(stage,edges){
+    var CH=31;
+    var groups={};
+    edges.forEach(function(edge){
+      var p=edge.pts, n=p.length-1;
+      if(n<1){ edge._n=0; edge._co=["H"]; edge._cc=[p[0]?p[0][0]:0]; return; }
+      edge._n=n; edge._co=[]; edge._cc=[];
+      for(var i=1;i<=n;i++){ edge._co[i-1]=orthoOrient(p[i-1],p[i]); edge._cc[i-1]=edge._co[i-1]==="H"?p[i-1][1]:p[i-1][0]; }
+      edge._sideA=attachSide(edge.a,p[0],p[1],edge._co[0]);
+      edge._sideB=attachSide(edge.b,p[n],p[n-1],edge._co[n-1]);
+      if(n>=2){
+        var ka=edge.a.id+"|"+edge._sideA, kb=edge.b.id+"|"+edge._sideB;
+        (groups[ka]=groups[ka]||[]).push({e:edge,w:"a"});
+        (groups[kb]=groups[kb]||[]).push({e:edge,w:"b"});
+      } else if(n===1){
+        var ka1=edge.a.id+"|"+edge._sideA, kb1=edge.b.id+"|"+edge._sideB;
+        (groups[ka1]=groups[ka1]||[]).push({e:edge,w:"a"});
+        (groups[kb1]=groups[kb1]||[]).push({e:edge,w:"b"});
+      }
+    });
+    /* spread port stubs so fan-out / fan-in connectors do not share a stub */
+    Object.keys(groups).forEach(function(k){
+      var list=groups[k]; if(list.length<2) return;
+      list.sort(function(u,v){
+        var nu=u.w==="a"?u.e.b:u.e.a, nv=v.w==="a"?v.e.b:v.e.a;
+        return (nu._cy-nv._cy)||(nu._cx-nv._cx)||(u.e.i-v.e.i);
+      });
+      var m=list.length;
+      var node0=(list[0].w==="a")?list[0].e.a:list[0].e.b;
+      var side0=(list[0].w==="a")?list[0].e._sideA:list[0].e._sideB;
+      var usable=((side0==="R"||side0==="L")?(node0._h):(node0._w))-16;
+      var gap=(m>1)?Math.min(PORT_GAP,usable/(m-1)):0;
+      list.forEach(function(it,idx){
+        var off=clamp((idx-(m-1)/2)*gap,-usable/2,usable/2);
+        var edge=it.e, node=(it.w==="a")?edge.a:edge.b, side=(it.w==="a")?edge._sideA:edge._sideB;
+        var at=(it.w==="a")?0:(edge._n-1);
+        edge._cc[at]=(side==="R"||side==="L")?(node._cy+off):(node._cx+off);
+      });
+    });
+    /* interior segments get a track per channel. Horizontals stay in their own
+       routing corridor and are offset by whole tracks within it; verticals take
+       a track in the inter-column gap using the FINAL y of their neighbours. */
+    var vreg={}, hreg={};
+    edges.forEach(function(edge){
+      var n=edge._n; if(!n) return;
+      for(var seg=1; seg<=n-2; seg++){
+        if(edge._co[seg]!=="H") continue;
+        var y=edge.pts[seg][1], xa0=Math.min(edge.pts[seg][0],edge.pts[seg+1][0]), xa1=Math.max(edge.pts[seg][0],edge.pts[seg+1][0]);
+        var key=Math.round(y/6), reg=hreg[key]||(hreg[key]=[]);
+        if(reg._base==null) reg._base=y;
+        var tb=schedArr(reg,xa0,xa1);
+        var dir=(y<stage._centreY)?-1:1;
+        edge._cc[seg]=reg._base+dir*tb*TRACK;
+      }
+    });
+    edges.forEach(function(edge){
+      var n=edge._n; if(!n) return;
+      for(var seg=1; seg<=n-2; seg++){
+        if(edge._co[seg]!=="V") continue;
+        var yA=(edge._co[seg-1]==="H")?edge._cc[seg-1]:edge.pts[seg][1];
+        var yB=(edge._co[seg+1]==="H")?edge._cc[seg+1]:edge.pts[seg+1][1];
+        var y0=Math.min(yA,yB), y1=Math.max(yA,yB);
+        var x=edge.pts[seg][0];
+        var gi=gapOf(stage,x), t, g=(gi>=0?stage.gaps[gi]:null);
+        if(gi>=0){
+          var side=(x<=(g.left+g.right)/2)?"L":"R";
+          t=schedArr(vreg["g"+gi+"|"+side]||(vreg["g"+gi+"|"+side]=[]),y0,y1);
+          edge._cc[seg]=side==="L"?(g.left+CH+t*TRACK):(g.right-CH-t*TRACK);
+        } else {
+          edge._cc[seg]=x;
+        }
+      }
+    });
+    edges.forEach(function(edge){ edge.pts=rebuildPts(edge); });
+    relaxEdges(stage,edges);
+    /* demands for the next layout pass */
+    var demand={gapExtra:{},mTopX:0,mBotX:0};
+    for(var gi2=0; gi2<(stage.gaps||[]).length; gi2++){
+      var tl=(vreg["g"+gi2+"|L"]||[]).length, tr=(vreg["g"+gi2+"|R"]||[]).length;
+      var extra=Math.max(0, 2*CH + (Math.max(0,tl-1)+Math.max(0,tr-1))*TRACK + 22 - (stage.COLGAP||76));
+      if(extra>0) demand.gapExtra[gi2]=Math.ceil(extra);
+    }
+    demand.mTopX=0;
+    demand.mBotX=0;
+    stage._demand=demand;
+  }
+  /* ---- clearance / overlap relaxer ---------------------------------------
+     After track assignment a few segments may still hug a cube or coincide
+     (port stubs, risers that live inside a column). Nudge exactly those
+     segments by whole tracks until every connector clears every footprint and
+     no two connectors share a segment. */
+  function relaxEdges(stage,edges){
+    var rects=rectsOf(stage), T=TRACK, NEED=12.5;
+    function clearanceOf(pts,fromId,toId){
+      var m=1e9;
+      for(var i=0;i<pts.length-1;i++){
+        var s=[pts[i],pts[i+1]];
+        for(var j=0;j<rects.length;j++){
+          var r=rects[j]; if(r.id===fromId||r.id===toId) continue;
+          var d=segDist(s,r); if(d<m) m=d;
+        }
+      }
+      return m;
+    }
+    function overlapOf(pts,self){
+      for(var i=0;i<pts.length-1;i++){
+        var a=pts[i],b=pts[i+1], h=Math.abs(a[1]-b[1])<0.5;
+        var lo=h?Math.min(a[0],b[0]):Math.min(a[1],b[1]), hi=h?Math.max(a[0],b[0]):Math.max(a[1],b[1]);
+        var co=h?a[1]:a[0];
+        for(var e2=0;e2<edges.length;e2++){
+          var o=edges[e2]; if(o===self) continue;
+          for(var j=0;j<o.pts.length-1;j++){
+            var c=o.pts[j],d=o.pts[j+1], h2=Math.abs(c[1]-d[1])<0.5;
+            if(h!==h2) continue;
+            var co2=h?c[1]:c[0]; if(Math.abs(co-co2)>0.6) continue;
+            var lo2=h?Math.min(c[0],d[0]):Math.min(c[1],d[1]), hi2=h?Math.max(c[0],d[0]):Math.max(c[1],d[1]);
+            if(Math.min(hi,hi2)-Math.max(lo,lo2)>0.5) return true;
+          }
+        }
+      }
+      return false;
+    }
+    for(var iter=0; iter<80; iter++){
+      var changed=false;
+      for(var ei=0; ei<edges.length && !changed; ei++){
+        var edge=edges[ei], n=edge._n;
+        if(!n) continue;
+        if(clearanceOf(edge.pts,edge.from,edge.to)>=NEED && !overlapOf(edge.pts,edge)) continue;
+        var orig=edge._cc.slice();
+        for(var si=0; si<n && !changed; si++){
+          var base=edge._cc[si], saved=edge._cc[si];
+          for(var k=1;k<=6 && !changed;k++){
+            for(var sgn=-1;sgn<=1 && !changed;sgn+=2){
+              edge._cc[si]=base+sgn*k*T;
+              var np=rebuildPts(edge);
+              if(clearanceOf(np,edge.from,edge.to)>=NEED && !overlapOf(np,edge)){
+                edge.pts=np; changed=true;
+              }
+            }
+          }
+          if(!changed) edge._cc[si]=saved;
+        }
+        if(!changed){ edge._cc=orig; edge.pts=rebuildPts(edge); }
+      }
+      if(!changed) break;
+    }
+  }
+  function computeEdges(stage){
+    var byId=stage.nodeById, rects=rectsOf(stage);
+    var edges=stage.model.edges.map(function(e,i){
+      var a=byId[e.from], b=byId[e.to];
+      if(!a||!b) return null;
+      var edge={from:e.from,to:e.to,label:e.label||"",a:a,b:b,i:i};
+      var d=route(stage,a,b);
+      var pts=parsePath(d);
+      if(!pathClear(pts,rects,a.id,b.id)){
+        var cr=channelRoute(stage,a,b,rects);
+        if(cr){ d=toPathD(cr); }
+        else {
+          var aR=a._x+a._w, aL=a._x, aRo=aR+DEPTH, bR=b._x+b._w, bL=b._x, bRo=bR+DEPTH;
+          var s,t;
+          if(bL>=aRo-0.5){ s=[aRo,a._cy]; t=[bL,b._cy]; }
+          else if(bRo<=aL+0.5){ s=[aL,a._cy]; t=[bRo,b._cy]; }
+          else if(a._lane&&b._lane&&a._lane!==b._lane){ var dn=b._cy>=a._cy; s=[a._cx,dn?a._y+a._h:a._y]; t=[b._cx,dn?b._y:b._y+b._h]; }
+          else { s=[a._cx,a._cy]; t=[b._cx,b._cy]; }
+          var r2=astarRoute(stage,a.id,b.id,s,t,rects);
+          if(r2) d=toPathD(r2);
+        }
+      }
+      edge.pts=parsePath(d);
+      return edge;
+    }).filter(Boolean);
+    applyTracks(stage,edges);
+    edges.forEach(function(edge){
+      edge.pts=ortho(edge.pts);
+      edge.d=toPathD(edge.pts);
+      var dx=edge.b._x-edge.a._x;
+      edge.cross=dx>3*stage.PITCH || dx<-0.5;
+      edge.dashed=/feeds via raw/i.test(edge.label)||dx>4.5*stage.PITCH;
+      edge._col=edge.a._col;
+    });
+    stage.edgeData=edges;
+    return edges;
+  }
   function buildStage(model, idx){
     var stage={model:model, chapters:model.chapters, cam:null, id0:idx, els:{nodes:{},edges:{}}};
     normalise(model);
     layout(stage);
+    computeEdges(stage);
+    stage.gapExtra=(stage._demand&&stage._demand.gapExtra)||{};
+    stage.mTopX=(stage._demand&&stage._demand.mTopX)||0;
+    stage.mBotX=(stage._demand&&stage._demand.mBotX)||0;
+    layout(stage);
+    computeEdges(stage);
 
     var world=document.createElement("div");
     world.className="world"; world.id="world-"+model.provider.replace(/\W/g,"");
@@ -624,28 +1116,17 @@
   }
 
   function buildEdges(stage,svg){
-    var byId=stage.nodeById;
-    stage.edgeList=stage.model.edges.map(function(e){
-      var a=byId[e.from], b=byId[e.to];
-      if(!a||!b) return null;
-      var edge={from:e.from,to:e.to,label:e.label||"",a:a,b:b};
-      edge.d=route(stage,a,b);
-      var dx=b._x-a._x;
-      edge.cross=dx>3*stage.PITCH || dx<-0.5;
-      edge.dashed=/feeds via raw/i.test(edge.label)||dx>4.5*stage.PITCH;
-      edge._col=a._col;
-      return edge;
-    }).filter(Boolean);
+    stage.edgeList=stage.edgeData||[];
 
     stage.edgeList.forEach(function(edge){
       var p=document.createElementNS(NS,"path");
       p.setAttribute("d",edge.d);
       p.setAttribute("class","edge"+(edge.cross?" cross":"")+(edge.dashed?" dash":""));
       p.setAttribute("fill","none");
-      p.style.stroke=edge.cross?"var(--edge-cross)":edge.a._type.color;
-      p.style.strokeWidth=edge.cross?"1.1":"1.5";
-      p.style.opacity=edge.cross?".34":"1";
-      p.style.strokeDasharray=edge.dashed?"5 5":"none";
+      p.style.stroke=edge.cross?(edge.dashed?"var(--edge-dash)":"var(--edge-cross)"):edge.a._type.color;
+      p.style.strokeWidth=baseW(edge);
+      p.style.opacity=baseO(edge);
+      p.style.strokeDasharray=edge.dashed?"7 5":"none";
       p.setAttribute("marker-end","url(#arw-"+(edge.cross?"cross":edge.a.type)+"-"+stage.id0+")");
       var ttl=document.createElementNS(NS,"title");
       ttl.textContent=edge.a.title+"  →  "+edge.b.title+(edge.label?"  ["+edge.label+"]":"");
@@ -656,8 +1137,14 @@
       var hit=document.createElementNS(NS,"path");
       hit.setAttribute("d",edge.d); hit.setAttribute("class","edge-hit");
       hit.dataset.key=edge.from+"|"+edge.to;
-      hit.addEventListener("pointerenter",function(){ onEdgeHover(stage,edge); });
-      hit.addEventListener("pointerleave",function(){ hideHover(); });
+      hit.addEventListener("pointerenter",function(ev){ onEdgeHover(stage,edge,ev); });
+      hit.addEventListener("pointermove",function(ev){ onEdgeHoverMove(ev); });
+      hit.addEventListener("pointerleave",function(){ hideEdgeHover(stage); });
+      hit.addEventListener("click",function(ev){
+        ev.stopPropagation();
+        if(suppressClick){ suppressClick=false; return; }
+        selectEdge(stage,edge);
+      });
       svg.appendChild(hit);
       edge._hit=hit;
       stage.els.edges[edge.from+"|"+edge.to]=edge;
@@ -683,7 +1170,7 @@
         '<div class="face front">'+frontInner(n)+'</div>';
       el.addEventListener("pointerenter",function(){ onNodeHover(stage,n,el); });
       el.addEventListener("pointermove",function(ev){ moveHover(ev); });
-      el.addEventListener("pointerleave",function(){ hideHover(); clearEdgeOn(); });
+      el.addEventListener("pointerleave",function(){ hideEdgeHover(stage); });
       el.addEventListener("click",function(ev){ ev.stopPropagation(); selectNode(stage,n); });
       el.addEventListener("pointerdown",function(ev){ ev.stopPropagation(); });
       host.appendChild(el);
@@ -697,7 +1184,7 @@
     Array.prototype.forEach.call(titles,function(t){
       var fs=10.5, guard=0;
       t.style.fontSize=fs+"px";
-      while(t.scrollHeight>t.clientHeight+1 && fs>8 && guard<14){
+      while((t.scrollHeight>t.clientHeight+1||t.scrollWidth>t.clientWidth+1)&&fs>8&&guard<14){
         fs-=0.5; t.style.fontSize=fs+"px"; guard++;
       }
     });
@@ -708,7 +1195,7 @@
     var extra=n._rows.length-rows.length;
     var step=(n._chapNum!=null)?'<span class="card-step">'+n._chapNum+'.'+n._step+'</span>':'';
     var h='<div class="card-head">'+step+'<span class="card-icon">'+iconSVG(n.type)+'</span>'+
-      '<span class="card-title">'+esc(n.title)+'</span></div>';
+      '<span class="card-title">'+breakable(n.title)+'</span></div>';
     if(rows.length){
       h+='<div class="card-rows">';
       rows.forEach(function(r){ h+='<div class="card-row"><span class="crk">'+esc(r[0])+'</span><span class="crv">'+esc(r[1])+'</span></div>'; });
@@ -724,6 +1211,7 @@
      HOVER CARD
      ============================================================ */
   var hoverEl=document.getElementById("hover");
+  var edgeLabelEl=document.getElementById("edgelabel");
   var hoverActive=false;
 
   function renderDetailValue(v,out){
@@ -763,7 +1251,7 @@
       '<span class="hicon" style="--nc:'+c+';--nc-fill:'+hexRgba(c,.16)+'">'+iconSVG(n.type)+'</span>'+
       '<span class="hmeta"><span class="htype" style="--nc:'+c+'">'+esc(n._type.label)+'</span>'+
       '<span class="hchap">'+esc(chap.title||n.chapter||"")+'</span></span></div>'+
-      '<div class="htitle">'+esc(n.title)+'</div>'+(n.plain?'<div class="hplain">'+esc(n.plain)+'</div>':'')+
+      '<div class="htitle">'+breakable(n.title)+'</div>'+(n.plain?'<div class="hplain">'+esc(n.plain)+'</div>':'')+
       '<div class="hbody">'+renderDetailObject(n.details||{},false)+'</div>'+
       '<div class="hcode"><span>code</span><code>'+esc(n.code||"—")+'</code></div>';
     hoverEl.innerHTML=html; hoverEl.classList.add("show");
@@ -798,16 +1286,54 @@
     if(lastEv) placeHover(lastEv);
     highlightIncident(stage,n,true);
   }
-  function onEdgeHover(stage,edge){
+  function onEdgeHover(stage,edge,ev){
     hoverActive=true;
-    showEdgeCard(stage,edge);
+    hideHover();
+    if(selEdge===edge){ edgeLabelEl.classList.remove("show"); return; }
+    var a=edge.a,b=edge.b;
+    var c=a._type.color;
+    function stepLbl(n){ return (n._chapNum!=null&&n._step!=null)?(n._chapNum+"."+n._step):""; }
+    var html='<span class="el-row" style="--nc:'+c+';--nc-fill:'+hexRgba(c,.16)+'">'+
+        (stepLbl(a)?'<b>'+esc(stepLbl(a))+'</b>':'')+esc(a.title)+
+        '<span class="el-arrow">→</span>'+
+        (stepLbl(b)?'<b>'+esc(stepLbl(b))+'</b>':'')+esc(b.title)+'</span>'+
+      (edge.label?'<span class="el-lab">'+esc(edge.label)+'</span>':'');
+    edgeLabelEl.innerHTML=html; edgeLabelEl.classList.add("show");
+    placeEdgeLabel(ev);
+    // thicken + light highlight on the two end cubes
+    edge._hov=true;
+    if(selEdge!==edge){ edge._el.style.strokeWidth=(baseW(edge)+1.4); edge._el.style.opacity="1"; }
+    if(!selEdge){
+      a._el.classList.add("ehov"); b._el.classList.add("ehov");
+    }
+  }
+  function onEdgeHoverMove(ev){ placeEdgeLabel(ev); }
+  function hideEdgeHover(stage){
+    hideHover();
+    edgeLabelEl.classList.remove("show");
+    if(!stage||!stage.edgeList) return;
+    stage.edgeList.forEach(function(e){
+      if(e._hov){ e._hov=false; if(e!==selEdge){ e._el.style.strokeWidth=baseW(e); e._el.style.opacity=baseO(e); } }
+      if(e.a) e.a._el.classList.remove("ehov");
+      if(e.b) e.b._el.classList.remove("ehov");
+    });
+  }
+  function placeEdgeLabel(ev){
+    if(!ev||!edgeLabelEl.classList.contains("show")) return;
+    var r=edgeLabelEl.getBoundingClientRect();
+    var x=ev.clientX+14, y=ev.clientY+16;
+    if(x+r.width>window.innerWidth-8) x=ev.clientX-r.width-14;
+    if(y+r.height>window.innerHeight-8) y=ev.clientY-r.height-16;
+    if(x<8) x=8; if(y<8) y=8;
+    edgeLabelEl.style.left=x+"px"; edgeLabelEl.style.top=y+"px";
   }
   function highlightIncident(stage,n,on){
     if(!stage.edgeList) return;
     stage.edgeList.forEach(function(e){
+      if(e===selEdge) return;
       var inc=(e.from===n.id||e.to===n.id);
       if(inc){ e._el.style.strokeWidth=e.cross?"2":"2.4"; e._el.style.opacity="1"; }
-      else { e._el.style.strokeWidth=e.cross?"1.1":"1.5"; e._el.style.opacity=e.cross?".34":"1"; }
+      else { e._el.style.strokeWidth=baseW(e); e._el.style.opacity=baseO(e); }
     });
   }
   function clearEdgeOn(){}
@@ -816,7 +1342,9 @@
      SELECTION + CLIPBOARD
      ============================================================ */
   var selected=null;
+  var selEdge=null;
   function selectNode(stage,n){
+    if(selEdge) clearEdgeSelection(stage);
     var c=n._type.color;
     if(selected && selected._el) selected._el.classList.remove("sel");
     selected=n;
@@ -842,19 +1370,58 @@
       var pathEdge=(reach[e.from]&&reach[e.to]);
       e._el.classList.toggle("hl",pathEdge);
       if(pathEdge){ e._el.style.opacity="1"; e._el.style.strokeWidth="2.2"; e._el.style.strokeDasharray="none"; }
-      else { e._el.style.opacity=e.cross?".14":".3"; e._el.style.strokeWidth=e.cross?"1.1":"1.5"; }
+      else { e._el.style.opacity=e.cross?".14":".3"; e._el.style.strokeWidth=baseW(e); }
     });
     copyCode(n.code);
   }
   function clearSelection(stage){
+    if(!stage) return;
+    clearEdgeSelection(stage);
     selected=null;
-    stage.model.nodes.forEach(function(m){ if(m._el){ m._el.classList.remove("sel","pathhl"); } });
+    stage.model.nodes.forEach(function(m){ if(m._el){ m._el.classList.remove("sel","pathhl","esel","edim","ehov"); } });
     stage.edgeList.forEach(function(e){
-      e._el.classList.remove("hl");
-      e._el.style.opacity=e.cross?".34":"1";
-      e._el.style.strokeWidth=e.cross?"1.1":"1.5";
-      e._el.style.strokeDasharray=e.dashed?"5 5":"none";
+      e._hov=false;
+      e._el.classList.remove("hl","esel");
+      e._el.style.stroke=e.cross?(e.dashed?"var(--edge-dash)":"var(--edge-cross)"):e.a._type.color;
+      e._el.style.opacity=baseO(e);
+      e._el.style.strokeWidth=baseW(e);
+      e._el.style.strokeDasharray=e.dashed?"7 5":"none";
     });
+    drawMinimap(stage);
+  }
+
+  /* ---- connector selection ---- */
+  function clearEdgeSelection(stage){
+    if(!stage||!selEdge) return;
+    var e=selEdge; selEdge=null;
+    e._el.classList.remove("esel");
+    e._el.style.stroke=e.cross?(e.dashed?"var(--edge-dash)":"var(--edge-cross)"):e.a._type.color;
+    e._el.style.strokeWidth=baseW(e);
+    e._el.style.opacity=baseO(e);
+    e._el.style.strokeDasharray=e.dashed?"7 5":"none";
+    stage.model.nodes.forEach(function(m){ if(m._el) m._el.classList.remove("esel","edim"); });
+    stage.edgeList.forEach(function(ed){ ed._el.style.opacity=baseO(ed); });
+    drawMinimap(stage);
+  }
+  function selectEdge(stage,edge){
+    hideEdgeHover(stage);
+    if(selected && selected._el) selected._el.classList.remove("sel");
+    selected=null;
+    if(selEdge && selEdge!==edge) clearEdgeSelection(stage);
+    stage.model.nodes.forEach(function(m){ if(m._el) m._el.classList.remove("pathhl"); });
+    selEdge=edge;
+    edge._el.classList.add("esel");
+    edge._el.style.stroke="var(--accent)";
+    edge._el.style.strokeWidth="3.6";
+    edge._el.style.opacity="1";
+    edge._el.style.strokeDasharray=edge.dashed?"2 3":"none";
+    if(edge._el.parentNode) edge._el.parentNode.appendChild(edge._el);
+    edge.a._el.classList.add("esel"); edge.b._el.classList.add("esel");
+    stage.model.nodes.forEach(function(m){
+      if(m._el && m!==edge.a && m!==edge.b) m._el.classList.add("edim");
+    });
+    stage.edgeList.forEach(function(e2){ if(e2!==edge) e2._el.style.opacity=".1"; });
+    drawMinimap(stage);
   }
 
   var toastEl=document.getElementById("toast"), toastTimer=null;
@@ -906,16 +1473,30 @@
       var zw=Math.max(80,ch._x1-ch._x0-36);
       var chars=Math.max(5,(ch.title||"").length);
       var byWidth=zw/(chars*0.58);
-      var head=(ch._contentTop!=null?ch._contentTop-ch._top-22:70);
-      var byVert=Math.max(11,head)/1.15;
+      /* space reserved at the top of the zone for the title + summary */
+      var avail=(ch._contentTop!=null?ch._contentTop-ch._top:104)-10;
+      var byVert=Math.max(11,avail)/1.15;
       var fs=clamp(23/s,15,120);
       fs=Math.min(fs,byWidth,byVert);
       fs=Math.max(fs,11);
-      t.style.fontSize=fs.toFixed(1)+"px";
       t.style.whiteSpace="nowrap";
       t.style.overflow="hidden";
       t.style.textOverflow="ellipsis";
-      if(sum){ sum.style.display=""; sum.style.fontSize=Math.max(11,Math.min(fs*0.45,34)).toFixed(1)+"px"; sum.style.display="-webkit-box"; sum.style.webkitLineClamp="3"; sum.style.webkitBoxOrient="vertical"; sum.style.overflow="hidden"; sum.style.color="var(--ink-dim, var(--ink))"; }
+      if(sum){
+        sum.style.display="-webkit-box";
+        sum.style.webkitLineClamp="3"; sum.style.webkitBoxOrient="vertical";
+        sum.style.overflow="hidden"; sum.style.color="var(--ink-dim, var(--ink))";
+      }
+      /* shrink until the head block fits inside the reserved space */
+      var guard=0;
+      while(guard<24){
+        t.style.fontSize=fs.toFixed(1)+"px";
+        if(sum) sum.style.fontSize=Math.max(10.5,Math.min(fs*0.45,34)).toFixed(1)+"px";
+        if(ch._headEl.offsetHeight<=avail||fs<=11) break;
+        fs-=1; guard++;
+        if(guard===8&&sum) sum.style.webkitLineClamp="2";
+        if(guard===16&&sum) sum.style.webkitLineClamp="1";
+      }
     });
   }
   function setCam(stage,px,py,scale,animate){
@@ -964,6 +1545,8 @@
     viewport.addEventListener("pointerdown",function(ev){
       if(ev.target.closest(".obj")) return;
       if(ev.button!==0 && ev.pointerType==="mouse") return;
+      var hitEl=null;
+      try{ if(ev.target&&ev.target.classList&&ev.target.classList.contains("edge-hit")) hitEl=ev.target; }catch(e){}
       viewport.setPointerCapture(ev.pointerId);
       viewport.classList.add("dragging");
       var lx=ev.clientX, ly=ev.clientY, moved=0;
@@ -974,9 +1557,17 @@
       };
       var up=function(){
         viewport.classList.remove("dragging");
-        if(moved>4) suppressClick=true;
         viewport.removeEventListener("pointermove",mv);
         viewport.removeEventListener("pointerup",up);
+        if(moved>4){ suppressClick=true; return; }
+        suppressClick=true;
+        if(!active) return;
+        if(hitEl){
+          var edge=active.els.edges[hitEl.dataset.key];
+          if(edge) selectEdge(active,edge);
+        } else {
+          clearSelection(active);
+        }
       };
       viewport.addEventListener("pointermove",mv);
       viewport.addEventListener("pointerup",up);
@@ -1036,12 +1627,13 @@
   function setActive(id){
     STAGES.forEach(function(s){
       var on=s.model.provider===id;
+      if(!on && s.edgeList) clearSelection(s);
       s.world.classList.toggle("active",on);
       if(on){ active=s; }
     });
     Array.prototype.forEach.call(tabHost.children,function(b){ b.classList.toggle("active", b.dataset.id===id); });
     coderef.textContent=active.model.code_ref||"";
-    buildChips(active); buildLegend();
+    buildChips(active); buildLegend(); buildIndex(active);
     fitTitles(active);
     if(!active.cam){ fitAll(active,false); } else { apply(active); drawMinimap(active); }
   }
@@ -1075,7 +1667,7 @@
   var index=[];
   function buildIndex(stage){
     index=stage.model.nodes.map(function(n){
-      var hay=(n.title+" "+n.id+" "+n.type+" "+n.chapter+" "+JSON.stringify(n.details||{})).toLowerCase();
+      var hay=(n.title+" "+n.id+" "+n.type+" "+n.chapter+" "+(n.plain||"")+" "+JSON.stringify(n.details||{})).toLowerCase();
       return {n:n, hay:hay};
     });
   }
@@ -1137,7 +1729,7 @@
   var MM_W=220, MM_H=150, MM_P=8;
   function mmScale(stage){ return Math.min((MM_W-MM_P*2)/stage.W,(MM_H-MM_P*2)/stage.H); }
   function drawMinimap(stage){
-    if(!stage) return;
+    if(!stage||!stage.cam) return;
     var s=mmScale(stage);
     var ox=(MM_W-stage.W*s)/2, oy=(MM_H-stage.H*s)/2;
     mmx.clearRect(0,0,MM_W,MM_H);
@@ -1147,6 +1739,18 @@
       mmx.fillRect(ox+n._x*s, oy+n._y*s, Math.max(1.5,n._w*s), Math.max(1.2,n._h*s));
     });
     mmx.globalAlpha=1;
+    // selected connector: mark its two end cubes
+    if(selEdge && stage.edgeList && stage.edgeList.indexOf(selEdge)>=0){
+      var accent=getComputedStyle(document.body).getPropertyValue("--accent").trim()||"#4ea1ff";
+      [selEdge.a,selEdge.b].forEach(function(n){
+        if(!n) return;
+        mmx.strokeStyle=accent; mmx.lineWidth=1.6;
+        mmx.strokeRect(ox+n._x*s-1, oy+n._y*s-1, Math.max(2.5,n._w*s)+2, Math.max(2,n._h*s)+2);
+        mmx.fillStyle=accent; mmx.globalAlpha=.32;
+        mmx.fillRect(ox+n._x*s, oy+n._y*s, Math.max(1.5,n._w*s), Math.max(1.2,n._h*s));
+        mmx.globalAlpha=1;
+      });
+    }
     // viewport rect
     var vw=viewport.clientWidth, vh=viewport.clientHeight;
     var wx0=(-stage.cam.px)/stage.cam.scale, wy0=(-stage.cam.py)/stage.cam.scale;
