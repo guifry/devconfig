@@ -141,7 +141,7 @@ in {
       alias sounds-off='rm -f ~/.claude/sounds/.enabled && echo "Sounds disabled"'
 
       alias cs='claude --dangerously-skip-permissions'
-      alias oc='opencode'
+      alias oc='opencode --auto'
       alias ocs='opencode --dangerously-skip-permissions'
       alias claude-status='open https://status.claude.com/'
       alias go60='open https://my.moergo.com/go60/#/layout/go60-macos'
