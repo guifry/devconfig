@@ -141,6 +141,7 @@
   .obj.sel{z-index:9}
   .obj.sel .front{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--nc),0 14px 30px rgba(0,0,0,.55)}
   .obj.pathhl{z-index:6}
+  .obj.pdim{opacity:.2;filter:grayscale(1)}
   .obj.pathhl .front{box-shadow:0 0 0 2px var(--nc),0 0 16px -2px var(--nc)}
   .obj.dim{opacity:.3}
   .obj.edgeon .front{box-shadow:0 0 0 2px var(--nc)}
@@ -1416,7 +1417,7 @@
     reach[n.id]=1;
 
     stage.model.nodes.forEach(function(m){
-      if(m._el) m._el.classList.toggle("pathhl",!!reach[m.id]&&m.id!==n.id);
+      if(m._el){ m._el.classList.toggle("pathhl",!!reach[m.id]&&m.id!==n.id); m._el.classList.toggle("pdim",!reach[m.id]); }
     });
     stage.edgeList.forEach(function(e){
       var on=reach[e.from]&&reach[e.to]&&(e.from===n.id||e.to===n.id||reach[e.from]&&reach[e.to]);
@@ -1432,7 +1433,7 @@
     if(!stage) return;
     clearEdgeSelection(stage);
     selected=null;
-    stage.model.nodes.forEach(function(m){ if(m._el){ m._el.classList.remove("sel","pathhl","esel","edim","ehov"); } });
+    stage.model.nodes.forEach(function(m){ if(m._el){ m._el.classList.remove("sel","pathhl","pdim","esel","edim","ehov"); } });
     stage.edgeList.forEach(function(e){
       e._hov=false;
       e._el.classList.remove("hl","esel");
@@ -1462,7 +1463,7 @@
     if(selected && selected._el) selected._el.classList.remove("sel");
     selected=null;
     if(selEdge && selEdge!==edge) clearEdgeSelection(stage);
-    stage.model.nodes.forEach(function(m){ if(m._el) m._el.classList.remove("pathhl"); });
+    stage.model.nodes.forEach(function(m){ if(m._el) m._el.classList.remove("pathhl","pdim"); });
     selEdge=edge;
     edge._el.classList.add("esel");
     edge._el.style.stroke="var(--accent)";
