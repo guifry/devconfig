@@ -86,6 +86,7 @@ Use Leaflet 1.9.4 from unpkg.
 - One circle marker per listing, coloured by area, `fitBounds` to all points.
 - Tooltip = price. Popup = price, name, and "Jump to listing →" calling the shared jump function.
 - Set `scrollWheelZoom:false` so the page still scrolls normally.
+- Add a small "Where is this?" button to every listing card (injected by JS is fine) that opens a modal mini-map. Keeps the page uncluttered while answering "where actually is this?".
 
 Do **not** use:
 - `tile.openstreetmap.org` — returns 403 on `file://` pages ("App is not following the tile usage policy").
