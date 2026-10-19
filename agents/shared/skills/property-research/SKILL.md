@@ -16,8 +16,10 @@ Get these before searching. Infer sensible defaults and state them if the user o
 - **Anchor** — city/area and the point commuters travel to (e.g. Edinburgh city centre).
 - **Budget** — max price. Ask for a stretch figure too; run both tiers when given (the £250k vs £400k tier is a different property class).
 - **Min bedrooms**, **property type** (house vs flat, terrace/semi/detached).
+- **Household** — adults, kids (ages), pets. Pets change the brief: cats need safe outdoor access, so favour houses with enclosed gardens over upper flats; add a cat-proof-fence line to the budget.
 - **Must-haves** — garden, garage, parking, condition (turnkey vs project).
-- **Hard limits** — max commute, must-avoid areas, schools priority (primary/secondary age).
+- **Hard limits** — max commute, must-avoid areas, schools priority (primary/secondary age). Commute may be "not needed"; ask only if it is unclear.
+- **Units** — report floor areas in m², never sq ft.
 
 ## Workflow
 
@@ -47,23 +49,47 @@ Get these before searching. Infer sensible defaults and state them if the user o
 
 ## Output HTML
 
-Single self-contained file (inline CSS, no build step), one `<section>` per area, a responsive card grid. Each card: photo (or a labelled placeholder), price badge, status badge (available / under-offer / off-market colour-coded), address, beds/type, garden, school, commute tags, and a listing link. Add a status key and a "verify availability" note at the top. Write to `~/<area>-property-options.html` and `open` it.
+Single self-contained file (inline CSS, no build step). Keep this order:
+
+1. **Header + honest answer.** Budget, household, what the money actually buys. Write the answer short, friendly and plain English — two or three short paragraphs, no jargon, no long caveats. Put one short disclaimer line in the footer instead of a "verify availability" card.
+2. **Shortlist.** 4–6 picks, **exactly 2 cards per row** (1 per row under 760px). Each card has a thumbnail, rank number, one-line reason, price and "Jump to listing →". The whole card is a link to `#<listing-id>`.
+3. **Map** (below).
+4. **Area sections.** One `<section>` per area, responsive card grid.
+5. **Verdict.** How to choose, schools, pets, watch-outs.
+
+Every listing card needs a stable `id` (kebab-case address) and `scroll-margin-top:28px`. Shortlist links and map popups target `#id`. On jump, smooth-scroll and add a `.highlight` class (outline + pulse) to the target for ~3s, then remove it.
+
+Each card: photo (or labelled placeholder), price badge, status badge (available / under-offer / off-market colour-coded), address, beds/type, floor area in m², garden, school, commute tags, and a listing link.
 
 Card shape:
 
 ```html
-<article class="card">
+<article class="card" id="myres-drive">
   <div class="thumb"><span class="price">£245,000</span><span class="status ok">available</span>
     <img src="<og:image>" alt="<address>" referrerpolicy="no-referrer" loading="lazy">
   </div>
   <div class="body">
     <div class="addr">Address (postcode)</div>
-    <div class="facts"><b>4-bed semi</b> · garden, garage · condition</div>
+    <div class="facts"><b>4-bed semi</b> · 137 m² · garden, garage · condition</div>
     <div><span class="tag">School</span><span class="tag">Commute</span></div>
     <a class="link" href="<listing-url>" target="_blank" rel="noopener">View listing →</a>
   </div>
 </article>
 ```
+
+## Map
+
+Use Leaflet 1.9.4 from unpkg.
+
+- **Base:** Esri `Canvas/World_Light_Gray_Base` plus `Canvas/World_Light_Gray_Reference` for labels.
+- **Fallback:** swap to Esri `World_Street_Map` after repeated tile errors.
+- One circle marker per listing, coloured by area, `fitBounds` to all points.
+- Tooltip = price. Popup = price, name, and "Jump to listing →" calling the shared jump function.
+- Set `scrollWheelZoom:false` so the page still scrolls normally.
+
+Do **not** use:
+- `tile.openstreetmap.org` — returns 403 on `file://` pages ("App is not following the tile usage policy").
+- CARTO basemaps — now require an API key and render "API KEY REQUIRED" placeholders.
 
 ## Reusing the skill
 
@@ -80,4 +106,7 @@ Vary the anchor, budget and commute limit for any city. Keep sold-price and scho
 
 - Always confirm listing status — the belt moves fast and many options end up SSTC/off market between runs.
 - When showing two budget tiers, make the delta explicit: it is usually the jump from terrace/semi-doer-upper to detached-move-in, and from mid-tier to top-tier schools.
+- Live listing URLs that work: `/for-sale/4-bed-houses/<county>/`, `/for-sale/3-bed-flats-apartments/<area>/`. The shorter `/for-sale/3-bed-flats/<city>/` 404s.
+- For family briefs, rank on garden, school catchment and safety before price. Say which specific estate to avoid, not just the town.
+- Floor areas are as advertised, not measured. Convert to m² and round sensibly.
 - End with a short list of unresolved questions (culture/lifestyle priorities, drive vs rail, primary vs secondary school age) rather than guessing them.
