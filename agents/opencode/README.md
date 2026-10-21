@@ -25,8 +25,15 @@ Opt-outs if it becomes annoying: `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1`,
 
 ## Destructive-command guard
 
-`plugin/guard.js` implements `tool.execute.before` and throws to abort the call.
-It delegates to `agents/shared/guard/check-command.sh` — see CLAUDE.md.
+`plugin/guard.js` registers `ctx.tool.hook("execute.before")` and
+`ctx.shell.hook("create.before")`, and throws to abort the call. Both are needed:
+a tool-driven shell fires both, a shell created through the API fires only the
+second. It delegates to `agents/shared/guard/check-command.sh` — see CLAUDE.md.
+
+V2 plugins default-export `{ id, setup }`; V1's returned hook object does not
+load (the plugin silently reports "failed" and the guard is inert). A changed
+plugin file is only re-read on a fresh server process — `opencode reload` re-runs
+the old module from the ESM cache, so restart the service after editing it.
 
 Why a plugin rather than `permission.bash` globs alone: the glob rules are
 anchored full-string matches against tree-sitter-parsed sub-commands, so
