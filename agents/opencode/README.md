@@ -9,7 +9,6 @@
 | `~/.config/opencode/AGENTS.md` | `agents/shared/instructions.md` |
 | `~/.config/opencode/command` | `agents/shared/commands` |
 | `~/.config/opencode/skills` | `agents/shared/skills` |
-| `~/.config/opencode/plugin` | `agents/opencode/plugin` |
 
 **Verified** against 1.18.27: config discovery globs `{command,commands}/**/*.md`,
 `{skill,skills}/**/SKILL.md` and `{plugin,plugins}/*.{ts,js}`, all with symlinks
@@ -25,28 +24,22 @@ Opt-outs if it becomes annoying: `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1`,
 
 ## Destructive-command guard
 
-`plugin/guard.js` registers `ctx.tool.hook("execute.before")` and
-`ctx.shell.hook("create.before")`, and throws to abort the call. Both are needed:
-a tool-driven shell fires both, a shell created through the API fires only the
-second. It delegates to `agents/shared/guard/check-command.sh` — see CLAUDE.md.
+Not wired here. `agents/shared/guard/check-command.sh` is used by the Claude Code
+hook and Codex; opencode relies on the `permission.bash` deny globs in
+`opencode.json` alone.
 
-V2 plugins default-export `{ id, setup }`; V1's returned hook object does not
-load (the plugin silently reports "failed" and the guard is inert). A changed
-plugin file is only re-read on a fresh server process — `opencode reload` re-runs
-the old module from the ESM cache, so restart the service after editing it.
+A V1 plugin adapter used to live in `agents/opencode/plugin/guard.js`. It broke on
+the V2 plugin API (V1 returned a hook object; V2 needs `export default { id, setup }`)
+and surfaced as "Plugin failed" on every start, so it was removed rather than
+ported. The globs it added coverage over: `sudo rm -rf ~`, `/bin/rm -rf ~`,
+`bash -c "rm -rf ~"` — anchored full-string matches against tree-sitter-parsed
+sub-commands, so those still slip past the deny list.
 
-Why a plugin rather than `permission.bash` globs alone: the glob rules are
-anchored full-string matches against tree-sitter-parsed sub-commands, so
-`foo && rm -rf ~` is caught by `rm *` but `sudo rm -rf ~`, `/bin/rm -rf ~` and
-`bash -c "rm -rf ~"` are not. The plugin sees the raw string. The deny globs in
-`opencode.json` stay as a coarse second layer.
+`--dangerously-skip-permissions` does not defeat the globs: it is a hidden alias
+for `--auto`, which only auto-answers permission *prompts*, and a `deny` rule
+short-circuits before any prompt is published.
 
-`--dangerously-skip-permissions` does not defeat either: it is a hidden alias for
-`--auto`, which only auto-answers permission *prompts*, and a `deny` rule
-short-circuits before any prompt is published. The plugin hook runs earlier
-still, before permission evaluation.
-
-Config and plugins load once at startup — restart opencode after changing them.
+Config loads once at startup — restart opencode after changing it.
 
 ## Known duplication
 

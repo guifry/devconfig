@@ -499,7 +499,6 @@ EOF
   xdg.configFile."opencode/AGENTS.md".source = agentFile "shared/instructions.md";
   xdg.configFile."opencode/command".source = agentFile "shared/commands";
   xdg.configFile."opencode/skills".source = agentFile "shared/skills";
-  xdg.configFile."opencode/plugin".source = agentFile "opencode/plugin";
 
   home.file.".codex/AGENTS.md".source = agentFile "shared/instructions.md";
   home.file.".codex/prompts".source = agentFile "shared/commands";
