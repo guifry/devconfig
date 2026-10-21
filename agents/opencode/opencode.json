@@ -1,5 +1,40 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "lithosai": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LithosAI",
+      "options": {
+        "baseURL": "https://api.lithosai.cloud/v1",
+        "apiKey": "{file:~/.config/opencode/lithos-key.txt}"
+      },
+      "models": {
+        "deepseek-ai/DeepSeek-V4.1-Flash-fast": {
+          "name": "DeepSeek V4.1 Flash fast",
+          "reasoning": true,
+          "limit": { "context": 1048576, "output": 32768 },
+          "options": { "reasoningEffort": "high" },
+          "variants": {
+            "low": { "reasoningEffort": "low" },
+            "high": { "reasoningEffort": "high" },
+            "max": { "reasoningEffort": "max" }
+          }
+        },
+        "deepseek-ai/DeepSeek-V4.1-Flash": {
+          "name": "DeepSeek V4.1 Flash",
+          "reasoning": true,
+          "limit": { "context": 1048576, "output": 32768 },
+          "options": { "reasoningEffort": "high" }
+        },
+        "moonshotai/Kimi-K3-fast": {
+          "name": "Kimi K3 fast",
+          "reasoning": true,
+          "limit": { "context": 1048576, "output": 32768 },
+          "options": { "reasoningEffort": "high" }
+        }
+      }
+    }
+  },
   "mcp": {
     "notion": {
       "type": "remote",
