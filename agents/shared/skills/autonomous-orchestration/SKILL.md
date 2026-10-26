@@ -22,6 +22,7 @@ You are the orchestrator. You plan, dispatch, check, merge and keep the record. 
 ## 1b. Speed with quality: the failure to avoid
 
 The usual way an autonomous run goes wrong is not recklessness but over-caution: testing every step, waiting in sequence, re-verifying, perfecting a corner. Aim at accuracy, intelligence and quality **and** speed:
+- Do not lint or run CI between steps or tasks: far too slow. Lint and CI run once per chapter.
 - Test in big groups, not per step. Inside a task: only what compiles and imports the change, plus the core invariant suite when core logic changed. No full test suite, no end-to-end, no integration run, no lint between steps or tasks. The full suite and the end-to-end run happen once per chapter (a big group of tasks), with the chapter-end review.
 - Never re-run, re-check or re-plan what is settled. Trust a passed review; read its verdict, not the diff again.
 - No side quests: a problem outside the task goes to the register as deferred with its trigger, unless it blocks the task.
@@ -63,7 +64,8 @@ Read and apply the project's plan-optimisation skill if present. Find the critic
 2. **Implement**: DeepSeek, prompt = "read BUILDING_WELL.md, then the plan, carry it out, commit each step, write T<n>-REPORT.md, do not push". Split very large plans into one run per phase.
 3. **Review loop** until no P0 or P1 (`scripts/loop.sh`):
    - each round a fresh reviewer that reads the vocabulary/decisions/spec sections the plan cites **in full**, the design note, the decisions for the task, the plan, the report and earlier reviews, then reviews `git diff <integration>...HEAD`;
-   - reviewers judge in order: spec model and invariants, generality (special-case code where the spec has a general layer is P1), domain correctness, code-quality rules; cosmetic issues are P2 and never block;
+   - adversarial reviews are the one step never cut for speed. Reviewers judge in order: (a) spec model and invariants: does it do what the spec says, is it actually implemented and wired, not just present; (b) failure modes: what breaks on a missing value, a zero, a sign change, two sources on one item, an undo, a partial period, empty history, concurrency, a retry; (c) generality: special-case code where the spec has a general layer is P1; (d) domain correctness; (e) code quality, as P1 when it hurts maintenance: low cyclomatic complexity, no huge functions, no massive modules, behaviour organised semantically into classes (one or two per module) rather than free-floating functions or piles of private helpers, explicit English names for classes, functions and variables, no hidden or global dependencies (inject through constructors), no magic values, strict typing;
+   - cosmetic issues are P2 and never block;
    - review file opens with `VERDICT: PASS` or `VERDICT: FAIL`; then a fix round, then a new review;
    - escalation: round 4 (and 8) of any task is Opus high; the three hardest tasks also get an Opus high review at round 2, forced even if round 1 passed, and the fix after an Opus review on those is Opus medium; cap 8 rounds, then decide yourself.
 4. **Merge through a PR** (`scripts/merge.sh`): push the branch, `gh pr create --base <integration>` with a body of what changed, rows closed, review rounds and verdicts, decisions; `gh pr merge --merge` with a descriptive title `verb: what it does (T<n>)`; pull; update status, issue, register.
@@ -72,7 +74,9 @@ Inside a task run only what the change needs to compile and import, plus the pro
 
 ## 6. Self-check
 
-Every four merged tasks, at each chapter boundary, and whenever something waited longer than expected, re-read this skill and the plan-optimisation skill and answer in the log, in a few lines: what runs now and what waits, and could a waiting item run in parallel? What did I verify, and was it needed now? Did I re-run or re-plan settled work? Did I polish or build scaffolding that changes nothing? Did I go down a side quest while the critical path waited? What changes from now on? Then make those changes at once.
+**Quick check every five steps** (five dispatches, merges or decisions), a few lines in the log: am I still on the critical path, or drifting into a tangent? Is the current plan still optimal: is anything waiting that could run in parallel without sharing files? Am I spending time reviewing or testing beyond what is needed (beyond adversarial reviews, which are never cut)? Are my recent orchestration decisions still right? Fix what it finds at once.
+
+**Full check** every four merged tasks, at each chapter boundary, and whenever something waited longer than expected: re-read this skill and the plan-optimisation skill, then answer: what runs now and what waits, and could a waiting item run in parallel? What did I verify, and was it needed now? Did I re-run or re-plan settled work? Did I lint, run CI or tests between steps? Did I polish or build scaffolding that changes nothing? Did I go down a side quest while the critical path waited? What changes from now on? Then make those changes at once.
 
 ## 7. Talking to the user
 
