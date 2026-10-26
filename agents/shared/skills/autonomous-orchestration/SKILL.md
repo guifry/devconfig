@@ -19,6 +19,16 @@ You are the orchestrator. You plan, dispatch, check, merge and keep the record. 
 - **Speed of development first, quality never traded.** Effort goes on following the spec and on sharp adversarial reviews. None on side quests, polishing a corner while the critical path waits, full test suites or lint between chapters, or re-checking settled work. Out-of-scope problems go to the gap register / decision log as deferred, with a trigger.
 - **Build the general layer the spec defines.** A new case is new content, never new code. Shortcuts are recorded, never silent.
 
+## 1b. Speed with quality: the failure to avoid
+
+The usual way an autonomous run goes wrong is not recklessness but over-caution: testing every step, waiting in sequence, re-verifying, perfecting a corner. Aim at accuracy, intelligence and quality **and** speed:
+- Test in big groups, not per step. Inside a task: only what compiles and imports the change, plus the core invariant suite when core logic changed. No full test suite, no end-to-end, no integration run, no lint between steps or tasks. The full suite and the end-to-end run happen once per chapter (a big group of tasks), with the chapter-end review.
+- Never re-run, re-check or re-plan what is settled. Trust a passed review; read its verdict, not the diff again.
+- No side quests: a problem outside the task goes to the register as deferred with its trigger, unless it blocks the task.
+- No mock scaffolding or test infrastructure that does not change the result.
+- Keep every lane busy: while one task builds, the next task's plan is being drafted and the review of the last one is running.
+- Put the quality effort where it changes the result: the spec read in full, precise plans, and sharp adversarial reviews.
+
 ## 2. Roles and models
 
 | Work | Who |

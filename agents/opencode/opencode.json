@@ -12,25 +12,46 @@
         "deepseek-ai/DeepSeek-V4.1-Flash-fast": {
           "name": "DeepSeek V4.1 Flash fast",
           "reasoning": true,
-          "limit": { "context": 1048576, "output": 32768 },
-          "options": { "reasoningEffort": "high" },
+          "limit": {
+            "context": 1048576,
+            "output": 32768
+          },
+          "options": {
+            "reasoningEffort": "high"
+          },
           "variants": {
-            "low": { "reasoningEffort": "low" },
-            "high": { "reasoningEffort": "high" },
-            "max": { "reasoningEffort": "max" }
+            "low": {
+              "reasoningEffort": "low"
+            },
+            "high": {
+              "reasoningEffort": "high"
+            },
+            "max": {
+              "reasoningEffort": "max"
+            }
           }
         },
         "deepseek-ai/DeepSeek-V4.1-Flash": {
           "name": "DeepSeek V4.1 Flash",
           "reasoning": true,
-          "limit": { "context": 1048576, "output": 32768 },
-          "options": { "reasoningEffort": "high" }
+          "limit": {
+            "context": 1048576,
+            "output": 32768
+          },
+          "options": {
+            "reasoningEffort": "high"
+          }
         },
         "moonshotai/Kimi-K3-fast": {
           "name": "Kimi K3 fast",
           "reasoning": true,
-          "limit": { "context": 1048576, "output": 32768 },
-          "options": { "reasoningEffort": "high" }
+          "limit": {
+            "context": 1048576,
+            "output": 32768
+          },
+          "options": {
+            "reasoningEffort": "high"
+          }
         }
       }
     }
@@ -42,7 +63,11 @@
     },
     "apple-mail": {
       "type": "local",
-      "command": ["npx", "-y", "macos-mail-mcp"]
+      "command": [
+        "npx",
+        "-y",
+        "macos-mail-mcp"
+      ]
     }
   },
   "permission": {
@@ -61,7 +86,7 @@
   },
   "agent": {
     "review": {
-      "description": "Reviews PRs and docs changes critically. Focuses on real bugs, logic errors, production risks, and architecture — not style or formatting.",
+      "description": "Reviews PRs and docs changes critically. Focuses on real bugs, logic errors, production risks, and architecture \u2014 not style or formatting.",
       "mode": "subagent",
       "temperature": 0.1,
       "permission": {
@@ -79,7 +104,7 @@
           "git branch *": "allow"
         }
       },
-      "prompt": "You are a code reviewer. Independently critique the work, do not justify it.\n\nFocus on:\n- Bugs and behavioral regressions\n- Logic errors (incorrect business logic, accounting, forecasting, data transformations)\n- API/schema compatibility (breaking changes, missing migrations, consumer impact)\n- Stacked-branch issues (merge order, dependencies between branches)\n- Stale docs (docstrings, README, ADRs that no longer match reality)\n- Missing or insufficient tests (edge cases, error paths, regression coverage)\n- Production risks (error handling, race conditions, security, data loss)\n- Over-engineering or unnecessary complexity\n\nIgnore: style preferences, trivial naming, missing comments, formatting.\n\nStart with a one-line summary of what the change does.\nThen list findings with file/line references and severity:\n- 🔴 real bug / will break in production\n- 🟡 should fix before merge\n- ⚪️ consider for future / minor\n\nRun targeted tests or static checks only if useful. If nothing serious, say so and list residual risks or test gaps."
+      "prompt": "You are a code reviewer. Independently critique the work, do not justify it.\n\nFocus on:\n- Bugs and behavioral regressions\n- Logic errors (incorrect business logic, accounting, forecasting, data transformations)\n- API/schema compatibility (breaking changes, missing migrations, consumer impact)\n- Stacked-branch issues (merge order, dependencies between branches)\n- Stale docs (docstrings, README, ADRs that no longer match reality)\n- Missing or insufficient tests (edge cases, error paths, regression coverage)\n- Production risks (error handling, race conditions, security, data loss)\n- Over-engineering or unnecessary complexity\n\nIgnore: style preferences, trivial naming, missing comments, formatting.\n\nStart with a one-line summary of what the change does.\nThen list findings with file/line references and severity:\n- \ud83d\udd34 real bug / will break in production\n- \ud83d\udfe1 should fix before merge\n- \u26aa\ufe0f consider for future / minor\n\nRun targeted tests or static checks only if useful. If nothing serious, say so and list residual risks or test gaps."
     }
   }
 }

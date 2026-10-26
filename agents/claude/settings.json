@@ -56,7 +56,7 @@
   "effortLevel": "medium",
   "modelSettings": {
     "claude-opus-5-5": {
-      "effortLevel": "low"
+      "effortLevel": "high"
     }
   },
   "tui": "fullscreen",
