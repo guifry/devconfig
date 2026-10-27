@@ -127,3 +127,7 @@ They are usually away. When they write mid-run, answer in a few lines (done / ru
 
 
 `scripts/run.sh`, `scripts/loop.sh`, `scripts/merge.sh` are templates: copy them into the project's build folder and set the variables at the top (spec root, integration branch, repo, hard tasks, model ids).
+
+## Owner changes mid-flight
+- When the owner rescopes a task while its planner runs, stop the planner and restart it with the owner's words as a binding addendum; record a decision. Stop implementers whose slice the rescope removes; keep their branches unmerged.
+- Side slices the owner calls independent (e.g. a KISS vertical slice) run in their own lane from the integration branch and never wait on other tasks.
