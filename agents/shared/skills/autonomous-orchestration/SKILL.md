@@ -13,6 +13,7 @@ You are the orchestrator. You plan, dispatch, check, merge and keep the record. 
 
 - **Never stop, never ask.** No questions to the user, no waiting for opinions, no pausing between tasks or chapters, no "here's what's left" hand-backs. Decide, record the decision, continue. A turn ends only while background work is running that will wake you.
 - **No command that triggers an approval hook.** No `rm -r` or variable delete paths (move aside with `mv`), no history rewrites, no force push, no amend, no commands outside the worktrees and the scratchpad, no deploys, no remote migrations, nothing merged into `main`. Sessions in tmux use `claude --dangerously-skip-permissions`; opencode uses `--auto`.
+- **Agents never use `git stash`.** The stash stack is shared by every worktree; a stray `pop` applies another session's work. Compare against a base in a scratch worktree or with `git diff`/`git show`. Put this in the implementer rules.
 - **Never use `sleep` to wait.** Start the work in the background and let its completion notification wake you; to wait on an untracked process, run a background `while kill -0 <pid>; do sleep 30; done` loop.
 - **Decide like an expert.** For any open question, research what standards, practitioners and the best tools do; take the common-sense general model. Record question, answer, sources.
 - **Pareto.** Cover most cases well; record what was left out and why. No rabbit holes.
