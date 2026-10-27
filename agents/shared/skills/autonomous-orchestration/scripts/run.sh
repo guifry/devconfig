@@ -6,6 +6,7 @@ OPUS_MODEL=${OPUS_MODEL:-claude-opus-5-5}
 DEEPSEEK_MODEL=${DEEPSEEK_MODEL:-deepseek/deepseek-flash}
 TASK=$1; ROLE=$2; ROUND=$3; WT=$4; BR=$5; ENGINE=${6:-deepseek}
 T=$PROMPTS/$( [ "$ROLE" = review ] && echo REVIEW || echo FIX )-template.md
+[ "$ROLE" = review ] && [ "$REVIEW_KIND" = followup ] && T=$PROMPTS/REVIEW-followup-template.md
 P=$(sed -e "s/TASK/$TASK/g" -e "s/ROUND/$ROUND/g" -e "s#BRANCH#$BR#g" "$T")
 cd "$WT" || exit 1
 if [ "$ENGINE" = opus ] || [ "$ENGINE" = opus-medium ]; then
