@@ -30,6 +30,14 @@ The usual way an autonomous run goes wrong is not recklessness but over-caution:
 - Keep every lane busy: while one task builds, the next task's plan is being drafted and the review of the last one is running.
 - Put the quality effort where it changes the result: the spec read in full, precise plans, and sharp adversarial reviews.
 
+## 1c. No duplicated logic (the most damaging AI failure)
+
+Agents duplicate rather than reuse: the same rule in several classes, a fix patched at one call site while sibling copies remain, one rule owned by several entities. Evidence: GitClear 2025 (copy/paste up, refactoring down), "More Code, Less Reuse" (agent PRs ~1.9x more redundant). Every prompt carries this, every time:
+- **Implementers and fixers search first.** Before writing or changing logic, search the codebase for existing code implementing the same rule or concept (names, domain words, types, every call site) and reuse or extend it. One owner per business rule. When fixing, find every place the rule lives, consolidate into one owner, then fix there. Exceptions only with a stated reason (genuinely different layer, real nuance, meant to drift). Reports list each rule touched and its owner.
+- **Reviewers hunt duplication every round.** Unjustified duplication or several owners of one rule is a P1.
+- **Fixers inherit the line of work.** A fix round continues the implementer's session (opencode -s); a fixer on a different model reads every earlier review, every fix-round report and the branch history, so it does not re-break earlier fixes.
+- **A loop finding the same kind of defect in new places** means a rule is spread: pause, have a stronger model consolidate the design, then continue.
+
 ## 2. Roles and models
 
 | Work | Who |
