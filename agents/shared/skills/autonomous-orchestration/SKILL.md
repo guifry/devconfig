@@ -131,3 +131,6 @@ They are usually away. When they write mid-run, answer in a few lines (done / ru
 ## Owner changes mid-flight
 - When the owner rescopes a task while its planner runs, stop the planner and restart it with the owner's words as a binding addendum; record a decision. Stop implementers whose slice the rescope removes; keep their branches unmerged.
 - Side slices the owner calls independent (e.g. a KISS vertical slice) run in their own lane from the integration branch and never wait on other tasks.
+
+## Pre-existing failures
+- Tests failing before the line of work are ignored; skip with a TODO reason if in the way, list in the report; reviewers never flag them.
