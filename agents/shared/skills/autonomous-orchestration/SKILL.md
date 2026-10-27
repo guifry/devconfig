@@ -71,7 +71,7 @@ Read and apply the project's plan-optimisation skill if present. Find the critic
 
 ## 5. Every task
 
-1. **Plan** (`build/T<n>-PLAN.md`), drafted by an Opus sub-agent where large: goal, spec sections, owned files, ordered steps with one commit each, exact check commands, invariant tests worth writing, out of scope, report contents. Design notes come first where the spec is short.
+1. **Plan** (`build/T<n>-PLAN.md`), drafted by Opus high, then an **adversarial plan review by Opus high** (spec conformance, domain design, duplication and a complete rule-ownership table, failure modes, file ownership), then the planner amends it; only then implementation. A sharp plan saves many implementation review rounds. The plan lists, for each business rule it touches, the single existing or new owner found by searching the code. Contents: goal, spec sections, owned files, ordered steps with one commit each, exact check commands, invariant tests worth writing, out of scope, report contents. Design notes come first where the spec is short.
 2. **Implement**: DeepSeek, prompt = "read BUILDING_WELL.md, then the plan, carry it out, commit each step, write T<n>-REPORT.md, do not push". Split very large plans into one run per phase.
 3. **Review loop** until no P0 or P1 (`scripts/loop.sh`):
    - each round a fresh reviewer that reads the vocabulary/decisions/spec sections the plan cites **in full**, the design note, the decisions for the task, the plan, the report and earlier reviews, then reviews `git diff <integration>...HEAD`;
