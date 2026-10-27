@@ -36,6 +36,7 @@ Agents duplicate rather than reuse: the same rule in several classes, a fix patc
 - **Implementers and fixers search first.** Before writing or changing logic, search the codebase for existing code implementing the same rule or concept (names, domain words, types, every call site) and reuse or extend it. One owner per business rule. When fixing, find every place the rule lives, consolidate into one owner, then fix there. Exceptions only with a stated reason (genuinely different layer, real nuance, meant to drift). Reports list each rule touched and its owner.
 - **Reviewers hunt duplication every round.** Unjustified duplication or several owners of one rule is a P1.
 - **Fixers inherit the line of work.** A fix round continues the implementer's session (opencode -s); a fixer on a different model reads every earlier review, every fix-round report and the branch history, so it does not re-break earlier fixes.
+- **Textual clone scan only before every second review round** (never during implementation; whole codebase, ~1 min), filtered to clones involving the branch's changes; ignore pre-existing duplication outside the line of work. It catches copy-paste only, so the reviewer still hunts semantic duplication.
 - **A loop finding the same kind of defect in new places** means a rule is spread: pause, have a stronger model consolidate the design, then continue.
 
 ## 2. Roles and models
