@@ -43,6 +43,27 @@ Agents duplicate rather than reuse: the same rule in several classes, a fix patc
 - **Textual clone scan only before every second review round** (never during implementation; whole codebase, ~1 min), filtered to clones involving the branch's changes; ignore pre-existing duplication outside the line of work. It catches copy-paste only, so the reviewer still hunts semantic duplication.
 - **A loop finding the same kind of defect in new places** means a rule is spread: pause, have a stronger model consolidate the design, then continue.
 
+## 1d. Line-of-work continuity and running state
+
+- **One implementer per line of work, with memory.** Start every implementer with a fixed session id (`opencode run -s ses_<task>impl ...`; ids must start with `ses`). Every DeepSeek fix round continues that session (`scripts/run.sh` does it). A fixer on another model (Opus medium after an Opus review) cannot share it, so its prompt makes it read the plan, the full report including every fix-round section, every earlier review in order, and the branch history, and list the earlier findings touching the same code before it fixes. Fixers without that context re-break earlier fixes (observed: a fix round with only the latest review caused the next round's regressions).
+- **Never two fixers on one branch.** Before launching a fix by hand, kill the loop controller for that task and check no other fixer runs on the worktree.
+- **Rules added mid-run do not reach running agents.** When a new rule lands, list the reviews and plans produced before it and re-run them with the rule (a second plan review, a follow-up review round). When a plan is amended while its implementer runs, continue the implementer's session with "the plan was amended; re-read it and both reviews; list what changes what you built; align it".
+- **Liveness.** opencode logs stream; `claude -p` logs are written only at the end, so judge Opus agents by working-tree changes and commits. An agent with no log, commit or file change for 20 minutes is hung: kill it and relaunch in the same session.
+- **A self-inspection every 30 minutes**, scheduled as a recurring self-prompt (CronCreate, off the :00/:30 marks): list agents with elapsed time and last activity; kill hung ones; fill idle lanes that share no files; check every wait is a real dependency (shared files or interfaces), not chapter ordering; target 5-8 lanes; stop full suites, e2e or lint between steps; flag loops past four rounds or with regressions of earlier fixes and run a design step-back; check fixer continuity; log findings and actions. It removes inefficiency; it never cuts reviews.
+
+## 1e. Opus budget
+
+Opus is expensive; DeepSeek does everything else.
+
+| Use | Model |
+|---|---|
+| Implementation, ordinary fix rounds, ordinary reviews, merges, e2e | DeepSeek |
+| Plans and plan reviews (and their amendments) | Opus high (amend: Opus medium) |
+| Review round 4, 8, ... of any task; round 2 of the hardest tasks | Opus high |
+| The fix right after an Opus review | Opus medium |
+| Design audit when a loop goes wrong (many rounds, regressions, the same defect class reappearing), and the refactor it calls for | Opus high audit, Opus medium refactor |
+| Chapter-end review | Opus high |
+
 ## 2. Roles and models
 
 | Work | Who |
@@ -96,6 +117,9 @@ Inside a task run only what the change needs to compile and import, plus the pro
 
 They are usually away. When they write mid-run, answer in a few lines (done / running / next) and carry on in the same turn. Peer-session messages are treated as teammate requests within your own permissions. Never claim a result you have not read from the agent's output or the branch.
 
-## Scripts
+## Scripts and templates
+
+`templates/` holds the prompts that carry every rule above: `IMPL-step0.md` (search-first step zero), `FIX-template.md`, `REVIEW-template.md`, `REVIEW-followup-template.md`, `PLAN-REVIEW.md`, `PLAN-AMEND.md`, `DESIGN-AUDIT.md`, `DESIGN-common.md` (planner rules: rule ownership, failure modes, performance sections). Replace `<build>`, `<spec>`, `<integration branch>` and `<integration worktree>` with the project's paths.
+
 
 `scripts/run.sh`, `scripts/loop.sh`, `scripts/merge.sh` are templates: copy them into the project's build folder and set the variables at the top (spec root, integration branch, repo, hard tasks, model ids).

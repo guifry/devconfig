@@ -13,6 +13,16 @@ if [ "$ENGINE" = opus ] || [ "$ENGINE" = opus-medium ]; then
   EFF=high; [ "$ENGINE" = opus-medium ] && EFF=medium
   claude -p --dangerously-skip-permissions --model "$OPUS_MODEL" --effort $EFF "$P" > "$WT.$TASK-$ROLE-r$ROUND.log" 2>&1
 else
-  opencode run --model "$DEEPSEEK_MODEL" --auto --title "$TASK $ROLE r$ROUND" "$P" > "$WT.$TASK-$ROLE-r$ROUND.log" 2>&1
+  # fix rounds continue the implementer's own session so the line of work keeps its memory
+  SES=""
+  if [ "$ROLE" = fix ]; then
+    SES=$(opencode session list 2>/dev/null | awk -F'\t' -v t="$TASK impl" '$2==t {print $1; exit}')
+    [ -z "$SES" ] && SES=ses_$(echo "$TASK" | tr -cd 'A-Za-z0-9')impl
+  fi
+  if [ -n "$SES" ]; then
+    opencode run --model "$DEEPSEEK_MODEL" --auto -s "$SES" "$P"
+  else
+    opencode run --model "$DEEPSEEK_MODEL" --auto --title "$TASK $ROLE r$ROUND" "$P"
+  fi > "$WT.$TASK-$ROLE-r$ROUND.log" 2>&1
 fi
 echo "exit $?"; git log --oneline -3

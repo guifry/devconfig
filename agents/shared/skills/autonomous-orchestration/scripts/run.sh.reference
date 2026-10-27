@@ -1,0 +1,24 @@
+#!/bin/bash
+# usage: run.sh TASK ROLE(review|fix) ROUND WORKTREE_DIR BRANCH [opus]
+S=/Users/guilhemforey/projects/taisk-wt-spec-decisions/.claude/guilhem-docs/docs/architecture-study
+TASK=$1; ROLE=$2; ROUND=$3; WT=$4; BR=$5; ENGINE=${6:-deepseek}
+T=$S/build/prompts/$( [ "$ROLE" = review ] && echo REVIEW || echo FIX )-template.md
+[ "$ROLE" = review ] && [ "$REVIEW_KIND" = followup ] && T=$S/build/prompts/REVIEW-followup-template.md
+P=$(sed -e "s/TASK/$TASK/g" -e "s/ROUND/$ROUND/g" -e "s#BRANCH#$BR#g" "$T")
+cd "$WT" || exit 1
+if [ "$ENGINE" = opus ] || [ "$ENGINE" = opus-medium ]; then
+  EFF=high; [ "$ENGINE" = opus-medium ] && EFF=medium
+  claude -p --dangerously-skip-permissions --model claude-opus-5-5 --effort $EFF "$P" > "$WT.$TASK-$ROLE-r$ROUND.log" 2>&1
+else
+  SES=""
+  if [ "$ROLE" = fix ]; then
+    SES=$(cd "$WT" && opencode session list 2>/dev/null | awk -F'	' -v t="$TASK impl" '$2==t {print $1; exit}')
+    [ -z "$SES" ] && SES=ses_$(echo "$TASK" | tr -cd 'A-Za-z0-9')impl
+  fi
+  if [ -n "$SES" ]; then
+    opencode run --model deepseek/deepseek-flash --auto -s "$SES" "$P"
+  else
+    opencode run --model deepseek/deepseek-flash --auto --title "$TASK $ROLE r$ROUND" "$P"
+  fi > "$WT.$TASK-$ROLE-r$ROUND.log" 2>&1
+fi
+echo "exit $?"; git log --oneline -3
