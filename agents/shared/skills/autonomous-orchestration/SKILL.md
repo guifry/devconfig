@@ -134,3 +134,6 @@ They are usually away. When they write mid-run, answer in a few lines (done / ru
 
 ## Pre-existing failures
 - Tests failing before the line of work are ignored; skip with a TODO reason if in the way, list in the report; reviewers never flag them.
+
+## Shared dependencies
+- Worktrees symlinking node_modules: forbid npm ci/install in every prompt; one agent running it empties every worktree.
