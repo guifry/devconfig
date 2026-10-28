@@ -137,3 +137,7 @@ They are usually away. When they write mid-run, answer in a few lines (done / ru
 
 ## Shared dependencies
 - Worktrees symlinking node_modules: forbid npm ci/install in every prompt; one agent running it empties every worktree.
+
+## Cost
+- Cost is driven by context re-sent on every step (cache helps but not free): keep prompts pointing at sections, reviewers scoped to the diff, fix sessions bounded, test output trimmed.
+- Owner preference (28 Oct): fixes and implementation on Codex gpt-6.1-sol medium, not Claude.
