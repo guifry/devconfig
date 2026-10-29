@@ -1236,36 +1236,50 @@ require("lazy").setup({
 		config = function()
 			require("nvim-treesitter-textobjects").setup({ move = { set_jumps = true } })
 			local move = require("nvim-treesitter-textobjects.move")
-			local function jump_to_method_name(forward)
+			local defn_patterns = {
+				python = "(function_definition) @defn",
+				javascript = "(function_declaration) @defn",
+				typescript = "(function_declaration) @defn",
+				tsx = "(function_declaration) @defn",
+				go = "(function_declaration) @defn",
+				rust = "(function_item) @defn",
+				c = "(function_definition) @defn",
+				cpp = "(function_definition) @defn",
+				java = "(method_declaration) @defn",
+			}
+			local class_patterns = {
+				python = "(class_definition) @defn",
+				javascript = "(class_declaration) @defn",
+				typescript = "(class_declaration) @defn",
+				tsx = "(class_declaration) @defn",
+				java = "(class_declaration) @defn",
+			}
+
+			local function declared_name(node)
+				return node:field("name")[1] or node
+			end
+
+			local function jump_to_name(patterns, extract, forward)
 				local ft = vim.bo.filetype
-				local patterns = {
-					python = "(function_definition) @defn",
-					javascript = "(function_declaration) @defn",
-					typescript = "(function_declaration) @defn",
-					tsx = "(function_declaration) @defn",
-					go = "(function_declaration) @defn",
-					rust = "(function_item) @defn",
-					c = "(function_definition) @defn",
-					cpp = "(function_definition) @defn",
-					java = "(method_declaration) @defn",
-				}
 				local pattern = patterns[ft]
-				if not pattern then return end
+				if not pattern then return false end
 				local ok, query = pcall(vim.treesitter.query.parse, ft, pattern)
-				if not ok then return end
-				local ok, parser = pcall(vim.treesitter.get_parser, 0, ft)
-				if not ok or not parser then return end
-				local root = parser:parse()[1]:root()
-				if not root then return end
-				local defns = {}
-				for id, node, _ in query:iter_captures(root, vim.api.nvim_get_current_buf(), 0, -1) do
+				if not ok then return false end
+				local ok_parser, parser = pcall(vim.treesitter.get_parser, 0, ft)
+				if not ok_parser or not parser then return false end
+				local tree = parser:parse()[1]
+				if not tree then return false end
+				local targets = {}
+				for id, node in query:iter_captures(tree:root(), vim.api.nvim_get_current_buf(), 0, -1) do
 					if query.captures[id] == "defn" then
-						local name = node:field("name")[1] or node
-						local r, c = name:range()
-						table.insert(defns, { row = r, col = c })
+						local target = extract(node)
+						if target then
+							local r, c = target:range()
+							table.insert(targets, { row = r, col = c })
+						end
 					end
 				end
-				table.sort(defns, function(a, b)
+				table.sort(targets, function(a, b)
 					if a.row ~= b.row then return a.row < b.row end
 					return a.col < b.col
 				end)
@@ -1273,100 +1287,83 @@ require("lazy").setup({
 				local cursor_row, cursor_col = cursor[1] - 1, cursor[2]
 				local target
 				if forward then
-					for _, d in ipairs(defns) do
-						if d.row > cursor_row or (d.row == cursor_row and d.col > cursor_col) then
-							target = d; break
+					for _, t in ipairs(targets) do
+						if t.row > cursor_row or (t.row == cursor_row and t.col > cursor_col) then
+							target = t
+							break
 						end
 					end
-					if not target and #defns > 0 then target = defns[1] end
+					target = target or targets[1]
 				else
-					for i = #defns, 1, -1 do
-						local d = defns[i]
-						if d.row < cursor_row or (d.row == cursor_row and d.col < cursor_col) then
-							target = d; break
+					for i = #targets, 1, -1 do
+						local t = targets[i]
+						if t.row < cursor_row or (t.row == cursor_row and t.col < cursor_col) then
+							target = t
+							break
 						end
 					end
-					if not target and #defns > 0 then target = defns[#defns] end
+					target = target or targets[#targets]
 				end
-				if target then vim.api.nvim_win_set_cursor(0, { target.row + 1, target.col }) end
+				if not target then return false end
+				vim.api.nvim_win_set_cursor(0, { target.row + 1, target.col })
+				return true
 			end
-			vim.keymap.set({ "n", "x", "o" }, "[m", function() jump_to_method_name(false) end, { desc = "Previous method start" })
-			vim.keymap.set({ "n", "x", "o" }, "]m", function() jump_to_method_name(true) end, { desc = "Next method start" })
 			local function safe_move(fn)
 				return function() pcall(fn) end
 			end
 			vim.keymap.set({ "n", "x", "o" }, "[M", safe_move(function() move.goto_previous_end("@function.outer", "textobjects") end), { desc = "Previous method end" })
 			vim.keymap.set({ "n", "x", "o" }, "]M", safe_move(function() move.goto_next_end("@function.outer", "textobjects") end), { desc = "Next method end" })
-			local function call_name_node(node)
-				local cursor = node:field("function")[1] or node:field("name")[1] or node
-				while cursor do
-					local child = cursor:field("attribute")[1] or cursor:field("property")[1]
-					if child then cursor = child else break end
+			local function called_name(node)
+				local target = node:field("function")[1] or node:field("name")[1] or node
+				while target do
+					local child = target:field("attribute")[1] or target:field("property")[1]
+					if not child then break end
+					target = child
 				end
-				return cursor
+				return target or node
 			end
 			local call_patterns = {
-				python = "(call) @call",
-				javascript = "(call_expression) @call",
-				typescript = "(call_expression) @call",
-				tsx = "(call_expression) @call",
-				go = "(call_expression) @call",
-				rust = "(call_expression) @call",
-				c = "(call_expression) @call",
-				cpp = "(call_expression) @call",
-				java = "(method_invocation) @call",
+				python = "(call) @defn",
+				javascript = "(call_expression) @defn",
+				typescript = "(call_expression) @defn",
+				tsx = "(call_expression) @defn",
+				go = "(call_expression) @defn",
+				rust = "(call_expression) @defn",
+				c = "(call_expression) @defn",
+				cpp = "(call_expression) @defn",
+				java = "(method_invocation) @defn",
 			}
-			local function jump_to_call_name(forward)
-				local ft = vim.bo.filetype
-				local pattern = call_patterns[ft]
-				if not pattern then return end
-				local ok, query = pcall(vim.treesitter.query.parse, ft, pattern)
-				if not ok then return end
-				local parser = vim.treesitter.get_parser(0, ft)
-				if not parser then return end
-				local tree = parser:parse()[1]
-				if not tree then return end
-				local calls = {}
-				for id, node, _ in query:iter_captures(tree:root(), vim.api.nvim_get_current_buf(), 0, -1) do
-					if query.captures[id] == "call" then
-						local target = call_name_node(node)
-						if target then
-							local r, c = target:range()
-							table.insert(calls, { row = r, col = c })
-						end
-					end
+			vim.keymap.set({ "n", "x", "o" }, "[f", function()
+				jump_to_name(call_patterns, called_name, false)
+			end, { desc = "Previous function call name" })
+			vim.keymap.set({ "n", "x", "o" }, "]f", function()
+				jump_to_name(call_patterns, called_name, true)
+			end, { desc = "Next function call name" })
+			local function set_buffer_maps(buf)
+				local ft = vim.bo[buf].filetype
+				local function map(keys, fn, desc)
+					vim.keymap.set({ "n", "x", "o" }, keys, fn, { buffer = buf, desc = desc })
 				end
-				table.sort(calls, function(a, b)
-					if a.row ~= b.row then return a.row < b.row end
-					return a.col < b.col
-				end)
-				local cursor = vim.api.nvim_win_get_cursor(0)
-				local cursor_row, cursor_col = cursor[1] - 1, cursor[2]
-				local target
-				if forward then
-					for _, c in ipairs(calls) do
-						if c.row > cursor_row or (c.row == cursor_row and c.col > cursor_col) then
-							target = c
-							break
-						end
-					end
-					if not target and #calls > 0 then target = calls[1] end
-				else
-					for i = #calls, 1, -1 do
-						local c = calls[i]
-						if c.row < cursor_row or (c.row == cursor_row and c.col < cursor_col) then
-							target = c
-							break
-						end
-					end
-					if not target and #calls > 0 then target = calls[#calls] end
+				if defn_patterns[ft] then
+					map("[m", function() jump_to_name(defn_patterns, declared_name, false) end, "Previous method start")
+					map("]m", function() jump_to_name(defn_patterns, declared_name, true) end, "Next method start")
+					map("[M", safe_move(function() move.goto_previous_end("@function.outer", "textobjects") end), "Previous method end")
+					map("]M", safe_move(function() move.goto_next_end("@function.outer", "textobjects") end), "Next method end")
 				end
-				if target then
-					vim.api.nvim_win_set_cursor(0, { target.row + 1, target.col })
+				if class_patterns[ft] then
+					map("[c", function() jump_to_name(class_patterns, declared_name, false) end, "Previous class start")
+					map("]c", function() jump_to_name(class_patterns, declared_name, true) end, "Next class start")
 				end
 			end
-			vim.keymap.set({ "n", "x", "o" }, "[f", function() jump_to_call_name(false) end, { desc = "Previous function call name" })
-			vim.keymap.set({ "n", "x", "o" }, "]f", function() jump_to_call_name(true) end, { desc = "Next function call name" })
+
+			vim.api.nvim_create_autocmd("FileType", {
+				group = vim.api.nvim_create_augroup("UserCodeMotions", { clear = true }),
+				callback = function(ev) set_buffer_maps(ev.buf) end,
+			})
+			for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+				if vim.api.nvim_buf_is_loaded(buf) then set_buffer_maps(buf) end
+			end
+
 			vim.keymap.set({ "n", "x", "o" }, "[c", function()
 				move.goto_previous_start("@class.outer", "textobjects")
 			end, { desc = "Previous class" })
