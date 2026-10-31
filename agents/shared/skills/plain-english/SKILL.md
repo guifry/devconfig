@@ -1,9 +1,9 @@
 ---
-name: word-forward-word-out
-description: Explain anything as a chain of very short lines, one idea per line, each following from the last, in plain simple English. Use when the user says "word forward, word out", or asks for a simple step-by-step explanation, or says they are tired, short on time, or don't want to read paragraphs.
+name: plain-english
+description: Explain anything as a chain of very short lines, one idea per line, each following from the last, in plain simple English. Use when the user says "plain english" or "word forward, word out", or asks for a simple step-by-step explanation, or says they are tired, short on time, or don't want to read paragraphs.
 ---
 
-# Word Forward, Word Out
+# Plain English
 
 Explain the thing one line at a time.
 
