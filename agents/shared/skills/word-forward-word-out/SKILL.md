@@ -11,7 +11,7 @@ Explain the thing one line at a time.
 
 - One short phrase per line.
 - Each line follows from the line before it.
-- Plain simple English. Grade school level.
+- Plain simple English. Primary school level.
 - No paragraphs. No bullet nesting.
 - No jargon. If a term is needed, define it on the next line.
 - Use real numbers, not vague ones.
