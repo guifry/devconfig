@@ -462,6 +462,14 @@ EOF
     fi
   '');
 
+  # Spotlight must not index ~/projects: agent worktrees churn millions of files and pin
+  # mds_stores/fseventsd. The exclusion list needs sudo and Full Disk Access, so warn only.
+  home.activation.checkSpotlightProjects = lib.mkIf isDarwin (lib.hm.dag.entryAfter ["writeBoundary"] ''
+    if [ -d "$HOME/projects" ] && [ "$(/usr/bin/mdfind -onlyin "$HOME/projects" -count 'kMDItemFSName == "*"' 2>/dev/null || echo 0)" -gt 0 ]; then
+      echo "WARNING: Spotlight is indexing ~/projects. Add it in System Settings > Spotlight > Search Privacy."
+    fi
+  '');
+
   # Key repeat. NOTE: these only take effect for an app when it next launches, and
   # fully only after a logout — macOS caches NSGlobalDomain per process at startup.
   # `devconfig switch` prints a reminder when it changes them.
