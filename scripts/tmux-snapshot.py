@@ -174,8 +174,7 @@ class PaneClassifier:
         if found is None:
             pane.resume, pane.note = "opencode", "session not identified from title"
             return pane
-        session, directory = found
-        pane.resume_dir, pane.resume = directory, shlex.join(["opencode", "--session", session])
+        pane.resume_dir, pane.resume = pane.cwd, shlex.join(["opencode", "--session", found[0]])
         return pane
 
     def _codex(self, pane: Pane, pids: list[int]) -> Pane:
