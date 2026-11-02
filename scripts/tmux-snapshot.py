@@ -150,7 +150,9 @@ class PaneClassifier:
         if self._runs(pids, r"(^|/)codex( |$)") or pane.command == "codex":
             return self._codex(pane, pids)
         if pane.command == "nvim":
-            pane.program, pane.resume = "nvim", "nvim"
+            named = Path(pane.window_name).expanduser()
+            pane.program = "nvim"
+            pane.resume = shlex.join(["nvim", str(named)]) if named.is_file() else "nvim"
             return pane
         if pane.command not in {"zsh", "bash", "sh", "fish"}:
             pane.program, pane.note = "other", self._first_args(pids)
