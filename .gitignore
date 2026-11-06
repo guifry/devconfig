@@ -19,6 +19,7 @@ agents/claude/debug/
 agents/claude/plans/
 agents/claude/plugins/
 agents/**/.autonomous
+agents/shared/skills/synced/
 
 # Nix build output
 result
