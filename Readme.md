@@ -36,7 +36,32 @@ curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.s
 apk add curl bash git && curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash
 ```
 
-Prompts for **light** (terminal: zsh, tmux, vim, rg, claude) or **full** (+ SSH keys, Python).
+### Headless server (Ubuntu / Debian)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash -s -- --mode server
+```
+
+Server mode installs the same shell, tmux, git, editor and agent config, but:
+
+- no Ghostty, no `xclip`, no `pbcopy` aliases
+- adds `mosh`
+- adds a `work` alias (`tmux new -A -s main`)
+- skips the interactive SSH key wizard — use `gh auth login` or a deploy key
+- skips the slow nvim LSP setup — run `devconfig nvim-setup` later
+- only offers alias categories 1, 2 and 4
+
+Tailscale, Docker, swap and timezone are system-level and stay out of this repo:
+
+```bash
+sudo apt install -y mosh
+curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up
+curl -fsSL https://get.docker.com | sh && sudo usermod -aG docker "$USER"
+```
+
+---
+
+Prompts for **light** (terminal: zsh, tmux, vim, rg, claude), **full** (+ SSH keys, Python), or **server** (headless: no GUI/clipboard, adds mosh).
 
 ---
 
@@ -70,6 +95,7 @@ Prompts for **light** (terminal: zsh, tmux, vim, rg, claude) or **full** (+ SSH 
 | Warns about auto-wipe | Prompts user about org backup policies |
 | Clipboard cross-platform | pbcopy on macOS, xclip on Linux |
 | Headless servers | Warns xclip won't work if no $DISPLAY |
+| Server mode | `linux-*-server` flake output: no GUI packages, adds mosh |
 | Non-destructive | Never force-overwrites, always prompts |
 | Reversible | home-manager generations, backup restore, nix uninstall |
 | Idempotent | Safe to re-run, skips already-installed components |

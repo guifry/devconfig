@@ -1,11 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Copies Claude Code's last response from the tmux pane to system clipboard.
+# Copies Claude Code's last response from the tmux pane to the system clipboard,
+# falling back to the tmux buffer on headless machines.
 # Extracts text between the last ⏺ and the next ❯ (or end of scrollback).
-tmux capture-pane -p -S - | awk '
+data=$(tmux capture-pane -p -S - | awk '
 /^⏺/ { buf=$0; cap=1; next }
 cap && /^❯/ { cap=0; next }
 cap { buf=buf ORS $0 }
 END { if(buf) print buf }
-' | pbcopy
-tmux display-message "Copied last Claude response"
+')
+
+if command -v pbcopy >/dev/null 2>&1; then
+  printf '%s' "$data" | pbcopy
+  msg="Copied last Claude response"
+elif command -v wl-copy >/dev/null 2>&1; then
+  printf '%s' "$data" | wl-copy
+  msg="Copied last Claude response"
+elif command -v xclip >/dev/null 2>&1; then
+  printf '%s' "$data" | xclip -selection clipboard
+  msg="Copied last Claude response"
+else
+  tmux set-buffer -- "$data"
+  msg="Copied last Claude response to the tmux buffer"
+fi
+
+tmux display-message "$msg"

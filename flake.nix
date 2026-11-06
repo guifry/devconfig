@@ -9,31 +9,46 @@
     };
   };
 
-  outputs = { nixpkgs, home-manager, ... }@inputs: {
-    homeConfigurations = {
-      "darwin-arm64" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.aarch64-darwin;
+  outputs = { nixpkgs, home-manager, ... }:
+    let
+      baseModules = [ ./home.nix ./modules/headless.nix ];
+    in {
+      homeConfigurations = {
+        "darwin-arm64" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.aarch64-darwin;
 
-        modules = [ ./home.nix ];
-      };
+          modules = baseModules;
+        };
 
-      "darwin-x86" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.x86_64-darwin;
+        "darwin-x86" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.x86_64-darwin;
 
-        modules = [ ./home.nix ];
-      };
+          modules = baseModules;
+        };
 
-      "linux-x86" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        "linux-x86" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
 
-        modules = [ ./home.nix ];
-      };
+          modules = baseModules;
+        };
 
-      "linux-arm64" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.aarch64-linux;
+        "linux-arm64" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.aarch64-linux;
 
-        modules = [ ./home.nix ];
+          modules = baseModules;
+        };
+
+        "linux-x86-server" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+
+          modules = baseModules ++ [ { headless = true; } ];
+        };
+
+        "linux-arm64-server" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.aarch64-linux;
+
+          modules = baseModules ++ [ { headless = true; } ];
+        };
       };
     };
-  };
 }

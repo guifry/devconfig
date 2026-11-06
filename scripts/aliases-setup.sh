@@ -7,11 +7,14 @@ ALIASES_DST="$HOME/.aliases.d"
 
 mkdir -p "$ALIASES_DST"
 
+IS_SERVER=false
+[[ "${DEVCONFIG_MODE:-}" == "server" ]] && IS_SERVER=true
+
 get_category() {
   case $1 in
     1) echo "chartering" ;;
     2) echo "kpler" ;;
-    3) echo "macos-apps" ;;
+    3) [[ "$IS_SERVER" == true ]] || echo "macos-apps" ;;
     4) echo "personal" ;;
     *) echo "" ;;
   esac
@@ -21,7 +24,7 @@ if [[ -z "$ALIAS_CATEGORIES" ]]; then
   echo "Alias categories:"
   echo "1) chartering  - chartering-fix, chartering-lint"
   echo "2) kpler       - fst, kpler work env"
-  echo "3) macos-apps  - windsurf, mac app shortcuts"
+  [[ "$IS_SERVER" == true ]] || echo "3) macos-apps  - windsurf, mac app shortcuts"
   echo "4) personal    - loadzsh, personal utils"
   read -p "Select (space-separated, or 'none'): " ALIAS_CATEGORIES < /dev/tty
 fi
@@ -32,6 +35,10 @@ fi
 ALIAS_CATEGORIES="${ALIAS_CATEGORIES//,/ }"
 
 for num in $ALIAS_CATEGORIES; do
+  if [[ "$num" == "3" && "$IS_SERVER" == true ]]; then
+    echo "Skipping macos-apps on server"
+    continue
+  fi
   cat=$(get_category "$num")
   [[ -z "$cat" ]] && continue
   src="$ALIASES_SRC/${cat}.sh"

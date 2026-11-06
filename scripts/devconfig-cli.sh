@@ -23,6 +23,19 @@ else
   [[ "$ARCH" == "aarch64" ]] && CONFIG="linux-arm64" || CONFIG="linux-x86"
 fi
 
+SERVER_MODE=false
+for arg in "$@"; do
+  [[ "$arg" == "--server" ]] && SERVER_MODE=true
+done
+[[ "${DEVCONFIG_MODE:-}" == "server" ]] && SERVER_MODE=true
+if [[ "$SERVER_MODE" == true ]]; then
+  if [[ "$IS_DARWIN" == true ]]; then
+    echo "ERROR: server mode is Linux-only." >&2
+    exit 1
+  fi
+  CONFIG="${CONFIG}-server"
+fi
+
 # Homebrew's installer does not add itself to PATH on Apple Silicon, and a shell
 # started before home-manager ran will not have it either. Look in the known
 # locations before concluding it is absent — otherwise brew bundle is skipped
@@ -270,7 +283,7 @@ cmd_help() {
   echo "Usage: devconfig [command]"
   echo ""
   echo "Commands:"
-  echo "  switch    Apply config changes"
+  echo "  switch    Apply config changes (--server for a headless box)"
   echo "  update    Update flake inputs + brew + apply"
   echo "  doctor    Check installed components"
   echo "  sync      Check agent skills/commands are in devconfig (--fix to pull them in)"

@@ -3,20 +3,42 @@ set -e
 
 # Parse flags
 LOCAL_MODE=false
-for arg in "$@"; do
-  case "$arg" in
+ASSUME_YES=false
+WITH_NVIM=false
+MODE="${DEVCONFIG_MODE:-}"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
     --local)
       # Use the current checkout as-is: skip the fetch/pull and the
       # clean-and-pushed guard. For testing a branch before merging.
       LOCAL_MODE=true
       ;;
+    --mode)
+      MODE="${2:-}"
+      shift
+      ;;
+    --mode=*)
+      MODE="${1#*=}"
+      ;;
+    --yes|-y)
+      ASSUME_YES=true
+      ;;
+    --with-nvim)
+      WITH_NVIM=true
+      ;;
     -h|--help)
-      echo "Usage: ./bootstrap.sh [--local]"
-      echo "  --local   Bootstrap from the current checkout without pulling from origin."
-      echo "            Use when testing a branch that is not merged or pushed."
+      echo "Usage: ./bootstrap.sh [--local] [--mode light|full|server] [--yes] [--with-nvim]"
+      echo "  --local      Bootstrap from the current checkout without pulling from origin."
+      echo "  --mode       Skip the mode prompt: light, full or server (headless)."
+      echo "  --yes        Do not prompt for the mode; defaults to full."
+      echo "  --with-nvim  Run the slow nvim LSP setup in server mode."
       exit 0
       ;;
+    *)
+      shift
+      ;;
   esac
+  shift
 done
 
 # Ensure USER and HOME are set (sometimes missing in containers)
@@ -70,9 +92,41 @@ fi
 
 echo "Devconfig Setup"
 echo "==============="
-echo "1) Light - terminal experience (zsh, tmux, vim, rg, claude code)"
-echo "2) Full  - light + SSH keys + Python environment"
-read -p "Choice [1/2]: " choice < /dev/tty
+if [[ -z "$MODE" && "$ASSUME_YES" == true ]]; then
+  MODE=full
+fi
+if [[ -z "$MODE" ]]; then
+  echo "1) Light  - terminal experience (zsh, tmux, vim, rg, claude code)"
+  echo "2) Full   - light + SSH keys + Python environment"
+  echo "3) Server - headless: no GUI/clipboard, adds mosh"
+  if [[ "$UNAME" != "Darwin" ]] && [[ -z "$DISPLAY" ]] && [[ -z "$WAYLAND_DISPLAY" ]]; then
+    echo ""
+    echo "No display detected. Option 3 is the usual choice for a server."
+  fi
+  read -p "Choice [1/2/3]: " choice < /dev/tty
+else
+  case "$MODE" in
+    light|1) choice=1 ;;
+    full|2) choice=2 ;;
+    server|3) choice=3 ;;
+    *) echo "Invalid mode: $MODE (use light, full or server)" >&2; exit 1 ;;
+  esac
+fi
+
+case "$choice" in
+  1|light)  MODE=light ;;
+  2|full)   MODE=full ;;
+  3|server) MODE=server ;;
+  *) echo "Invalid choice: $choice" >&2; exit 1 ;;
+esac
+
+if [[ "$MODE" == "server" ]]; then
+  if [[ "$UNAME" == "Darwin" ]]; then
+    echo "Server mode is Linux-only. Use Light or Full on macOS." >&2
+    exit 1
+  fi
+  CONFIG="${CONFIG}-server"
+fi
 
 if ! command -v git &> /dev/null; then
   echo "Git required. Install with:"
@@ -154,13 +208,30 @@ else
 fi
 
 echo ""
-echo "Alias categories (space-separated numbers, or 'none'):"
-echo "1) chartering  - chartering-fix, chartering-lint"
-echo "2) kpler       - fst, kpler work env"
-echo "3) macos-apps  - windsurf, mac app shortcuts"
-echo "4) personal    - loadzsh, personal utils"
-read -p "Select [e.g. 1 3 4 or 1,3,4]: " alias_choice < /dev/tty
-export ALIAS_CATEGORIES="$alias_choice"
+if [[ -z "${ALIAS_CATEGORIES:-}" && "$ASSUME_YES" == true ]]; then
+  if [[ "$MODE" == "server" ]]; then ALIAS_CATEGORIES="1 2 4"; else ALIAS_CATEGORIES="none"; fi
+fi
+if [[ -n "${ALIAS_CATEGORIES:-}" ]]; then
+  echo "Using alias categories from ALIAS_CATEGORIES: $ALIAS_CATEGORIES"
+elif [[ "$MODE" == "server" ]]; then
+  echo "Alias categories (space-separated numbers, or 'none'):"
+  echo "1) chartering  - chartering-fix, chartering-lint"
+  echo "2) kpler       - fst, kpler work env"
+  echo "4) personal    - loadzsh, personal utils"
+  echo "   (macos-apps is skipped on servers)"
+  read -p "Select [e.g. 1 2 4 or 1,2,4]: " alias_choice < /dev/tty
+  ALIAS_CATEGORIES="${alias_choice:-1 2 4}"
+else
+  echo "Alias categories (space-separated numbers, or 'none'):"
+  echo "1) chartering  - chartering-fix, chartering-lint"
+  echo "2) kpler       - fst, kpler work env"
+  echo "3) macos-apps  - windsurf, mac app shortcuts"
+  echo "4) personal    - loadzsh, personal utils"
+  read -p "Select [e.g. 1 3 4 or 1,3,4]: " alias_choice < /dev/tty
+  ALIAS_CATEGORIES="$alias_choice"
+fi
+export ALIAS_CATEGORIES
+export DEVCONFIG_MODE="$MODE"
 
 if [[ "$UNAME" == "Darwin" ]] && command -v brew &>/dev/null; then
   echo "Updating brew index..."
@@ -170,11 +241,12 @@ fi
 # Backup existing dotfiles
 ./scripts/backup-existing.sh || { echo "Setup cancelled."; exit 0; }
 
-# Warn if headless Linux (clipboard won't work)
-if [[ "$UNAME" != "Darwin" ]] && [[ -z "$DISPLAY" ]] && [[ -z "$WAYLAND_DISPLAY" ]]; then
+# Warn if headless Linux outside server mode (clipboard won't work)
+if [[ "$MODE" != "server" ]] && [[ "$UNAME" != "Darwin" ]] && [[ -z "$DISPLAY" ]] && [[ -z "$WAYLAND_DISPLAY" ]]; then
   echo ""
   echo "Note: No display detected (headless server)."
   echo "      Clipboard integration (xclip) will not work."
+  echo "      Re-run with --mode server for the headless configuration."
   echo ""
 fi
 
@@ -224,12 +296,20 @@ if [[ -f ~/.vimrc ]]; then
   vim +PlugInstall +qall
 fi
 
-# Full setup extras
-if [[ "$choice" == "2" ]]; then
+# Full / server extras
+if [[ "$MODE" == "full" ]]; then
   ./scripts/ssh-setup.sh
+fi
+if [[ "$MODE" == "full" || "$MODE" == "server" ]]; then
   ./scripts/python-setup.sh
   # Without these, user.useConfigOnly makes git refuse to commit anywhere.
   ./scripts/git-identity-setup
+fi
+if [[ "$MODE" == "server" ]]; then
+  echo ""
+  echo "Skipped the SSH key wizard (server mode)."
+  echo "Authenticate GitHub with: gh auth login"
+  echo "Or add a read-only deploy key for the agent's repositories."
 fi
 
 # One-time mise install: standalone build in ~/.local/bin (writable, so
@@ -243,9 +323,14 @@ echo "Installing mise (per-project toolchain manager)..."
 # One-time heavy nvim setup: plugins, LSPs, formatters, debug adapters and the
 # codecompanion ACP bridge. Done here rather than in `devconfig switch` so that
 # switch stays fast. Re-run later with: devconfig nvim-setup
-echo ""
-echo "Preparing nvim (plugins + LSPs). This is the slow part, and only runs once."
-./scripts/devconfig-cli.sh nvim-setup || echo "Warning: nvim setup incomplete — run 'devconfig nvim-setup' later"
+if [[ "$MODE" == "server" && "$WITH_NVIM" != true ]]; then
+  echo ""
+  echo "Skipping nvim LSP setup on this server (run 'devconfig nvim-setup' when needed)."
+else
+  echo ""
+  echo "Preparing nvim (plugins + LSPs). This is the slow part, and only runs once."
+  ./scripts/devconfig-cli.sh nvim-setup || echo "Warning: nvim setup incomplete — run 'devconfig nvim-setup' later"
+fi
 
 echo ""
 echo "Setup complete!"

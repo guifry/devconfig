@@ -2,6 +2,7 @@
 
 let
   isDarwin = pkgs.stdenv.isDarwin;
+  headless = config.headless;
   envUser = builtins.getEnv "USER";
   envHome = builtins.getEnv "HOME";
   username = if envUser != "" then envUser else "user";
@@ -47,9 +48,11 @@ in {
     # any npx-based MCP server. nvm is deliberately NOT used — `mise` (standalone,
     # see devconfig mise-setup) manages per-project node versions the same way.
     nodejs
-  ] ++ lib.optionals (!isDarwin) [
+  ] ++ lib.optionals (!isDarwin && !headless) [
     ghostty
     xclip
+  ] ++ lib.optionals headless [
+    mosh
   ];
 
   programs.zsh = {
@@ -204,9 +207,12 @@ EOF
       }
     '' + lib.optionalString isDarwin ''
       export PATH="/opt/homebrew/bin:$PATH"
-    '' + lib.optionalString (!isDarwin) ''
+    '' + lib.optionalString (!isDarwin && !headless) ''
       alias pbcopy='xclip -selection clipboard'
       alias pbpaste='xclip -selection clipboard -o'
+    '' + lib.optionalString headless ''
+      # Reattach to the persistent agent session from any SSH login.
+      alias work='tmux new -A -s main'
     '';
   };
 
@@ -224,6 +230,8 @@ EOF
           set -g @thumbs-key f
         '' + (if isDarwin then ''
           set -g @thumbs-command 'echo -n {} | pbcopy'
+        '' else if headless then ''
+          set -g @thumbs-command 'tmux set-buffer -- {}'
         '' else ''
           set -g @thumbs-command 'echo -n {} | xclip -selection clipboard'
         '');
@@ -485,8 +493,12 @@ EOF
   '');
 
   xdg.configFile."nvim/init.lua".source = repoFile "nvim/init.lua";
-  xdg.configFile."aerospace/aerospace.toml".source = repoFile "aerospace.toml";
-  xdg.configFile."ghostty/config".source = repoFile "ghostty.config";
+  xdg.configFile."aerospace/aerospace.toml" = lib.mkIf (!headless) {
+    source = repoFile "aerospace.toml";
+  };
+  xdg.configFile."ghostty/config" = lib.mkIf (!headless) {
+    source = repoFile "ghostty.config";
+  };
   xdg.configFile."lazygit/config.yml".source = repoFile "lazygit.yml";
   # Agent config. One shared source of instructions/commands/skills, fanned out to
   # every agent's expected location. Agent-specific config stays in its own dir.
@@ -525,11 +537,23 @@ EOF
   home.file."bin/vx" = { source = ./scripts/vx; executable = true; };
   home.file."bin/create_script" = { source = ./scripts/create_script; executable = true; };
   home.file."bin/edscript" = { source = ./scripts/edscript; executable = true; };
-  home.file."bin/aerospace-reorganise" = { source = ./scripts/aerospace-reorganise; executable = true; };
+  home.file."bin/aerospace-reorganise" = lib.mkIf (!headless) {
+    source = ./scripts/aerospace-reorganise;
+    executable = true;
+  };
   home.file."bin/tmux-smart-rename" = { source = ./scripts/tmux-smart-rename; executable = true; };
-  home.file."bin/chrome-kpler-route" = { source = ./scripts/chrome-kpler-route; executable = true; };
-  home.file."bin/chrome-kpler-calendar" = { source = ./scripts/chrome-kpler-calendar; executable = true; };
-  home.file."bin/aerospace-swap-center" = { source = ./scripts/aerospace-swap-center; executable = true; };
+  home.file."bin/chrome-kpler-route" = lib.mkIf (!headless) {
+    source = ./scripts/chrome-kpler-route;
+    executable = true;
+  };
+  home.file."bin/chrome-kpler-calendar" = lib.mkIf (!headless) {
+    source = ./scripts/chrome-kpler-calendar;
+    executable = true;
+  };
+  home.file."bin/aerospace-swap-center" = lib.mkIf (!headless) {
+    source = ./scripts/aerospace-swap-center;
+    executable = true;
+  };
   home.file."bin/tmux-yank-claude" = { source = ./scripts/tmux-yank-claude; executable = true; };
   home.file."bin/devconfig" = { source = ./scripts/devconfig-cli.sh; executable = true; };
   home.file."bin/dcli" = { source = ./scripts/dcli; executable = true; };

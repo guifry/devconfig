@@ -17,7 +17,9 @@ else
     endif
 endif
 
-.PHONY: setup setup-light setup-full switch update clean doctor
+.PHONY: setup setup-light setup-full setup-server switch update clean doctor
+
+CONFIG_SERVER := $(CONFIG)-server
 
 setup: setup-light
 
@@ -36,6 +38,21 @@ setup-full: setup-light
 	./scripts/python-setup.sh
 	@echo ""
 	@echo "Full setup complete."
+
+setup-server:
+	@if [ "$(UNAME)" = "Darwin" ]; then echo "Server mode is Linux-only."; exit 1; fi
+	@./scripts/backup-existing.sh
+	DEVCONFIG_MODE=server nix run home-manager -- switch --impure --flake .#$(CONFIG_SERVER)
+	DEVCONFIG_MODE=server ALIAS_CATEGORIES="1 2 4" ./scripts/aliases-setup.sh
+	@echo ""
+	@echo "Installing Claude Code..."
+	@command -v claude >/dev/null 2>&1 || curl -fsSL https://claude.ai/install.sh | sh
+	@echo ""
+	@./scripts/python-setup.sh
+	@./scripts/git-identity-setup
+	@./scripts/devconfig-cli.sh mise-setup
+	@echo ""
+	@echo "Server setup complete. SSH wizard and nvim LSP setup skipped."
 
 switch:
 	nix run home-manager -- switch --impure --flake .#$(CONFIG)
