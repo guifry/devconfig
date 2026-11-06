@@ -277,7 +277,7 @@ fi
 echo ""
 echo "Installing Claude Code..."
 if ! command -v claude >/dev/null 2>&1; then
-  if curl -fsSL https://claude.ai/install.sh | sh; then
+  if curl -fsSL https://claude.ai/install.sh | bash; then
     echo "Claude Code installed"
   else
     echo "Warning: Claude Code install failed (non-critical)"
