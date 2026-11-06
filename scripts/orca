@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Orca bundles its CLI inside the desktop app. This wrapper lives in ~/bin so
+# agents running outside Orca's own terminals can still call it.
+if [[ -n "${ORCA_CLI:-}" && -x "$ORCA_CLI" ]]; then
+  exec "$ORCA_CLI" "$@"
+fi
+
+for candidate in \
+  "/Applications/Orca.app/Contents/Resources/bin/orca" \
+  "$HOME/.local/bin/orca" \
+  "/usr/local/bin/orca" \
+  "/opt/orca/orca"; do
+  if [[ -x "$candidate" ]]; then
+    exec "$candidate" "$@"
+  fi
+done
+
+# Fall back to any other orca on PATH, skipping ~/bin to avoid recursion.
+IFS=':' read -r -a path_parts <<< "${PATH:-}"
+for dir in "${path_parts[@]}"; do
+  [[ -n "$dir" ]] || continue
+  [[ "$dir" == "$HOME/bin" ]] && continue
+  if [[ -x "$dir/orca" ]]; then
+    exec "$dir/orca" "$@"
+  fi
+done
+
+echo "orca CLI not found. Install it from Orca -> Settings -> General -> Orca CLI." >&2
+exit 127

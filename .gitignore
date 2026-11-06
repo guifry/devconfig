@@ -32,3 +32,6 @@ venv/
 
 # macOS
 .DS_Store
+
+# Local backups (Orca and other tools write these next to config)
+*.bak

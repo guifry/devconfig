@@ -556,6 +556,7 @@ EOF
   };
   home.file."bin/tmux-yank-claude" = { source = ./scripts/tmux-yank-claude; executable = true; };
   home.file."bin/devconfig" = { source = ./scripts/devconfig-cli.sh; executable = true; };
+  home.file."bin/orca" = { source = ./scripts/orca; executable = true; };
   home.file."bin/dcli" = { source = ./scripts/dcli; executable = true; };
   home.file."bin/agent-sync" = { source = ./scripts/agent-sync; executable = true; };
   home.file."bin/guard" = { source = ./scripts/guard; executable = true; };
