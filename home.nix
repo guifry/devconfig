@@ -71,6 +71,9 @@ in {
       FZF_DEFAULT_COMMAND = "fd --type f --hidden --exclude .git";
       EDITOR = "nvim";
       VISUAL = "nvim";
+    } // lib.optionalAttrs headless {
+      # Keep `devconfig switch` on the server output after bootstrap.
+      DEVCONFIG_MODE = "server";
     };
     oh-my-zsh = {
       enable = true;
