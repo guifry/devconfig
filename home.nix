@@ -19,6 +19,13 @@ in {
 
   programs.home-manager.enable = true;
 
+  # Non-interactive shells (agents, services, orca serve) need these too.
+  home.sessionPath = [
+    "$HOME/.nix-profile/bin"
+    "$HOME/.local/bin"
+    "$HOME/bin"
+  ];
+
   home.packages = with pkgs; [
     gnumake
     curl
