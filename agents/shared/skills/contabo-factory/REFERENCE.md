@@ -138,6 +138,32 @@ Versions drift. Check with `claude --version`, `codex --version`, `opencode --ve
 - `~/.secrets` is a template, mode 600. Fill it; never commit it.
 - `~/.gitconfig-guifry` is the personal GitHub noreply identity. `~/.gitconfig-kpler` is a placeholder; fix it before committing work repos.
 
+## Provisioning
+
+`bootstrap.sh --mode server` runs `scripts/server-provision.sh` after home-manager. It is idempotent; re-run with `devconfig server-provision`.
+
+It applies:
+
+- 4 GB swap if none exists
+- timezone `Europe/London`
+- `/etc/gai.conf` IPv4 preference
+- netplan DNS fallbacks `1.1.1.1` / `9.9.9.9` (only if missing)
+- `netplan apply` and the IPv6 default route; installs `devconfig-ipv6-route.service` to re-apply at boot
+- sshd key-only, root login off — only when `dev` already has `authorized_keys`
+- Docker and the `docker` group
+- the Tailscale package (no auth)
+- UFW only when Tailscale is `Running`; otherwise it prints the follow-up command
+
+Flags:
+
+```
+--firewall      force UFW on
+--no-firewall   never touch UFW
+--no-docker     skip Docker
+```
+
+Requires passwordless sudo, normally `/etc/sudoers.d/90-dev-provisioning`. After Tailscale is authenticated, run `devconfig server-provision` again so UFW is enabled with the tailnet rules.
+
 ## Orca
 
 - Use `contabo-ts` as the SSH host. OpenSSH over the tailnet, key auth, port forwarding available.
@@ -326,15 +352,13 @@ tailscale status
 
 ## Rebuild from scratch
 
-1. Contabo Cloud VPS 8, Ubuntu 24.04, add `~/.ssh/contabo_agent.pub` for `dev` (or root first).
+1. Contabo Cloud VPS 8, Ubuntu 24.04, add `~/.ssh/contabo_agent.pub` for `dev` (or root first). Give `dev` passwordless sudo.
 2. Install Nix: `curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm`.
-3. `curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash -s -- --mode server --yes`.
-4. `sudo tailscale up --ssh=false --hostname contabo-factory`, then the UFW rules.
-5. Confirm network: `ip -6 route show default` shows `fe80::1`; netplan DNS includes `1.1.1.1` and `9.9.9.9`; `sudo netplan generate && sudo netplan apply`. Optional IPv4 preference: `echo 'precedence ::ffff:0:0/96  100' | sudo tee -a /etc/gai.conf`.
-6. Docker: `curl -fsSL https://get.docker.com | sh`; `sudo usermod -aG docker dev`.
-7. 4 GB swap and `Europe/London`.
-8. Auth: gh, claude, codex, opencode, gcloud.
-9. Orca: add `contabo-ts` as an SSH host.
+3. `curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash -s -- --mode server --yes`. This runs `server-provision.sh` (swap, DNS, IPv6, sshd, Docker, Tailscale package). UFW is skipped because Tailscale is not authenticated yet.
+4. `sudo tailscale up --ssh=false --hostname contabo-factory`, approve the URL.
+5. `devconfig server-provision` again — now Tailscale is `Running`, so UFW is enabled with the tailnet rules.
+6. Auth: `gh auth login`, `claude auth login`, `codex login --device-auth`, `opencode auth login`, `gcloud auth login --no-launch-browser`.
+7. Orca: add `contabo-ts` as an SSH host.
 
 ## Secrets
 

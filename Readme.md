@@ -50,14 +50,19 @@ Server mode installs the same shell, tmux, git, editor and agent config, but:
 - skips the interactive SSH key wizard — use `gh auth login` or a deploy key
 - skips the slow nvim LSP setup — run `devconfig nvim-setup` later
 - only offers alias categories 1, 2 and 4
+- installs OpenCode and Codex
+- runs `scripts/server-provision.sh`: 4 GB swap, timezone, DNS fallbacks, IPv6 route, sshd hardening, Docker, Tailscale package
 
-Tailscale, Docker, swap and timezone are system-level and stay out of this repo:
+`server-provision.sh` needs passwordless sudo. It skips UFW until Tailscale is connected, so the machine cannot lock itself out during provisioning.
+
+After Tailscale auth, apply the firewall:
 
 ```bash
-sudo apt install -y mosh
-curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up
-curl -fsSL https://get.docker.com | sh && sudo usermod -aG docker "$USER"
+sudo tailscale up --ssh=false --hostname <name>
+devconfig server-provision
 ```
+
+`devconfig server-provision --help` lists the flags (`--firewall`, `--no-firewall`, `--no-docker`).
 
 ---
 
