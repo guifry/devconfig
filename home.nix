@@ -65,6 +65,10 @@ in {
 
   programs.zsh = {
     enable = true;
+    # Non-interactive shells (agents, systemd, orca serve) read .zshenv.
+    envExtra = ''
+      export PATH="/nix/var/nix/profiles/default/bin:$HOME/.nix-profile/bin:$HOME/.local/bin:$HOME/bin:$PATH"
+    '';
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
     history = {
