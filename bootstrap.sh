@@ -257,6 +257,13 @@ nix run home-manager -- switch --impure --flake ".#$CONFIG"
 # Setup aliases
 ./scripts/aliases-setup.sh
 
+# System-level fixups for a headless server. Idempotent; safe to re-run.
+if [[ "$MODE" == "server" ]]; then
+  echo ""
+  echo "Applying server system fixups..."
+  ./scripts/server-provision.sh || echo "Warning: server provisioning incomplete — run 'devconfig server-provision' later"
+fi
+
 # Setup secrets template
 if [[ ! -f ~/.secrets ]]; then
   cp secrets.example ~/.secrets
@@ -281,6 +288,20 @@ if ! command -v claude >/dev/null 2>&1; then
     echo "Claude Code installed"
   else
     echo "Warning: Claude Code install failed (non-critical)"
+  fi
+fi
+
+# OpenCode and Codex on servers. npm is a Nix package and may not be on PATH yet.
+if [[ "$MODE" == "server" ]]; then
+  NPM_BIN="$(command -v npm 2>/dev/null || true)"
+  if [[ -z "$NPM_BIN" && -x "$HOME/.nix-profile/bin/npm" ]]; then
+    NPM_BIN="$HOME/.nix-profile/bin/npm"
+  fi
+  if [[ -n "$NPM_BIN" ]]; then
+    echo ""
+    echo "Installing OpenCode and Codex..."
+    "$NPM_BIN" install -g --prefix "$HOME/.local" opencode-ai @openai/codex \
+      || echo "Warning: OpenCode/Codex install failed — rerun later"
   fi
 fi
 

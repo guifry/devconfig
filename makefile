@@ -46,11 +46,13 @@ setup-server:
 	DEVCONFIG_MODE=server ALIAS_CATEGORIES="1 2 4" ./scripts/aliases-setup.sh
 	@echo ""
 	@echo "Installing Claude Code..."
-	@command -v claude >/dev/null 2>&1 || curl -fsSL https://claude.ai/install.sh | sh
+	@command -v claude >/dev/null 2>&1 || curl -fsSL https://claude.ai/install.sh | bash
+	@if command -v npm >/dev/null 2>&1; then npm install -g --prefix "$$HOME/.local" opencode-ai @openai/codex; elif [ -x "$$HOME/.nix-profile/bin/npm" ]; then "$$HOME/.nix-profile/bin/npm" install -g --prefix "$$HOME/.local" opencode-ai @openai/codex; fi
 	@echo ""
 	@./scripts/python-setup.sh
 	@./scripts/git-identity-setup
 	@./scripts/devconfig-cli.sh mise-setup
+	@./scripts/server-provision.sh || echo "Warning: server provisioning incomplete"
 	@echo ""
 	@echo "Server setup complete. SSH wizard and nvim LSP setup skipped."
 

@@ -277,6 +277,10 @@ cmd_status() {
   fi
 }
 
+cmd_server_provision() {
+  "$REPO/scripts/server-provision.sh" "$@"
+}
+
 cmd_help() {
   echo "devconfig - manage your dev environment"
   echo ""
@@ -289,6 +293,7 @@ cmd_help() {
   echo "  sync      Check agent skills/commands are in devconfig (--fix to pull them in)"
   echo "  nvim-setup  Install nvim LSPs/formatters + claude-code-acp (slow, one-time)"
   echo "  mise-setup  Install mise to ~/.local/bin (slow, one-time)"
+  echo "  server-provision  Apply system fixups (swap, DNS, IPv6, sshd, Docker, Tailscale, UFW)"
   echo "  status    Show nix store size + generations"
   echo "  clean     Garbage collect old generations"
   echo "  edit      Open home.nix in editor"
@@ -339,6 +344,7 @@ case "${1:-}" in
   sync)    shift; cmd_sync "$@" ;;
   nvim-setup) cmd_nvim_setup ;;
   mise-setup) cmd_mise_setup ;;
+  server-provision) shift; cmd_server_provision "$@" ;;
   status)  cmd_status ;;
   clean)   cmd_clean ;;
   edit)    cmd_edit ;;
