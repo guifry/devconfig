@@ -1398,6 +1398,7 @@ require("lazy").setup({
 
 	{ -- Scrollbar with diagnostic/search markers (VSCode-style)
 		"petertriho/nvim-scrollbar",
+		branch = "v1",
 		event = "VeryLazy",
 		opts = {
 			handle = { color = "#565f89" },
