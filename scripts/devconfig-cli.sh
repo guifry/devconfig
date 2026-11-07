@@ -277,6 +277,24 @@ cmd_status() {
   fi
 }
 
+cmd_agents_setup() {
+  local npm_bin
+  npm_bin="$(command -v npm 2>/dev/null || true)"
+  if [[ -z "$npm_bin" && -x "$HOME/.nix-profile/bin/npm" ]]; then
+    npm_bin="$HOME/.nix-profile/bin/npm"
+  fi
+  if [[ -z "$npm_bin" ]]; then
+    echo "ERROR: npm not found. Run 'devconfig switch' first." >&2
+    return 1
+  fi
+
+  echo "Installing OpenCode v2 and Codex..."
+  "$npm_bin" uninstall -g --prefix "$HOME/.local" opencode-ai >/dev/null 2>&1 || true
+  "$npm_bin" install -g --prefix "$HOME/.local" @opencode/cli @openai/codex || return 1
+  echo "opencode: $("$HOME/.local/bin/opencode" --version 2>/dev/null || echo '?')"
+  echo "codex:    $("$HOME/.local/bin/codex" --version 2>/dev/null || echo '?')"
+}
+
 cmd_server_provision() {
   "$REPO/scripts/server-provision.sh" "$@"
 }
@@ -293,6 +311,7 @@ cmd_help() {
   echo "  sync      Check agent skills/commands are in devconfig (--fix to pull them in)"
   echo "  nvim-setup  Install nvim LSPs/formatters + claude-code-acp (slow, one-time)"
   echo "  mise-setup  Install mise to ~/.local/bin (slow, one-time)"
+  echo "  agents-setup  Install/upgrade OpenCode v2 and Codex"
   echo "  server-provision  Apply system fixups (swap, DNS, IPv6, sshd, Docker, Tailscale, UFW)"
   echo "  status    Show nix store size + generations"
   echo "  clean     Garbage collect old generations"
@@ -344,6 +363,7 @@ case "${1:-}" in
   sync)    shift; cmd_sync "$@" ;;
   nvim-setup) cmd_nvim_setup ;;
   mise-setup) cmd_mise_setup ;;
+  agents-setup) cmd_agents_setup ;;
   server-provision) shift; cmd_server_provision "$@" ;;
   status)  cmd_status ;;
   clean)   cmd_clean ;;

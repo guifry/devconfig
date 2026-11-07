@@ -47,7 +47,7 @@ setup-server:
 	@echo ""
 	@echo "Installing Claude Code..."
 	@command -v claude >/dev/null 2>&1 || curl -fsSL https://claude.ai/install.sh | bash
-	@if command -v npm >/dev/null 2>&1; then npm uninstall -g --prefix "$$HOME/.local" opencode-ai >/dev/null 2>&1 || true; npm install -g --prefix "$$HOME/.local" @opencode/cli @openai/codex; elif [ -x "$$HOME/.nix-profile/bin/npm" ]; then "$$HOME/.nix-profile/bin/npm" uninstall -g --prefix "$$HOME/.local" opencode-ai >/dev/null 2>&1 || true; "$$HOME/.nix-profile/bin/npm" install -g --prefix "$$HOME/.local" @opencode/cli @openai/codex; fi
+	@./scripts/devconfig-cli.sh agents-setup
 	@echo ""
 	@./scripts/python-setup.sh
 	@./scripts/git-identity-setup

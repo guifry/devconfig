@@ -291,19 +291,11 @@ if ! command -v claude >/dev/null 2>&1; then
   fi
 fi
 
-# OpenCode and Codex on servers. npm is a Nix package and may not be on PATH yet.
+# OpenCode and Codex on servers.
 if [[ "$MODE" == "server" ]]; then
-  NPM_BIN="$(command -v npm 2>/dev/null || true)"
-  if [[ -z "$NPM_BIN" && -x "$HOME/.nix-profile/bin/npm" ]]; then
-    NPM_BIN="$HOME/.nix-profile/bin/npm"
-  fi
-  if [[ -n "$NPM_BIN" ]]; then
-    echo ""
-    echo "Installing OpenCode and Codex..."
-    "$NPM_BIN" uninstall -g --prefix "$HOME/.local" opencode-ai >/dev/null 2>&1 || true
-    "$NPM_BIN" install -g --prefix "$HOME/.local" @opencode/cli @openai/codex \
-      || echo "Warning: OpenCode/Codex install failed — rerun later"
-  fi
+  echo ""
+  ./scripts/devconfig-cli.sh agents-setup \
+    || echo "Warning: OpenCode/Codex install failed — rerun later"
 fi
 
 # Install vim-plug and plugins, but only if a ~/.vimrc actually exists.
