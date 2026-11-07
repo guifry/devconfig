@@ -50,7 +50,7 @@ Server mode installs the same shell, tmux, git, editor and agent config, but:
 - skips the interactive SSH key wizard — use `gh auth login` or a deploy key
 - skips the slow nvim LSP setup — run `devconfig nvim-setup` later; `tree-sitter`, `gcc`, `unzip` and Python/pip are installed so parsers and Mason tools can build
 - only offers alias categories 1, 2 and 4
-- installs OpenCode and Codex
+- installs OpenCode v2 and Codex; upgrade them later with `devconfig agents-setup`
 - runs `scripts/server-provision.sh`: 4 GB swap, timezone, DNS fallbacks, IPv6 route, sshd hardening, Docker, Tailscale package
 
 `server-provision.sh` needs passwordless sudo. It skips UFW until Tailscale is connected, so the machine cannot lock itself out during provisioning.

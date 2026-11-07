@@ -134,6 +134,7 @@ Versions drift. Check with `claude --version`, `codex --version`, `opencode --ve
 - Server output: `linux-x86-server`.
 - `DEVCONFIG_MODE=server` is exported from `~/.zshenv`, so `devconfig switch` stays headless and does not install Ghostty or xclip.
 - After a pull: `cd ~/projects/devconfig && git pull --ff-only && devconfig switch`.
+- `devconfig agents-setup` installs/upgrades OpenCode v2 (`@opencode/cli`) and Codex. `devconfig switch` does **not** install them.
 - Non-interactive PATH includes `/nix/var/nix/profiles/default/bin`, `~/.nix-profile/bin`, `~/.local/bin`, `~/bin` via `programs.zsh.envExtra`. This matters for agents and Orca.
 - Agent config is symlinked into the repo: `~/.claude`, `~/.codex`, `~/.config/opencode`.
 - Orca hooks and the `orca-cli` skill are in the repo and symlinked.
