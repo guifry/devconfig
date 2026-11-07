@@ -68,6 +68,11 @@ in {
     envExtra = ''
       export PATH="/nix/var/nix/profiles/default/bin:$HOME/.nix-profile/bin:$HOME/.local/bin:$HOME/bin:$PATH"
     '';
+    # Nix OpenSSH does not implement Apple's UseKeychain. Use the system ssh
+    # for mosh's auth hop so the existing ~/.ssh/config keeps working.
+    shellAliases = {
+      mosh = "mosh --ssh=/usr/bin/ssh";
+    };
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
     history = {
