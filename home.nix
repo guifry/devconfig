@@ -58,6 +58,8 @@ in {
     nodejs
     mosh
     tree-sitter
+    unzip
+    (python3.withPackages (ps: [ ps.pip ]))
   ] ++ lib.optionals (!isDarwin && !headless) [
     ghostty
     xclip
