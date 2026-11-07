@@ -310,10 +310,11 @@ tailscale status
 2. Install Nix: `curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm`.
 3. `curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash -s -- --mode server --yes`.
 4. `sudo tailscale up --ssh=false --hostname contabo-factory`, then the UFW rules.
-5. Docker: `curl -fsSL https://get.docker.com | sh`; `sudo usermod -aG docker dev`.
-6. 4 GB swap and `Europe/London`.
-7. Auth: gh, claude, codex, opencode, gcloud.
-8. Orca: add `contabo-ts` as an SSH host.
+5. Prefer IPv4: `echo 'precedence ::ffff:0:0/96  100' | sudo tee -a /etc/gai.conf` (the VM has no IPv6 default route).
+6. Docker: `curl -fsSL https://get.docker.com | sh`; `sudo usermod -aG docker dev`.
+7. 4 GB swap and `Europe/London`.
+8. Auth: gh, claude, codex, opencode, gcloud.
+9. Orca: add `contabo-ts` as an SSH host.
 
 ## Secrets
 
