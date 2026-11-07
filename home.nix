@@ -21,6 +21,7 @@ in {
 
   # Non-interactive shells (agents, services, orca serve) need these too.
   home.sessionPath = [
+    "/nix/var/nix/profiles/default/bin"
     "$HOME/.nix-profile/bin"
     "$HOME/.local/bin"
     "$HOME/bin"
