@@ -69,7 +69,7 @@ grep -q '^precedence ::ffff:0:0/96' /etc/gai.conf 2>/dev/null \
 # Netplan: add DNS fallbacks and make sure the IPv6 default route is applied.
 NETPLAN_FILE="$(ls /etc/netplan/*.yaml 2>/dev/null | head -1 || true)"
 if [[ -n "$NETPLAN_FILE" ]]; then
-  if ! grep -qE '^[[:space:]]*-[[:space:]]*(1\.1\.1\.1|9\.9\.9\.9)' "$NETPLAN_FILE"; then
+  if ! sudo grep -qE '^[[:space:]]*-[[:space:]]*(1\.1\.1\.1|9\.9\.9\.9)' "$NETPLAN_FILE"; then
     echo "netplan: adding DNS fallbacks to $NETPLAN_FILE"
     sudo cp "$NETPLAN_FILE" /tmp/devconfig-netplan.bak
     sudo python3 - "$NETPLAN_FILE" <<'PY'
@@ -120,6 +120,25 @@ else
   echo "ipv6: NO default route; AAAA-only clients may hang" >&2
 fi
 
+# Contabo's netplan has the IPv6 route, but it has been missing after boot.
+# Re-apply it once the network is up.
+sudo tee /etc/systemd/system/devconfig-ipv6-route.service >/dev/null <<'EOF'
+[Unit]
+Description=Ensure the IPv6 default route
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'ip -6 route show default | grep -q . || /usr/sbin/netplan apply'
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload
+sudo systemctl enable devconfig-ipv6-route.service >/dev/null 2>&1 || true
+echo "ipv6: boot check enabled"
+
 # sshd hardening: only when the target user already has a key.
 AUTH_KEYS="/home/$TARGET_USER/.ssh/authorized_keys"
 if [[ -s "$AUTH_KEYS" ]]; then
@@ -164,7 +183,7 @@ echo "tailscale: $(tailscale version 2>/dev/null | head -1 || echo installed)"
 if [[ "$SKIP_FIREWALL" == false ]]; then
   TS_RUNNING=false
   if command -v tailscale >/dev/null 2>&1; then
-    if tailscale status --json 2>/dev/null | grep -q '"BackendState":"Running"'; then
+    if tailscale status --json 2>/dev/null | grep -qE '"BackendState"[[:space:]]*:[[:space:]]*"Running"'; then
       TS_RUNNING=true
     fi
   fi
