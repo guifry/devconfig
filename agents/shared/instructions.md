@@ -48,3 +48,6 @@ Rules:
 
 Run `agent-sync` to check for skills that ended up outside devconfig, and `agent-sync --fix` to pull them in.
 </creating-skills-and-commands>
+<infrastructure>
+The Contabo factory VM runbook is in `skills/contabo-factory/REFERENCE.md`. Read it before changing SSH, UFW, Tailscale, Docker, or devconfig on that host (`contabo-ts`).
+</infrastructure>
