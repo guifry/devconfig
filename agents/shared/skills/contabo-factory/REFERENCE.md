@@ -26,7 +26,7 @@ An always-on Linux box for coding agents, Orca, Docker and devconfig. The Mac is
 | Tailnet IPv6 | `fd7a:115c:a1e0::b22a:fb11` |
 | Tailscale | 1.104.5, MagicDNS short name `contabo-factory` (full domain in the admin console) |
 | Tailscale SSH | **disabled** (`tailscale up --ssh=false`) so port 22 over the tailnet reaches OpenSSH |
-| IPv6 | global address, but **no default IPv6 route**. IPv4 is preferred via `/etc/gai.conf` |
+| IPv6 | global address, but **no default IPv6 route**. `/etc/hosts` pins `api.anthropic.com` to IPv4; `/etc/gai.conf` also prefers IPv4 |
 
 Tailnet owner account is in the password manager. Do not publish it here.
 
@@ -222,7 +222,7 @@ Approve the printed URL. UFW must allow `41641/udp` and `tailscale0`.
 
 ### Anthropic API times out
 
-The VM has a global IPv6 address but no IPv6 default route. `api.anthropic.com` has an AAAA record, so some clients try IPv6 first and hang for 10 seconds.
+The VM has a global IPv6 address but no IPv6 default route. `api.anthropic.com` has an AAAA record, and the native Claude binary tries IPv6 first and hangs for 10 seconds. `/etc/gai.conf` alone did not fix it.
 
 Check IPv4:
 
@@ -230,18 +230,20 @@ Check IPv4:
 curl -4 -o /dev/null -w '%{http_code}\n' --max-time 10 https://api.anthropic.com/
 ```
 
-`404` means the API is reachable. The fix applied is an IPv4 preference in `/etc/gai.conf`:
+`404` means the API is reachable. The working fix is an `/etc/hosts` pin:
 
 ```
-precedence ::ffff:0:0/96  100
+160.79.104.10 api.anthropic.com
 ```
 
-Verify with `getent ahosts api.anthropic.com` — IPv4 should come first. `claude -p "say ok"` should reach `Not logged in · Please run /login`, not `Unable to connect`.
+`claude` then opens the onboarding screen instead of `Unable to connect`. `claude auth login` prints the OAuth URL and waits for the code.
 
-If a Node tool still stalls, prefix it:
+`/etc/gai.conf` also carries `precedence ::ffff:0:0/96  100`, which makes ordinary tools prefer IPv4, but it does not affect the native binary. If Anthropic changes the API IP, update the hosts entry or add a proper IPv6 default route.
+
+If a Node tool still stalls:
 
 ```
-NODE_OPTIONS=--dns-result-order=ipv4first claude
+NODE_OPTIONS=--dns-result-order=ipv4first <command>
 ```
 
 If IPv4 also times out, check the Contabo location against Anthropic's supported countries and test the same request from another host.
@@ -310,7 +312,7 @@ tailscale status
 2. Install Nix: `curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm`.
 3. `curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash -s -- --mode server --yes`.
 4. `sudo tailscale up --ssh=false --hostname contabo-factory`, then the UFW rules.
-5. Prefer IPv4: `echo 'precedence ::ffff:0:0/96  100' | sudo tee -a /etc/gai.conf` (the VM has no IPv6 default route).
+5. Prefer IPv4: `echo 'precedence ::ffff:0:0/96  100' | sudo tee -a /etc/gai.conf` and `echo '160.79.104.10 api.anthropic.com' | sudo tee -a /etc/hosts` (the VM has no IPv6 default route; native Claude ignores gai.conf).
 6. Docker: `curl -fsSL https://get.docker.com | sh`; `sudo usermod -aG docker dev`.
 7. 4 GB swap and `Europe/London`.
 8. Auth: gh, claude, codex, opencode, gcloud.
