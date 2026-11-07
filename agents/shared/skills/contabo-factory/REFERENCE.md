@@ -120,7 +120,7 @@ As built:
 - `tree-sitter` 0.26.8, `gcc` 15.2.0, `unzip`, Python 3.13 with pip — for nvim parsers and Mason
 - Claude Code 2.1.319
 - Codex CLI 0.167.0
-- OpenCode 1.19.5
+- OpenCode 2.2.6 (`@opencode/cli`, v2)
 - Docker 29.9.3; `dev` in the `docker` group
 - Tailscale 1.104.5
 - devconfig extras: ripgrep, fd, fzf, direnv, lazygit, yazi, btop
@@ -173,6 +173,14 @@ Requires passwordless sudo, normally `/etc/sudoers.d/90-dev-provisioning`. After
 - Tailscale SSH is off on purpose: Orca's managed server needs OpenSSH port forwarding.
 - Remote Orca Server (`orca serve`) is optional and not installed yet. Install after SSH is stable.
 - Orca skill: `~/.agents/skills/orca-cli`.
+
+Ready for Orca desktop as of 2026-11-07:
+
+- `ssh contabo-ts` works: OpenSSH, key auth, port forwarding, UFW tailnet only.
+- Claude and Codex are logged in; OpenCode 2.2.6 has the DeepSeek credential.
+- Orca 1.4.224+ supports OpenCode 2.x in Native Chat; the old status-plugin failure was fixed after 1.4.200. Use a current Orca.
+- Orca installs its managed server on the host on first connect; no Node or build tools needed on the host.
+- `gh` is **not** logged in. Orca's own GitHub OAuth may work for its UI, but agents need `gh auth login` for CLI PR work.
 
 ## Provider auth
 

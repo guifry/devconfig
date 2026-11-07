@@ -300,7 +300,8 @@ if [[ "$MODE" == "server" ]]; then
   if [[ -n "$NPM_BIN" ]]; then
     echo ""
     echo "Installing OpenCode and Codex..."
-    "$NPM_BIN" install -g --prefix "$HOME/.local" opencode-ai @openai/codex \
+    "$NPM_BIN" uninstall -g --prefix "$HOME/.local" opencode-ai >/dev/null 2>&1 || true
+    "$NPM_BIN" install -g --prefix "$HOME/.local" @opencode/cli @openai/codex \
       || echo "Warning: OpenCode/Codex install failed — rerun later"
   fi
 fi
