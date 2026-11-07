@@ -57,9 +57,12 @@ in {
     # see devconfig mise-setup) manages per-project node versions the same way.
     nodejs
     mosh
+    tree-sitter
   ] ++ lib.optionals (!isDarwin && !headless) [
     ghostty
     xclip
+  ] ++ lib.optionals (!isDarwin) [
+    gcc
   ];
 
   programs.zsh = {
