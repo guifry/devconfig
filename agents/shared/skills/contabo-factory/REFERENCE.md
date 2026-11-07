@@ -117,12 +117,14 @@ As built:
 - Nix (Determinate 3.24.2) 2.35.3
 - Home Manager 26.11-pre
 - zsh, tmux, mosh, nvim, git, gh, gcloud, node 24, uv, mise
+- `tree-sitter` 0.26.8, `gcc` 15.2.0, `unzip`, Python 3.13 with pip — for nvim parsers and Mason
 - Claude Code 2.1.319
 - Codex CLI 0.167.0
 - OpenCode 1.19.5
 - Docker 29.9.3; `dev` in the `docker` group
 - Tailscale 1.104.5
 - devconfig extras: ripgrep, fd, fzf, direnv, lazygit, yazi, btop
+- nvim: 22 tree-sitter parsers in `~/.local/share/nvim/site/parser`; Mason tools in `~/.local/share/nvim/mason/packages`
 
 Versions drift. Check with `claude --version`, `codex --version`, `opencode --version`, `docker --version`, `tailscale version`.
 
@@ -304,6 +306,18 @@ DEVCONFIG_MODE=server devconfig switch
 ```
 
 If `nix` is missing, start a login shell. `devconfig doctor` for the rest. Nvim LSPs are skipped in server mode; run `devconfig nvim-setup` if wanted.
+
+### nvim parser or Mason errors
+
+`tree-sitter: command not found`, `unzip` missing, or `python3`/pip failures on first start mean the nvim toolchain is incomplete. devconfig now includes `tree-sitter`, `gcc`, `unzip`, and Python 3.13 with pip.
+
+```
+devconfig switch
+nvim --headless "+Lazy! sync" +qa
+nvim --headless "+MasonToolsInstallSync" +qa
+```
+
+The first run compiles 22 parsers. After that, startup is about 0.2 s. `image.nvim: cannot query terminal size` is harmless in headless mode.
 
 ### Disk full
 

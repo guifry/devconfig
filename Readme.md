@@ -48,7 +48,7 @@ Server mode installs the same shell, tmux, git, editor and agent config, but:
 - adds `mosh`
 - adds a `work` alias (`tmux new -A -s main`)
 - skips the interactive SSH key wizard — use `gh auth login` or a deploy key
-- skips the slow nvim LSP setup — run `devconfig nvim-setup` later
+- skips the slow nvim LSP setup — run `devconfig nvim-setup` later; `tree-sitter`, `gcc`, `unzip` and Python/pip are installed so parsers and Mason tools can build
 - only offers alias categories 1, 2 and 4
 - installs OpenCode and Codex
 - runs `scripts/server-provision.sh`: 4 GB swap, timezone, DNS fallbacks, IPv6 route, sshd hardening, Docker, Tailscale package
