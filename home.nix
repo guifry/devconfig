@@ -56,11 +56,10 @@ in {
     # any npx-based MCP server. nvm is deliberately NOT used — `mise` (standalone,
     # see devconfig mise-setup) manages per-project node versions the same way.
     nodejs
+    mosh
   ] ++ lib.optionals (!isDarwin && !headless) [
     ghostty
     xclip
-  ] ++ lib.optionals headless [
-    mosh
   ];
 
   programs.zsh = {
