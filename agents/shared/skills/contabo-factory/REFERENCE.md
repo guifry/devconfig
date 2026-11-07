@@ -27,6 +27,7 @@ An always-on Linux box for coding agents, Orca, Docker and devconfig. The Mac is
 | Tailscale | 1.104.5, MagicDNS short name `contabo-factory` (full domain in the admin console) |
 | Tailscale SSH | **disabled** (`tailscale up --ssh=false`) so port 22 over the tailnet reaches OpenSSH |
 | IPv6 | global address, default route via `fe80::1` in `/etc/netplan/50-cloud-init.yaml`; verified with `ping6` and `curl -6` |
+| DNS | Contabo `195.179.224.53` / `209.126.15.53`, fallback `1.1.1.1` / `9.9.9.9` in the same netplan file |
 
 Tailnet owner account is in the password manager. Do not publish it here.
 
@@ -300,11 +301,19 @@ Harmless on Contabo; network and SSH work.
 ### DNS or downloads fail
 
 ```
-curl -I https://github.com
 resolvectl status
+resolvectl query github.com
+curl -I https://github.com
 ```
 
-Retry. Transient DNS failures happened during the first mise install.
+Netplan has Contabo's resolvers plus `1.1.1.1` and `9.9.9.9` as fallbacks. If queries fail, validate and reapply:
+
+```
+sudo netplan generate
+sudo netplan apply
+```
+
+Check `/etc/netplan/50-cloud-init.yaml` if it persists. Transient DNS failures happened during the first mise install and a git pull.
 
 ### After a reboot
 
@@ -321,7 +330,7 @@ tailscale status
 2. Install Nix: `curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm`.
 3. `curl -fsSL https://raw.githubusercontent.com/guifry/devconfig/master/bootstrap.sh | bash -s -- --mode server --yes`.
 4. `sudo tailscale up --ssh=false --hostname contabo-factory`, then the UFW rules.
-5. Confirm IPv6: `ip -6 route show default` should show `fe80::1`; run `sudo netplan apply` if missing. Optional IPv4 preference: `echo 'precedence ::ffff:0:0/96  100' | sudo tee -a /etc/gai.conf`.
+5. Confirm network: `ip -6 route show default` shows `fe80::1`; netplan DNS includes `1.1.1.1` and `9.9.9.9`; `sudo netplan generate && sudo netplan apply`. Optional IPv4 preference: `echo 'precedence ::ffff:0:0/96  100' | sudo tee -a /etc/gai.conf`.
 6. Docker: `curl -fsSL https://get.docker.com | sh`; `sudo usermod -aG docker dev`.
 7. 4 GB swap and `Europe/London`.
 8. Auth: gh, claude, codex, opencode, gcloud.
