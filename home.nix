@@ -72,6 +72,12 @@ in {
     # Non-interactive shells (agents, systemd, orca serve) read .zshenv.
     envExtra = ''
       export PATH="/nix/var/nix/profiles/default/bin:$HOME/.nix-profile/bin:$HOME/.local/bin:$HOME/bin:$PATH"
+      # Agents run as a service account: the org's 16-hour reauth policy revokes
+      # user credentials, which kills unattended runs.
+      if [ -f "$HOME/.config/gcloud/agents/staging.json" ]; then
+        export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/gcloud/agents/staging.json"
+        export CLOUDSDK_ACTIVE_CONFIG_NAME=agent
+      fi
     '';
     # Nix OpenSSH does not implement Apple's UseKeychain. Use the system ssh
     # for mosh's auth hop so the existing ~/.ssh/config keeps working.
